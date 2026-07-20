@@ -1,3 +1,5 @@
+import { warn } from '$lib/logger'
+
 export interface DebouncedPersist {
   schedule(): void
   flush(): Promise<void>
@@ -17,7 +19,7 @@ export function createDebouncedPersist(
       try {
         await saveFn()
       } catch (e) {
-        console.warn('Persisting failed:', e)
+        warn('Persisting failed:', e)
       } finally {
         inflight = null
       }

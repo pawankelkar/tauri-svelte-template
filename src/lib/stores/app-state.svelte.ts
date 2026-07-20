@@ -1,6 +1,7 @@
 import { commands, unwrapResult } from '$lib/tauri-bindings'
 import type { PersistedAppState } from '$lib/tauri-bindings'
 import { createDebouncedPersist } from '$lib/utils/debounce-persist'
+import { warn } from '$lib/logger'
 import {
   defaultAppState,
   sanitizeAppState,
@@ -16,7 +17,7 @@ async function persistToDisk(): Promise<void> {
   try {
     unwrapResult(await commands.saveAppState($state.snapshot(_appState)))
   } catch (e) {
-    console.warn('Persisting app state failed:', e)
+    warn('Persisting app state failed:', e)
   }
 }
 
@@ -64,7 +65,7 @@ export async function initAppState(): Promise<PersistedAppState> {
     const loaded = unwrapResult(await commands.loadAppState())
     _appState = sanitizeAppState(loaded)
   } catch (e) {
-    console.warn('Loading app state failed, using defaults:', e)
+    warn('Loading app state failed, using defaults:', e)
     _appState = defaultAppState()
   }
   _ready = true

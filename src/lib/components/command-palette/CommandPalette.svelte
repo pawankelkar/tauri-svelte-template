@@ -18,6 +18,10 @@
   let commands = $derived(listCommands())
 
   let grouped = $derived.by((): GroupedCommands => {
+    // A plain Map is correct here, not SvelteMap: this one is rebuilt from
+    // scratch every time `commands` changes and is never mutated afterwards,
+    // so `$derived` already supplies the reactivity SvelteMap would add.
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
     const map = new Map<string, typeof commands>()
     for (const cmd of commands) {
       const group = map.get(cmd.category) ?? []

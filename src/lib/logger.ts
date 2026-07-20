@@ -34,7 +34,6 @@ class Logger {
       const prefix = `[${new Date().toISOString()}] [${level.toUpperCase()}]`
       const method = CONSOLE_METHOD[level] as
         'debug' | 'info' | 'warn' | 'error'
-      // eslint-disable-next-line no-console
       console[method](prefix, message, ...args)
       return
     }

@@ -1,6 +1,7 @@
 import { commands, unwrapResult } from '$lib/tauri-bindings'
 import type { AppPreferences } from '$lib/tauri-bindings'
 import { createDebouncedPersist } from '$lib/utils/debounce-persist'
+import { warn } from '$lib/logger'
 import { defaultPreferences, sanitizePreferences } from './preferences-schema'
 
 const SAVE_DEBOUNCE_MS = 500
@@ -12,7 +13,7 @@ async function persistToDisk(): Promise<void> {
   try {
     unwrapResult(await commands.savePreferences($state.snapshot(_preferences)))
   } catch (e) {
-    console.warn('Persisting preferences failed:', e)
+    warn('Persisting preferences failed:', e)
   }
 }
 
@@ -63,7 +64,7 @@ export async function initPreferences(): Promise<AppPreferences> {
     const loaded = unwrapResult(await commands.loadPreferences())
     _preferences = sanitizePreferences(loaded)
   } catch (e) {
-    console.warn('Loading preferences failed, using defaults:', e)
+    warn('Loading preferences failed, using defaults:', e)
     _preferences = defaultPreferences()
   }
   _ready = true
