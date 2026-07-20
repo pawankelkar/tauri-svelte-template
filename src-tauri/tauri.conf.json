@@ -36,6 +36,12 @@
     },
     "macOSPrivateApi": true
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc1QkY5RkM3MDlGQTMyNzAKUldSd012b0p4NSsvZFNsVmJoUVRtdDFmWm51VFFTQ3Q1UWhuY2Yvekw2djhVMVpNWSsxVm11VUcK",
+      "endpoints": ["https://YOUR_GITHUB_USER.github.io/YOUR_REPO/latest.json"]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
@@ -47,6 +53,7 @@
       "icons/icon.ico"
     ],
     "category": "DeveloperTool",
-    "shortDescription": "A Tauri Svelte template application"
+    "shortDescription": "A Tauri Svelte template application",
+    "createUpdaterArtifacts": true
   }
 }

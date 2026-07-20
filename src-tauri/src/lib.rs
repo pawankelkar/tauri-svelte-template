@@ -54,6 +54,14 @@ pub fn run() {
         );
     }
 
+    // Auto-updater — checks the configured endpoint for a newer version.
+    // The pubkey and endpoints are placeholders until replaced; the plugin
+    // compiles and registers but won't connect.
+    #[cfg(desktop)]
+    {
+        app_builder = app_builder.plugin(tauri_plugin_updater::Builder::new().build());
+    }
+
     app_builder = app_builder.plugin({
         #[allow(unused_mut)]
         let mut targets = vec![

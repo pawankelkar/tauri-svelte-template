@@ -38,9 +38,9 @@ specta-typescript = "=0.0.9"
 tauri-plugin-single-instance = "2"
 tauri-plugin-window-state = "2"
 tauri-plugin-global-shortcut = "2"
+tauri-plugin-updater = "2"
 
 # Phase 6: tauri-nspanel (macOS)
-# Phase 8: tauri-plugin-updater
 
 [profile.release]
 codegen-units = 1
