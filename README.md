@@ -57,3 +57,44 @@ accepted: the two `round_trips_through_json_store` tests in
 `src-tauri/src/commands/`, whose shared shape is the `mod tests` preamble.
 Collapsing that needs a macro and costs more readability than it buys. The
 threshold is low enough that any _new_ clone fails the gate.
+
+## Releasing
+
+The template ships a release pipeline that builds multi-platform artifacts,
+signs them for the auto-updater, and uploads them to a draft GitHub Release.
+
+### One-time setup
+
+1. Generate a signing keypair:
+   ```bash
+   pnpm tauri signer generate -- -w ~/.tauri/myapp.key
+   ```
+2. Add two repository secrets in GitHub → Settings → Secrets → Actions:
+   - `TAURI_SIGNING_PRIVATE_KEY` — the contents of the `.key` file (or a path)
+   - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — the password you chose (leave empty
+     if none)
+3. Replace the `pubkey` in `src-tauri/tauri.conf.json` → `plugins.updater` with
+   the contents of your `.key.pub` file.
+4. Replace the `endpoints` URL with your actual update endpoint (e.g.
+   `https://github.com/YOUR_USER/YOUR_REPO/releases/latest/download/latest.json`).
+
+### Cutting a release
+
+```bash
+pnpm release v1.0.0
+```
+
+This runs `check:all`, syncs the version into `package.json`, `Cargo.toml`, and
+`tauri.conf.json`, refreshes the lockfile, and offers to commit + tag + push.
+
+Pushing the `v*` tag triggers `.github/workflows/release.yml`, which builds on
+macOS (arm64 + x64), Linux, and Windows, signs the artifacts, generates
+`latest.json` for the updater, and uploads everything to a **draft** release.
+Review the artifacts, then publish.
+
+## Crash recovery
+
+If the main content area throws during render, the `ErrorBoundary` catches it,
+saves the error details to `{app_data_dir}/recovery/crash-{timestamp}.json`, and
+shows a fallback UI with a "Copy details" button and a reload action. On the next
+startup, crash files older than 7 days are automatically purged.
