@@ -10,6 +10,9 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.ts'],
   },
   resolve: {
+    // Without this, `svelte` resolves to its server build and `mount()` throws
+    // lifecycle_function_unavailable — component tests need the client build.
+    conditions: ['browser'],
     alias: {
       $lib: path.resolve(__dirname, './src/lib'),
     },
