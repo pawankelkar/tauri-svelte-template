@@ -1,0 +1,20 @@
+my-docs/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/binaries/
+src-tauri/gen/
+
+# Node
+node_modules/
+dist/
+package-lock.json
+
+# Env
+.env
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*~

@@ -1,0 +1,10 @@
+{
+  "app.name": "Tauri App",
+
+  "titlebar.default": "Tauri App",
+  "titlebar.showLeftSidebar": "Show Left Sidebar",
+  "titlebar.hideLeftSidebar": "Hide Left Sidebar",
+  "titlebar.showRightSidebar": "Show Right Sidebar",
+  "titlebar.hideRightSidebar": "Hide Right Sidebar",
+  "titlebar.settings": "Settings"
+}
