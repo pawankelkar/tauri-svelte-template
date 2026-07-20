@@ -31,7 +31,8 @@
     data-tauri-drag-region
     class="pointer-events-none absolute inset-0 flex items-center justify-center"
   >
-    <span class="text-xs font-medium text-muted-foreground">{displayTitle}</span>
+    <span class="text-xs font-medium text-muted-foreground">{displayTitle}</span
+    >
   </div>
 
   <!-- Right side -->

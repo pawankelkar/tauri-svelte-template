@@ -156,7 +156,9 @@
       },
       get detail() {
         const entry = getLastQuickPaneEntry()
-        return entry ? t('welcome.tiles.quickPane.lastEntry', { text: entry }) : null
+        return entry
+          ? t('welcome.tiles.quickPane.lastEntry', { text: entry })
+          : null
       },
       run: () => void executeCommand(TOGGLE_QUICK_PANE),
     },
@@ -248,7 +250,9 @@
       {#each tiles as tile (tile.titleKey)}
         <Card.Root class="flex flex-col">
           <Card.Header>
-            <Card.Title class="flex items-center justify-between gap-2 text-base">
+            <Card.Title
+              class="flex items-center justify-between gap-2 text-base"
+            >
               <span>{t(tile.titleKey)}</span>
               {#if tile.shortcut}
                 <kbd

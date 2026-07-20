@@ -33,9 +33,7 @@ export function sanitizeAppState(raw: unknown): PersistedAppState {
         ? r.squareCorners
         : defaults.squareCorners,
     lastQuickPaneEntry:
-      typeof r.lastQuickPaneEntry === 'string'
-        ? r.lastQuickPaneEntry
-        : null,
+      typeof r.lastQuickPaneEntry === 'string' ? r.lastQuickPaneEntry : null,
     recentItems: Array.isArray(r.recentItems)
       ? r.recentItems
           .filter((x): x is string => typeof x === 'string')

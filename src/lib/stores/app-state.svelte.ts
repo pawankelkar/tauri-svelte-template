@@ -14,9 +14,7 @@ let _ready = $state(false)
 
 async function persistToDisk(): Promise<void> {
   try {
-    unwrapResult(
-      await commands.saveAppState($state.snapshot(_appState)),
-    )
+    unwrapResult(await commands.saveAppState($state.snapshot(_appState)))
   } catch (e) {
     console.warn('Persisting app state failed:', e)
   }

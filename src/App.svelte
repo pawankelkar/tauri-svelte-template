@@ -73,7 +73,9 @@
   })
 </script>
 
-<div class="flex h-screen flex-col rounded-[var(--app-corner-radius)] overflow-hidden">
+<div
+  class="flex h-screen flex-col rounded-[var(--app-corner-radius)] overflow-hidden"
+>
   <TitleBar />
   <!-- Global overlays live outside the boundary so they stay usable, and the
        window keeps its controls, even if the content area crashes. -->

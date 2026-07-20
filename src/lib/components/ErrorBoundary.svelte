@@ -45,7 +45,9 @@
   {@render children()}
 
   {#snippet failed(error, _reset)}
-    <div class="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+    <div
+      class="flex h-full flex-col items-center justify-center gap-4 p-8 text-center"
+    >
       <h2 class="text-lg font-semibold">{t('errorBoundary.title')}</h2>
       <p class="text-muted-foreground max-w-md text-sm">
         {error instanceof Error ? error.message : String(error)}

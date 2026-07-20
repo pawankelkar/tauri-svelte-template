@@ -41,7 +41,9 @@
         </AlertDialog.Cancel>
         <AlertDialog.Action
           onclick={confirmAccept}
-          class={cn(request.destructive && buttonVariants({ variant: 'destructive' }))}
+          class={cn(
+            request.destructive && buttonVariants({ variant: 'destructive' }),
+          )}
         >
           {t(request.confirmKey ?? 'confirm.confirm')}
         </AlertDialog.Action>

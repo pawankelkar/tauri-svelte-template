@@ -27,18 +27,10 @@ describe('logger', () => {
   })
 
   it('destructured functions retain correct this binding', () => {
-    const debugSpy = vi
-      .spyOn(console, 'debug')
-      .mockImplementation(() => {})
-    const infoSpy = vi
-      .spyOn(console, 'info')
-      .mockImplementation(() => {})
-    const warnSpy = vi
-      .spyOn(console, 'warn')
-      .mockImplementation(() => {})
-    const errorSpy = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => {})
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     expect(() => trace('t')).not.toThrow()
     expect(() => debug('d')).not.toThrow()
@@ -53,18 +45,10 @@ describe('logger', () => {
   })
 
   it('uses correct console methods for each level', () => {
-    const debugSpy = vi
-      .spyOn(console, 'debug')
-      .mockImplementation(() => {})
-    const infoSpy = vi
-      .spyOn(console, 'info')
-      .mockImplementation(() => {})
-    const warnSpy = vi
-      .spyOn(console, 'warn')
-      .mockImplementation(() => {})
-    const errorSpy = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => {})
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     logger.trace('t')
     logger.debug('d')

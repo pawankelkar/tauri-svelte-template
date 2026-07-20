@@ -144,9 +144,7 @@ describe('MRU helpers', () => {
       addRecentItem(`item-${i}`)
     }
     expect(getAppState().recentItems).toHaveLength(MAX_RECENT_ITEMS)
-    expect(getAppState().recentItems[0]).toBe(
-      `item-${MAX_RECENT_ITEMS + 4}`,
-    )
+    expect(getAppState().recentItems[0]).toBe(`item-${MAX_RECENT_ITEMS + 4}`)
   })
 
   it('removeRecentItem filters out the item', () => {

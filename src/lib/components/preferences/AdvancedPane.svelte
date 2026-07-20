@@ -25,7 +25,10 @@
   let exampleDensity = $state('comfortable')
 
   const densityOptions = $derived([
-    { value: 'comfortable', label: t('preferences.advanced.densityComfortable') },
+    {
+      value: 'comfortable',
+      label: t('preferences.advanced.densityComfortable'),
+    },
     { value: 'compact', label: t('preferences.advanced.densityCompact') },
   ])
 

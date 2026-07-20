@@ -32,7 +32,8 @@ class Logger {
   private log(level: LogLevel, message: string, ...args: unknown[]): void {
     if (import.meta.env.DEV) {
       const prefix = `[${new Date().toISOString()}] [${level.toUpperCase()}]`
-      const method = CONSOLE_METHOD[level] as 'debug' | 'info' | 'warn' | 'error'
+      const method = CONSOLE_METHOD[level] as
+        'debug' | 'info' | 'warn' | 'error'
       // eslint-disable-next-line no-console
       console[method](prefix, message, ...args)
       return
@@ -50,9 +51,8 @@ class Logger {
   ): void {
     void (async () => {
       try {
-        const { warn: logWarn, error: logError } = await import(
-          '@tauri-apps/plugin-log'
-        )
+        const { warn: logWarn, error: logError } =
+          await import('@tauri-apps/plugin-log')
         const fullMessage =
           args.length > 0 ? `${message} ${JSON.stringify(args)}` : message
         if (level === 'warn') logWarn(fullMessage)

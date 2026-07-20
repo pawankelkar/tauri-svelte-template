@@ -17,9 +17,7 @@ export function getResolvedMode(): 'light' | 'dark' {
   return mode === 'system' ? (_systemDark ? 'dark' : 'light') : mode
 }
 
-function applyClass(
-  target: HTMLElement = document.documentElement,
-): void {
+function applyClass(target: HTMLElement = document.documentElement): void {
   target.classList.toggle('dark', getResolvedMode() === 'dark')
 }
 

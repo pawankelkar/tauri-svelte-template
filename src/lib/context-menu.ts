@@ -1,8 +1,4 @@
-import {
-  Menu,
-  MenuItem,
-  PredefinedMenuItem,
-} from '@tauri-apps/api/menu'
+import { Menu, MenuItem, PredefinedMenuItem } from '@tauri-apps/api/menu'
 import i18n from '$lib/i18n/config'
 
 export interface ContextMenuItem {
@@ -53,15 +49,11 @@ export function toMenuItemOptions(
   })
 }
 
-function isSeparatorOption(
-  opt: MenuEntryOption,
-): opt is SeparatorOption {
+function isSeparatorOption(opt: MenuEntryOption): opt is SeparatorOption {
   return 'item' in opt
 }
 
-async function buildAndShowMenu(
-  options: MenuEntryOption[],
-): Promise<void> {
+async function buildAndShowMenu(options: MenuEntryOption[]): Promise<void> {
   const items = await Promise.all(
     options.map((opt) => {
       if (isSeparatorOption(opt)) {

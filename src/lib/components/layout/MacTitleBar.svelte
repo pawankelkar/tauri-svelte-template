@@ -90,11 +90,19 @@
         type="button"
         onclick={handleClose}
         aria-label="Close window"
-        class="{btnBase} hover:bg-[#ff544d] hover:border-black/[.12] active:bg-[#bf403a] {isWindowFocused ? focusedClose : unfocused}"
+        class="{btnBase} hover:bg-[#ff544d] hover:border-black/[.12] active:bg-[#bf403a] {isWindowFocused
+          ? focusedClose
+          : unfocused}"
       >
         <div class="flex h-3 w-3 items-center justify-center">
           {#if isHovering}
-            <svg width="6" height="6" viewBox="0 0 16 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg
+              width="6"
+              height="6"
+              viewBox="0 0 16 18"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path d={macosClosePath} fill="currentColor" class="opacity-60" />
             </svg>
           {/if}
@@ -104,12 +112,26 @@
         type="button"
         onclick={handleMinimize}
         aria-label="Minimize window"
-        class="{btnBase} hover:bg-[#ffbd2e] hover:border-black/[.12] active:bg-[#bf9122] {isWindowFocused ? focusedMinimize : unfocused}"
+        class="{btnBase} hover:bg-[#ffbd2e] hover:border-black/[.12] active:bg-[#bf9122] {isWindowFocused
+          ? focusedMinimize
+          : unfocused}"
       >
         <div class="flex h-3 w-3 items-center justify-center">
           {#if isHovering}
-            <svg width="8" height="8" viewBox="0 0 17 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d={macosMinimizePath} fill="currentColor" class="opacity-60" />
+            <svg
+              width="8"
+              height="8"
+              viewBox="0 0 17 6"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d={macosMinimizePath}
+                fill="currentColor"
+                class="opacity-60"
+              />
             </svg>
           {/if}
         </div>
@@ -118,17 +140,43 @@
         type="button"
         onclick={handleMaximizeOrFullscreen}
         aria-label={isAltKeyPressed ? 'Maximize window' : 'Enter fullscreen'}
-        class="{btnBase} hover:bg-[#28c93f] hover:border-black/[.12] active:bg-[#1e9930] {isWindowFocused ? focusedGreen : unfocused}"
+        class="{btnBase} hover:bg-[#28c93f] hover:border-black/[.12] active:bg-[#1e9930] {isWindowFocused
+          ? focusedGreen
+          : unfocused}"
       >
         <div class="flex h-3 w-3 items-center justify-center">
           {#if isHovering}
             {#if isAltKeyPressed}
-              <svg width="8" height="8" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d={macosMaximizePath} fill="currentColor" class="opacity-60" />
+              <svg
+                width="8"
+                height="8"
+                viewBox="0 0 17 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d={macosMaximizePath}
+                  fill="currentColor"
+                  class="opacity-60"
+                />
               </svg>
             {:else}
-              <svg width="6" height="6" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd" d={macosFullscreenPath} fill="currentColor" class="opacity-60" />
+              <svg
+                width="6"
+                height="6"
+                viewBox="0 0 15 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d={macosFullscreenPath}
+                  fill="currentColor"
+                  class="opacity-60"
+                />
               </svg>
             {/if}
           {/if}
@@ -145,7 +193,8 @@
     data-tauri-drag-region
     class="pointer-events-none absolute inset-0 flex items-center justify-center"
   >
-    <span class="text-xs font-medium text-muted-foreground">{displayTitle}</span>
+    <span class="text-xs font-medium text-muted-foreground">{displayTitle}</span
+    >
   </div>
 
   <!-- Right side -->

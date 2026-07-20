@@ -51,7 +51,8 @@
     data-tauri-drag-region
     class="pointer-events-none absolute inset-0 flex items-center justify-center"
   >
-    <span class="text-xs font-medium text-muted-foreground">{displayTitle}</span>
+    <span class="text-xs font-medium text-muted-foreground">{displayTitle}</span
+    >
   </div>
 
   <!-- Right side: actions + window controls -->
@@ -77,12 +78,24 @@
         aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
       >
         {#if isMaximized}
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor">
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            stroke="currentColor"
+          >
             <path d="M2 0.5h7.5v7.5" stroke-width="1" />
             <rect x="0.5" y="2.5" width="7" height="7" stroke-width="1" />
           </svg>
         {:else}
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor">
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            stroke="currentColor"
+          >
             <rect x="0.5" y="0.5" width="9" height="9" stroke-width="1" />
           </svg>
         {/if}
@@ -90,10 +103,19 @@
       <button
         type="button"
         onclick={() => appWindow.close()}
-        class={cn(btnClass, 'hover:bg-destructive hover:text-destructive-foreground')}
+        class={cn(
+          btnClass,
+          'hover:bg-destructive hover:text-destructive-foreground',
+        )}
         aria-label="Close window"
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor">
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          fill="none"
+          stroke="currentColor"
+        >
           <path d="M0 0L10 10M10 0L0 10" stroke-width="1" />
         </svg>
       </button>

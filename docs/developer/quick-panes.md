@@ -17,17 +17,17 @@ A Tauri window is a webview, and a webview is a separate JavaScript context.
 The Quick Pane cannot import the main window's stores, read its `$state`, or
 call its functions — those objects live in a different process-level runtime.
 
-What the two windows *do* share is an **origin** (`tauri://localhost`, or
+What the two windows _do_ share is an **origin** (`tauri://localhost`, or
 `http://localhost:1420` in dev). That gives them a common `localStorage`, which
 is why the theme hint works across both without any message passing.
 
 Everything else crosses the boundary as a Tauri event.
 
-| Concern | How it crosses |
-|---|---|
-| Theme | `localStorage['ui-theme']` + a `theme-changed` event as the trigger |
-| Submitted text | `quick-pane-submit` event, payload `{ text: string }` |
-| Show / hide / toggle | Rust commands, never `window.hide()` from JS |
+| Concern              | How it crosses                                                      |
+| -------------------- | ------------------------------------------------------------------- |
+| Theme                | `localStorage['ui-theme']` + a `theme-changed` event as the trigger |
+| Submitted text       | `quick-pane-submit` event, payload `{ text: string }`               |
+| Show / hide / toggle | Rust commands, never `window.hide()` from JS                        |
 
 ---
 
@@ -154,7 +154,7 @@ plugin needs no `global-shortcut:*` entry anywhere in this template.
 
 ## The shortcut
 
-Two global accelerators are now registered, and the plugin installs a *single*
+Two global accelerators are now registered, and the plugin installs a _single_
 handler for all of them — so the handler has to work out which one fired.
 
 `src-tauri/src/commands/global_shortcut.rs` keeps a registry keyed by purpose:
@@ -179,11 +179,11 @@ command, no new picker component.
 through `AppPreferences::default()`. Because the struct carries
 `#[serde(default)]`, this gives three distinguishable states:
 
-| `preferences.json` | Meaning |
-|---|---|
-| key absent | Never configured → the default is registered |
-| `"quickPaneShortcut": "Alt+Space"` | User's own binding |
-| `"quickPaneShortcut": null` | User cleared it → nothing is registered |
+| `preferences.json`                 | Meaning                                      |
+| ---------------------------------- | -------------------------------------------- |
+| key absent                         | Never configured → the default is registered |
+| `"quickPaneShortcut": "Alt+Space"` | User's own binding                           |
+| `"quickPaneShortcut": null`        | User cleared it → nothing is registered      |
 
 That third row is the reason the default lives in `Default::default()` rather
 than in an `unwrap_or` at the call site: an `unwrap_or` would hand the default
@@ -196,7 +196,7 @@ register-then-persist sequence with rollback on either failure, so the user can
 never end up with a shortcut that works but isn't saved, or is saved but
 doesn't work.
 
-Assigning the *same* combination to both purposes fails at OS registration and
+Assigning the _same_ combination to both purposes fails at OS registration and
 surfaces as an error toast, leaving the previous binding intact. There is no
 special-case check for it — the general failure path already does the right
 thing.
@@ -205,15 +205,15 @@ thing.
 
 ## Platform behaviour
 
-| | macOS | Windows | Linux (X11) | Linux (Wayland) |
-|---|---|---|---|---|
-| Always on top | ✅ | ✅ | ✅ | ✅ |
-| Hidden from taskbar/dock | ✅ | ✅ | ✅ | ✅ |
-| Follows the cursor's monitor | ✅ | ✅ | ✅ | ⚠️ compositor-dependent |
-| Visible across Spaces/workspaces | ✅ | n/a | ✅ | ⚠️ |
-| Appears over a fullscreen app | ❌ | ✅ | ⚠️ | ⚠️ |
-| Opens without stealing focus | ❌ | ✅ | ✅ | ⚠️ |
-| Global shortcut | ✅ | ✅ | ✅ | ❌ often blocked |
+|                                  | macOS | Windows | Linux (X11) | Linux (Wayland)         |
+| -------------------------------- | ----- | ------- | ----------- | ----------------------- |
+| Always on top                    | ✅    | ✅      | ✅          | ✅                      |
+| Hidden from taskbar/dock         | ✅    | ✅      | ✅          | ✅                      |
+| Follows the cursor's monitor     | ✅    | ✅      | ✅          | ⚠️ compositor-dependent |
+| Visible across Spaces/workspaces | ✅    | n/a     | ✅          | ⚠️                      |
+| Appears over a fullscreen app    | ❌    | ✅      | ⚠️          | ⚠️                      |
+| Opens without stealing focus     | ❌    | ✅      | ✅          | ⚠️                      |
+| Global shortcut                  | ✅    | ✅      | ✅          | ❌ often blocked        |
 
 Two caveats worth knowing before you ship:
 

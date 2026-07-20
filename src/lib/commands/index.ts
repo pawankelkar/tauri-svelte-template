@@ -52,10 +52,7 @@ import { registerNotificationCommands } from './notification-commands'
 import { registerClipboardCommands } from './clipboard-commands'
 import { registerDialogCommands } from './dialog-commands'
 import { registerShellCommands } from './shell-commands'
-import {
-  findCommandIdForShortcut,
-  executeCommand,
-} from './registry.svelte'
+import { findCommandIdForShortcut, executeCommand } from './registry.svelte'
 import { createKeydownHandler } from '$lib/shortcuts'
 import { initMenu } from '$lib/menu'
 

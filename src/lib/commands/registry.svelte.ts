@@ -37,9 +37,7 @@ export function listCommands(): AppCommand[] {
   return _commands
 }
 
-export function findCommandIdForShortcut(
-  combo: string,
-): string | undefined {
+export function findCommandIdForShortcut(combo: string): string | undefined {
   return _commands.find((c) => c.shortcut === combo)?.id
 }
 

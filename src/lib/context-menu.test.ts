@@ -65,7 +65,12 @@ describe('toMenuItemOptions', () => {
     const entries: ContextMenuEntry[] = [
       { id: 'a', labelKey: 'commands.quit', action: () => {} },
       { separator: true },
-      { id: 'b', labelKey: 'commands.toggleTheme', action: () => {}, disabled: true },
+      {
+        id: 'b',
+        labelKey: 'commands.toggleTheme',
+        action: () => {},
+        disabled: true,
+      },
     ]
     const options = toMenuItemOptions(entries)
     expect(options).toHaveLength(3)

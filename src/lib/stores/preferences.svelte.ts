@@ -10,9 +10,7 @@ let _ready = $state(false)
 
 async function persistToDisk(): Promise<void> {
   try {
-    unwrapResult(
-      await commands.savePreferences($state.snapshot(_preferences)),
-    )
+    unwrapResult(await commands.savePreferences($state.snapshot(_preferences)))
   } catch (e) {
     console.warn('Persisting preferences failed:', e)
   }

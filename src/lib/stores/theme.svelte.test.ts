@@ -7,7 +7,10 @@ import {
   getResolvedMode,
   getThemeMode,
 } from './theme.svelte'
-import { initPreferences, __resetPreferencesForTests } from './preferences.svelte'
+import {
+  initPreferences,
+  __resetPreferencesForTests,
+} from './preferences.svelte'
 import { defaultPreferences } from './preferences-schema'
 import { THEME_STORAGE_KEY } from '$lib/theme/paint-hint'
 

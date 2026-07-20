@@ -48,7 +48,9 @@ export function normalizeShortcut(raw: string): string {
     }
   }
 
-  modifiers.sort((a, b) => MODIFIER_ORDER.indexOf(a) - MODIFIER_ORDER.indexOf(b))
+  modifiers.sort(
+    (a, b) => MODIFIER_ORDER.indexOf(a) - MODIFIER_ORDER.indexOf(b),
+  )
   return [...modifiers, key].join('+')
 }
 
@@ -131,7 +133,9 @@ export function fromTauriAccelerator(accelerator: string): ParsedShortcut {
     }
   }
 
-  modifiers.sort((a, b) => MODIFIER_ORDER.indexOf(a) - MODIFIER_ORDER.indexOf(b))
+  modifiers.sort(
+    (a, b) => MODIFIER_ORDER.indexOf(a) - MODIFIER_ORDER.indexOf(b),
+  )
   return { key, modifiers }
 }
 

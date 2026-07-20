@@ -40,10 +40,7 @@ describe('command registry', () => {
   })
 
   it('lists all registered commands', () => {
-    registerCommands([
-      makeCommand({ id: 'a' }),
-      makeCommand({ id: 'b' }),
-    ])
+    registerCommands([makeCommand({ id: 'a' }), makeCommand({ id: 'b' })])
     expect(listCommands()).toHaveLength(2)
   })
 
@@ -71,15 +68,11 @@ describe('command registry', () => {
   it('executeCommand warns on unknown id', async () => {
     const { warn } = await import('$lib/logger')
     await executeCommand('nonexistent')
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('nonexistent'),
-    )
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('nonexistent'))
   })
 
   it('findCommandIdForShortcut resolves registered shortcut', () => {
-    registerCommand(
-      makeCommand({ id: 'with-shortcut', shortcut: 'mod+k' }),
-    )
+    registerCommand(makeCommand({ id: 'with-shortcut', shortcut: 'mod+k' }))
     expect(findCommandIdForShortcut('mod+k')).toBe('with-shortcut')
   })
 

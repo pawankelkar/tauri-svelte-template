@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  getPlatformStrings,
-  formatShortcut,
-} from './platform-strings'
+import { getPlatformStrings, formatShortcut } from './platform-strings'
 
 describe('getPlatformStrings', () => {
   it('returns macOS strings', () => {
@@ -45,9 +42,7 @@ describe('formatShortcut', () => {
   })
 
   it('formats macOS all modifiers', () => {
-    expect(formatShortcut('macos', 'k', ['mod', 'shift', 'alt'])).toBe(
-      '⌥⇧⌘K',
-    )
+    expect(formatShortcut('macos', 'k', ['mod', 'shift', 'alt'])).toBe('⌥⇧⌘K')
   })
 
   it('formats Windows single modifier', () => {
@@ -66,8 +61,6 @@ describe('formatShortcut', () => {
 
   it('handles multi-char keys', () => {
     expect(formatShortcut('macos', 'enter', ['mod'])).toBe('⌘Enter')
-    expect(formatShortcut('windows', 'enter', ['mod'])).toBe(
-      'Ctrl+Enter',
-    )
+    expect(formatShortcut('windows', 'enter', ['mod'])).toBe('Ctrl+Enter')
   })
 })

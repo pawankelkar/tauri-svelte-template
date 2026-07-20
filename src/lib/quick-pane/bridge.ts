@@ -36,8 +36,10 @@ export function initQuickPaneBridge(): () => void {
   )
 
   return () => {
-    void unlisten.then((fn) => fn()).catch((e: unknown) => {
-      logger.warn('Removing the Quick Pane listener failed', e)
-    })
+    void unlisten
+      .then((fn) => fn())
+      .catch((e: unknown) => {
+        logger.warn('Removing the Quick Pane listener failed', e)
+      })
   }
 }

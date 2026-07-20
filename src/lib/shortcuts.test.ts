@@ -58,9 +58,7 @@ describe('parseShortcut', () => {
 })
 
 describe('buildCombo', () => {
-  function makeEvent(
-    overrides: Partial<KeyboardEvent>,
-  ): KeyboardEvent {
+  function makeEvent(overrides: Partial<KeyboardEvent>): KeyboardEvent {
     return {
       key: 'k',
       metaKey: false,
@@ -80,15 +78,13 @@ describe('buildCombo', () => {
   })
 
   it('builds mod+shift+k', () => {
-    expect(
-      buildCombo(makeEvent({ ctrlKey: true, shiftKey: true })),
-    ).toBe('mod+shift+k')
+    expect(buildCombo(makeEvent({ ctrlKey: true, shiftKey: true }))).toBe(
+      'mod+shift+k',
+    )
   })
 
   it('returns only modifiers for modifier-only key events', () => {
-    expect(
-      buildCombo(makeEvent({ key: 'Control', ctrlKey: true })),
-    ).toBe('mod')
+    expect(buildCombo(makeEvent({ key: 'Control', ctrlKey: true }))).toBe('mod')
   })
 
   it('returns plain key with no modifiers', () => {
@@ -102,9 +98,7 @@ describe('toTauriAccelerator', () => {
   })
 
   it('converts mod+shift+b', () => {
-    expect(toTauriAccelerator('mod+shift+b')).toBe(
-      'CmdOrCtrl+Shift+B',
-    )
+    expect(toTauriAccelerator('mod+shift+b')).toBe('CmdOrCtrl+Shift+B')
   })
 
   it('converts alt+enter', () => {
@@ -138,11 +132,7 @@ describe('createKeydownHandler', () => {
 
   it('does not dispatch when no match', () => {
     const dispatch = vi.fn()
-    const handler = createKeydownHandler(
-      [],
-      () => undefined,
-      dispatch,
-    )
+    const handler = createKeydownHandler([], () => undefined, dispatch)
 
     handler({
       key: 'j',
@@ -204,7 +194,12 @@ describe('createKeydownHandler', () => {
 
 describe('fromTauriAccelerator', () => {
   it('round-trips with toTauriAccelerator', () => {
-    for (const combo of ['mod+k', 'mod+shift+k', 'mod+alt+p', 'mod+shift+alt+f']) {
+    for (const combo of [
+      'mod+k',
+      'mod+shift+k',
+      'mod+alt+p',
+      'mod+shift+alt+f',
+    ]) {
       const { key, modifiers } = fromTauriAccelerator(toTauriAccelerator(combo))
       expect([...modifiers, key].join('+')).toBe(combo)
     }

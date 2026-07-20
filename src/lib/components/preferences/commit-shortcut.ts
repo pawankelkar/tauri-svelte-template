@@ -24,8 +24,7 @@ const PURPOSES = {
 export type ShortcutPurposeId = keyof typeof PURPOSES
 
 export type CommitResult =
-  | { ok: true }
-  | { ok: false; reason: 'register' | 'persist'; message: string }
+  { ok: true } | { ok: false; reason: 'register' | 'persist'; message: string }
 
 /**
  * Changes one of the app's global shortcuts, keeping the OS registration and
@@ -54,9 +53,7 @@ export async function commitShortcut(
     // Nothing was persisted yet, so only the OS registration needs restoring.
     if (previous) {
       try {
-        unwrapResult(
-          await commands.registerGlobalShortcut(purpose, previous),
-        )
+        unwrapResult(await commands.registerGlobalShortcut(purpose, previous))
       } catch (restoreError) {
         logger.warn(`Could not restore previous ${id} shortcut`, restoreError)
       }
