@@ -8,6 +8,22 @@
 
 
 export const commands = {
+async loadAppState() : Promise<Result<PersistedAppState, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("load_app_state") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async saveAppState(appState: PersistedAppState) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_app_state", { appState }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async greet(name: string) : Promise<Result<string, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("greet", { name }) };
@@ -56,6 +72,7 @@ async openPreferencesFile() : Promise<Result<null, string>> {
 /** user-defined types **/
 
 export type AppPreferences = { theme: string; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null }
+export type PersistedAppState = { leftSidebarVisible: boolean; rightSidebarVisible: boolean; squareCorners: boolean; lastQuickPaneEntry: string | null; recentItems: string[]; onboardingCompleted: boolean }
 
 
 

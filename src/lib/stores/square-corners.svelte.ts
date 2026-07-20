@@ -1,5 +1,6 @@
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { platform } from '@tauri-apps/plugin-os'
+import { setSquareCorners } from '$lib/stores/ui.svelte'
 
 export function initSquareCorners(): () => void {
   if (platform() === 'macos') return () => {}
@@ -10,7 +11,7 @@ export function initSquareCorners(): () => void {
   const update = async () => {
     const isFullscreen = await win.isFullscreen()
     if (cancelled) return
-    document.documentElement.classList.toggle('square-corners', isFullscreen)
+    setSquareCorners(isFullscreen)
   }
 
   void update()

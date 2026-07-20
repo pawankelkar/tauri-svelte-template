@@ -6,22 +6,33 @@
   import { initSquareCorners } from '$lib/stores/square-corners.svelte'
   import {
     initPreferences,
-    getPreferences,
     persistPreferencesNow,
   } from '$lib/stores/preferences.svelte'
+  import {
+    initAppState,
+    persistAppStateNow,
+  } from '$lib/stores/app-state.svelte'
+  import { getSquareCorners } from '$lib/stores/ui.svelte'
   import { initTheme, reconcileTheme } from '$lib/stores/theme.svelte'
   import { initializeLanguage } from '$lib/i18n/language-init'
   import TitleBar from '$lib/components/layout/TitleBar.svelte'
   import './app.css'
+
+  $effect(() => {
+    document.documentElement.classList.toggle(
+      'square-corners',
+      getSquareCorners(),
+    )
+  })
 
   onMount(() => {
     const cleanupCorners = initSquareCorners()
     const cleanupTheme = initTheme()
 
     void (async () => {
-      await initPreferences()
+      const [prefs] = await Promise.all([initPreferences(), initAppState()])
       reconcileTheme()
-      await initializeLanguage(getPreferences().language)
+      await initializeLanguage(prefs.language)
     })()
 
     const appWindow = getCurrentWindow()
@@ -29,8 +40,7 @@
     appWindow.setFocus()
 
     const unlistenClose = listen('app:close-requested', async () => {
-      await persistPreferencesNow()
-      // Phase 3: flush app-state store here too, before confirming
+      await Promise.all([persistPreferencesNow(), persistAppStateNow()])
       await invoke('confirm_close')
       appWindow.close()
     })

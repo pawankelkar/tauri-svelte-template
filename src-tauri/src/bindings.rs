@@ -1,9 +1,11 @@
 use tauri_specta::{collect_commands, Builder};
 
 pub fn generate_bindings() -> Builder<tauri::Wry> {
-    use crate::commands::{demo, lifecycle, preferences};
+    use crate::commands::{app_state, demo, lifecycle, preferences};
 
     Builder::<tauri::Wry>::new().commands(collect_commands![
+        app_state::load_app_state,
+        app_state::save_app_state,
         demo::greet,
         lifecycle::confirm_close,
         preferences::load_preferences,

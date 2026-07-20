@@ -21,6 +21,30 @@ impl Default for AppPreferences {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase", default)]
+pub struct PersistedAppState {
+    pub left_sidebar_visible: bool,
+    pub right_sidebar_visible: bool,
+    pub square_corners: bool,
+    pub last_quick_pane_entry: Option<String>,
+    pub recent_items: Vec<String>,
+    pub onboarding_completed: bool,
+}
+
+impl Default for PersistedAppState {
+    fn default() -> Self {
+        Self {
+            left_sidebar_visible: true,
+            right_sidebar_visible: true,
+            square_corners: false,
+            last_quick_pane_entry: None,
+            recent_items: Vec::new(),
+            onboarding_completed: false,
+        }
+    }
+}
+
 pub fn validate_theme(theme: &str) -> Result<(), String> {
     match theme {
         "light" | "dark" | "system" => Ok(()),
@@ -52,5 +76,16 @@ mod tests {
     fn validate_theme_rejects_unknown_values() {
         assert!(validate_theme("blue").is_err());
         assert!(validate_theme("").is_err());
+    }
+
+    #[test]
+    fn default_persisted_app_state_shape() {
+        let state = PersistedAppState::default();
+        assert!(state.left_sidebar_visible);
+        assert!(state.right_sidebar_visible);
+        assert!(!state.square_corners);
+        assert_eq!(state.last_quick_pane_entry, None);
+        assert!(state.recent_items.is_empty());
+        assert!(!state.onboarding_completed);
     }
 }
