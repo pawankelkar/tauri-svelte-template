@@ -103,6 +103,13 @@ export default ts.config(
   },
 
   {
+    // CLI scripts are Node programs, not webview code.
+    files: ['scripts/**/*.js'],
+    languageOptions: { globals: { ...globals.node } },
+    rules: { 'no-console': 'off' },
+  },
+
+  {
     // The re-export layer necessarily imports the generated file.
     files: ['src/lib/tauri-bindings.ts'],
     rules: { 'no-restricted-imports': 'off' },

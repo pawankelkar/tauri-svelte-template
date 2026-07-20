@@ -26,6 +26,7 @@
     "rust:clippy": "cd src-tauri && cargo clippy --all-targets --all-features -- -D warnings",
     "rust:bindings": "cd src-tauri && cargo test export_bindings -- --ignored --nocapture",
     "check:all": "pnpm format:check && pnpm lint && pnpm check && pnpm ast-grep && pnpm knip && pnpm jscpd && pnpm test:run && pnpm rust:fmt && pnpm rust:clippy && pnpm rust:test",
+    "release": "node scripts/prepare-release.js",
     "tauri": "tauri"
   },
   "dependencies": {
