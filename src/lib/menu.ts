@@ -79,6 +79,42 @@ function predefined(item: PredefinedSpec['predefined']): PredefinedSpec {
   return { predefined: item }
 }
 
+/**
+ * Submenus that are identical on every platform.
+ *
+ * They are built fresh per call rather than shared as constants, because
+ * `commandItem()` reads the live registry — a command's accelerator can change
+ * while the app is running, and the menu is rebuilt on `languageChanged`.
+ */
+function editSubmenu(): SubmenuSpec {
+  return {
+    labelKey: 'menu.edit',
+    items: [
+      predefined('Undo'),
+      predefined('Redo'),
+      sep(),
+      predefined('Cut'),
+      predefined('Copy'),
+      predefined('Paste'),
+      sep(),
+      predefined('SelectAll'),
+    ],
+  }
+}
+
+function viewSubmenu(): SubmenuSpec {
+  return {
+    labelKey: 'menu.view',
+    items: [
+      commandItem(TOGGLE_LEFT_SIDEBAR),
+      commandItem(TOGGLE_RIGHT_SIDEBAR),
+      sep(),
+      commandItem(TOGGLE_QUICK_PANE),
+      commandItem(TOGGLE_THEME),
+    ],
+  }
+}
+
 export function buildMenuSpec(platform: AppPlatform): SubmenuSpec[] {
   if (platform === 'macos') {
     return [
@@ -98,29 +134,8 @@ export function buildMenuSpec(platform: AppPlatform): SubmenuSpec[] {
           commandItem(APP_QUIT, 'commands.quit'),
         ],
       },
-      {
-        labelKey: 'menu.edit',
-        items: [
-          predefined('Undo'),
-          predefined('Redo'),
-          sep(),
-          predefined('Cut'),
-          predefined('Copy'),
-          predefined('Paste'),
-          sep(),
-          predefined('SelectAll'),
-        ],
-      },
-      {
-        labelKey: 'menu.view',
-        items: [
-          commandItem(TOGGLE_LEFT_SIDEBAR),
-          commandItem(TOGGLE_RIGHT_SIDEBAR),
-          sep(),
-          commandItem(TOGGLE_QUICK_PANE),
-          commandItem(TOGGLE_THEME),
-        ],
-      },
+      editSubmenu(),
+      viewSubmenu(),
       {
         labelKey: 'menu.window',
         items: [predefined('Minimize'), predefined('Maximize')],
@@ -140,29 +155,8 @@ export function buildMenuSpec(platform: AppPlatform): SubmenuSpec[] {
         commandItem(APP_QUIT, 'commands.quit'),
       ],
     },
-    {
-      labelKey: 'menu.edit',
-      items: [
-        predefined('Undo'),
-        predefined('Redo'),
-        sep(),
-        predefined('Cut'),
-        predefined('Copy'),
-        predefined('Paste'),
-        sep(),
-        predefined('SelectAll'),
-      ],
-    },
-    {
-      labelKey: 'menu.view',
-      items: [
-        commandItem(TOGGLE_LEFT_SIDEBAR),
-        commandItem(TOGGLE_RIGHT_SIDEBAR),
-        sep(),
-        commandItem(TOGGLE_QUICK_PANE),
-        commandItem(TOGGLE_THEME),
-      ],
-    },
+    editSubmenu(),
+    viewSubmenu(),
   ]
 }
 

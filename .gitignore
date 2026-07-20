@@ -18,3 +18,4 @@ package-lock.json
 .vscode/
 *.swp
 *~
+jscpd-report/

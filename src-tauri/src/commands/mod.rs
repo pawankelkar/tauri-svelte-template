@@ -5,3 +5,6 @@ pub mod json_store;
 pub mod lifecycle;
 pub mod preferences;
 pub mod quick_pane;
+
+#[cfg(test)]
+pub mod test_support;

@@ -36,9 +36,7 @@ pub fn run() {
 
         app_builder = app_builder.plugin(
             tauri_plugin_window_state::Builder::new()
-                .with_state_flags(
-                    StateFlags::SIZE | StateFlags::POSITION | StateFlags::MAXIMIZED,
-                )
+                .with_state_flags(StateFlags::SIZE | StateFlags::POSITION | StateFlags::MAXIMIZED)
                 .with_denylist(&["quick-pane"])
                 .build(),
         );
@@ -61,9 +59,7 @@ pub fn run() {
         let mut targets = vec![
             tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
             #[cfg(target_os = "macos")]
-            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
-                file_name: None,
-            }),
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir { file_name: None }),
         ];
         // Excluded on Linux where WebKitGTK's webview doesn't exist during
         // setup(), causing app.emit() to deadlock on the IPC socket.

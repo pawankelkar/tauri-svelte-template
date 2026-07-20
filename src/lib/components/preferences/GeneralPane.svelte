@@ -1,7 +1,7 @@
 <script lang="ts">
-  import * as Select from '$lib/components/ui/select'
   import { Label } from '$lib/components/ui/label'
   import { Separator } from '$lib/components/ui/separator'
+  import PreferenceSelect from './PreferenceSelect.svelte'
   import ShortcutPicker from './ShortcutPicker.svelte'
   import { availableLanguages, languageLabels } from '$lib/i18n/config'
   import { initializeLanguage } from '$lib/i18n/language-init'
@@ -20,9 +20,6 @@
   ])
 
   const selected = $derived(getPreferences().language ?? SYSTEM)
-  const selectedLabel = $derived(
-    options.find((o) => o.value === selected)?.label ?? '',
-  )
 
   async function handleLanguageChange(value: string): Promise<void> {
     const language = value === SYSTEM ? null : value
@@ -33,27 +30,13 @@
   }
 </script>
 
-<div class="space-y-2">
-  <Label for="preferences-language">
-    {t('preferences.general.languageLabel')}
-  </Label>
-  <Select.Root
-    type="single"
-    value={selected}
-    onValueChange={handleLanguageChange}
-  >
-    <Select.Trigger id="preferences-language" class="w-[240px]">
-      {selectedLabel}
-    </Select.Trigger>
-    <Select.Content>
-      {#each options as option (option.value)}
-        <Select.Item value={option.value} label={option.label}>
-          {option.label}
-        </Select.Item>
-      {/each}
-    </Select.Content>
-  </Select.Root>
-</div>
+<PreferenceSelect
+  id="preferences-language"
+  label={t('preferences.general.languageLabel')}
+  value={selected}
+  {options}
+  onValueChange={handleLanguageChange}
+/>
 
 <Separator />
 

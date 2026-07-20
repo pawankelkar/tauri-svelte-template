@@ -37,10 +37,7 @@ pub fn register_global_shortcut(
 /// Releases the accelerator held for `purpose`, if any.
 #[tauri::command]
 #[specta::specta]
-pub fn unregister_global_shortcut(
-    app: AppHandle,
-    purpose: ShortcutPurpose,
-) -> Result<(), String> {
+pub fn unregister_global_shortcut(app: AppHandle, purpose: ShortcutPurpose) -> Result<(), String> {
     unregister_impl(&app, purpose)
 }
 
@@ -108,12 +105,12 @@ mod imp {
     /// both parse to the same modifiers-plus-key value.
     fn purpose_for(fired: &Shortcut) -> Option<ShortcutPurpose> {
         let registered = SHORTCUTS.lock().ok()?;
-        registered.iter().find_map(|(purpose, accelerator)| {
-            match Shortcut::from_str(accelerator) {
+        registered.iter().find_map(
+            |(purpose, accelerator)| match Shortcut::from_str(accelerator) {
                 Ok(parsed) if parsed == *fired => Some(*purpose),
                 _ => None,
-            }
-        })
+            },
+        )
     }
 
     /// Installed once via `Builder::with_handler` in `lib.rs`; fires for every

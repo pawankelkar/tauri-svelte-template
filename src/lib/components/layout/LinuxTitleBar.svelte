@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
-  import { t } from '$lib/i18n/t.svelte'
+  import TitleBarShell from './TitleBarShell.svelte'
+
+  /**
+   * Linux keeps whatever window controls the compositor draws, so this variant
+   * is the bare shell: actions on either side and nothing else.
+   */
 
   let {
     title,
@@ -11,34 +16,22 @@
     leftActions?: Snippet
     rightActions?: Snippet
   } = $props()
-
-  const displayTitle = $derived(title ?? t('titlebar.default'))
 </script>
 
-<div
-  data-tauri-drag-region
-  class="relative flex h-8 w-full shrink-0 items-center justify-between border-b bg-background"
->
-  <!-- Left side -->
-  <div class="flex items-center pl-2">
-    {#if leftActions}
-      {@render leftActions()}
-    {/if}
-  </div>
+<TitleBarShell {title}>
+  {#snippet leading()}
+    <div class="flex items-center pl-2">
+      {#if leftActions}
+        {@render leftActions()}
+      {/if}
+    </div>
+  {/snippet}
 
-  <!-- Center title -->
-  <div
-    data-tauri-drag-region
-    class="pointer-events-none absolute inset-0 flex items-center justify-center"
-  >
-    <span class="text-xs font-medium text-muted-foreground">{displayTitle}</span
-    >
-  </div>
-
-  <!-- Right side -->
-  <div class="flex items-center pr-2">
-    {#if rightActions}
-      {@render rightActions()}
-    {/if}
-  </div>
-</div>
+  {#snippet trailing()}
+    <div class="flex items-center pr-2">
+      {#if rightActions}
+        {@render rightActions()}
+      {/if}
+    </div>
+  {/snippet}
+</TitleBarShell>

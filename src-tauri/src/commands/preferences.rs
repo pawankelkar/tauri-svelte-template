@@ -62,22 +62,12 @@ pub fn load_quick_pane_shortcut(app: &AppHandle) -> Option<String> {
 mod tests {
     use super::*;
     use crate::commands::json_store::{load_json as load, save_json as save};
+    use crate::commands::test_support::scratch_dir;
     use std::fs;
-    use std::path::PathBuf;
-
-    fn scratch_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "tauri-app-preferences-test-{name}-{}",
-            std::process::id()
-        ));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).unwrap();
-        dir
-    }
 
     #[test]
     fn round_trips_through_json_store() {
-        let dir = scratch_dir("roundtrip");
+        let dir = scratch_dir("preferences", "roundtrip");
         let path = dir.join("preferences.json");
         let value = AppPreferences {
             theme: "dark".to_string(),
@@ -93,7 +83,7 @@ mod tests {
 
     #[test]
     fn round_trips_a_populated_global_shortcut() {
-        let dir = scratch_dir("global-shortcut");
+        let dir = scratch_dir("preferences", "global-shortcut");
         let path = dir.join("preferences.json");
         let value = AppPreferences {
             theme: "system".to_string(),
@@ -109,7 +99,7 @@ mod tests {
 
     #[test]
     fn missing_field_falls_back_via_serde_default() {
-        let dir = scratch_dir("partial");
+        let dir = scratch_dir("preferences", "partial");
         let path = dir.join("preferences.json");
         fs::write(
             &path,
@@ -128,7 +118,7 @@ mod tests {
 
     #[test]
     fn a_cleared_quick_pane_shortcut_survives_a_round_trip() {
-        let dir = scratch_dir("cleared-quick-pane");
+        let dir = scratch_dir("preferences", "cleared-quick-pane");
         let path = dir.join("preferences.json");
         let value = AppPreferences {
             quick_pane_shortcut: None,

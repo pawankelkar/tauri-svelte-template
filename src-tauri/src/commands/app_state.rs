@@ -23,22 +23,12 @@ pub async fn save_app_state(app: AppHandle, app_state: PersistedAppState) -> Res
 mod tests {
     use super::*;
     use crate::commands::json_store::{load_json as load, save_json as save};
+    use crate::commands::test_support::scratch_dir;
     use std::fs;
-    use std::path::PathBuf;
-
-    fn scratch_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "tauri-app-state-test-{name}-{}",
-            std::process::id()
-        ));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).unwrap();
-        dir
-    }
 
     #[test]
     fn round_trips_through_json_store() {
-        let dir = scratch_dir("roundtrip");
+        let dir = scratch_dir("app-state", "roundtrip");
         let path = dir.join("state.json");
         let value = PersistedAppState {
             left_sidebar_visible: false,
@@ -56,7 +46,7 @@ mod tests {
 
     #[test]
     fn missing_field_falls_back_via_serde_default() {
-        let dir = scratch_dir("partial");
+        let dir = scratch_dir("app-state", "partial");
         let path = dir.join("state.json");
         fs::write(
             &path,

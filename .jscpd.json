@@ -1,0 +1,16 @@
+{
+  "path": ["src", "src-tauri/src"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/target/**",
+    "src/lib/components/ui/**",
+    "src/lib/bindings.ts",
+    "**/*.test.ts"
+  ],
+  "minLines": 10,
+  "minTokens": 50,
+  "threshold": 0.3,
+  "reporters": ["console", "json"],
+  "output": "jscpd-report",
+  "gitignore": true
+}

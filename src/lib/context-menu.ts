@@ -72,6 +72,32 @@ async function buildAndShowMenu(options: MenuEntryOption[]): Promise<void> {
 }
 
 /**
+ * The OS supplies these; they need no `action` and no translation, because
+ * the platform labels them in the user's system language.
+ */
+type PredefinedItem = 'Undo' | 'Redo' | 'Cut' | 'Copy' | 'Paste' | 'SelectAll'
+
+const EDIT_ITEMS = [
+  'Cut',
+  'Copy',
+  'Paste',
+  'Separator',
+  'SelectAll',
+] as const satisfies readonly (PredefinedItem | 'Separator')[]
+
+const TEXT_INPUT_ITEMS = ['Undo', 'Redo', 'Separator', ...EDIT_ITEMS] as const
+
+async function popupPredefinedMenu(
+  kinds: readonly (PredefinedItem | 'Separator')[],
+): Promise<void> {
+  const items = await Promise.all(
+    kinds.map((item) => PredefinedMenuItem.new({ item })),
+  )
+  const menu = await Menu.new({ items })
+  await menu.popup()
+}
+
+/**
  * Builds an arbitrary native menu from a declarative list.
  *
  * @public Part of the template's API surface — kept even though nothing in
@@ -92,28 +118,15 @@ export async function showContextMenu(
  * inputs should use `showTextInputContextMenu()` instead.
  */
 export async function showEditContextMenu(): Promise<void> {
-  const items = await Promise.all([
-    PredefinedMenuItem.new({ item: 'Cut' }),
-    PredefinedMenuItem.new({ item: 'Copy' }),
-    PredefinedMenuItem.new({ item: 'Paste' }),
-    PredefinedMenuItem.new({ item: 'Separator' }),
-    PredefinedMenuItem.new({ item: 'SelectAll' }),
-  ])
-  const menu = await Menu.new({ items })
-  await menu.popup()
+  await popupPredefinedMenu(EDIT_ITEMS)
 }
 
+/**
+ * The full text-field menu: Undo/Redo on top of the edit items.
+ *
+ * Applied to plain inputs through the `textInputContextMenu` action in
+ * `$lib/actions/context-menu-actions`.
+ */
 export async function showTextInputContextMenu(): Promise<void> {
-  const items = await Promise.all([
-    PredefinedMenuItem.new({ item: 'Undo' }),
-    PredefinedMenuItem.new({ item: 'Redo' }),
-    PredefinedMenuItem.new({ item: 'Separator' }),
-    PredefinedMenuItem.new({ item: 'Cut' }),
-    PredefinedMenuItem.new({ item: 'Copy' }),
-    PredefinedMenuItem.new({ item: 'Paste' }),
-    PredefinedMenuItem.new({ item: 'Separator' }),
-    PredefinedMenuItem.new({ item: 'SelectAll' }),
-  ])
-  const menu = await Menu.new({ items })
-  await menu.popup()
+  await popupPredefinedMenu(TEXT_INPUT_ITEMS)
 }

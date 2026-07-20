@@ -45,8 +45,7 @@ pub fn load_json<T: DeserializeOwned + Default>(path: &Path) -> T {
 
 /// Atomically writes `value` as pretty JSON to `path` (temp file + rename).
 pub fn save_json<T: Serialize>(path: &Path, value: &T) -> Result<(), String> {
-    let json = serde_json::to_string_pretty(value)
-        .map_err(|e| format!("Serializing JSON: {e}"))?;
+    let json = serde_json::to_string_pretty(value).map_err(|e| format!("Serializing JSON: {e}"))?;
 
     let tmp_path = path.with_extension("json.tmp");
     fs::write(&tmp_path, &json).map_err(|e| format!("Writing temp file: {e}"))?;
@@ -62,16 +61,7 @@ pub fn save_json<T: Serialize>(path: &Path, value: &T) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn scratch_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "tauri-app-json-store-test-{name}-{}",
-            std::process::id()
-        ));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).unwrap();
-        dir
-    }
+    use crate::commands::test_support::scratch_dir;
 
     #[derive(Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
     struct TestData {
@@ -81,14 +71,14 @@ mod tests {
 
     #[test]
     fn missing_file_returns_default() {
-        let dir = scratch_dir("missing");
+        let dir = scratch_dir("json-store", "missing");
         let result: TestData = load_json(&dir.join("settings.json"));
         assert_eq!(result, TestData::default());
     }
 
     #[test]
     fn corrupt_file_is_backed_up_and_returns_default() {
-        let dir = scratch_dir("corrupt");
+        let dir = scratch_dir("json-store", "corrupt");
         let path = dir.join("settings.json");
         fs::write(&path, "{ not json").unwrap();
 
@@ -109,9 +99,12 @@ mod tests {
 
     #[test]
     fn round_trip_write_then_load() {
-        let dir = scratch_dir("roundtrip");
+        let dir = scratch_dir("json-store", "roundtrip");
         let path = dir.join("settings.json");
-        let value = TestData { version: 1, name: "test".to_string() };
+        let value = TestData {
+            version: 1,
+            name: "test".to_string(),
+        };
 
         save_json(&path, &value).unwrap();
         assert!(

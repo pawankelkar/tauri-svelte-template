@@ -66,8 +66,8 @@ fn centered_position(
     let pane_height = HEIGHT * scale_factor;
 
     let x = monitor_position.x as f64 + (monitor_size.width as f64 - pane_width) / 2.0;
-    let y = monitor_position.y as f64
-        + (monitor_size.height as f64 - pane_height) * TOP_OFFSET_RATIO;
+    let y =
+        monitor_position.y as f64 + (monitor_size.height as f64 - pane_height) * TOP_OFFSET_RATIO;
 
     PhysicalPosition::new(x.round() as i32, y.round() as i32)
 }
@@ -90,11 +90,8 @@ pub fn show_quick_pane(app: AppHandle) -> Result<(), String> {
         .or_else(|| app.primary_monitor().ok().flatten());
 
     if let Some(monitor) = monitor {
-        let position = centered_position(
-            *monitor.position(),
-            *monitor.size(),
-            monitor.scale_factor(),
-        );
+        let position =
+            centered_position(*monitor.position(), *monitor.size(), monitor.scale_factor());
         let _ = window.set_position(position);
     }
 
@@ -165,7 +162,10 @@ mod tests {
             1.0,
         );
         assert_eq!(position.x, ((1920.0 - WIDTH) / 2.0).round() as i32);
-        assert_eq!(position.y, ((1080.0 - HEIGHT) * TOP_OFFSET_RATIO).round() as i32);
+        assert_eq!(
+            position.y,
+            ((1080.0 - HEIGHT) * TOP_OFFSET_RATIO).round() as i32
+        );
     }
 
     #[test]
