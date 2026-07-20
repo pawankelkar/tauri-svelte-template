@@ -11,6 +11,11 @@
     "noEmit": true,
     "verbatimModuleSyntax": true,
 
+    /* Third-party .d.ts files are not this project's business. Without this,
+       svelte-check reports bits-ui/svelte-toolbelt declaration errors that no
+       change here can fix. */
+    "skipLibCheck": true,
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -33,5 +38,8 @@
     /* Svelte */
     "types": ["svelte", "vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts"]
+  /* Build-time configs (vite/vitest/svelte/eslint) run in Node and are
+     checked separately by tsconfig.node.json, so that @types/node never
+     reaches the webview's type environment. */
+  "include": ["src/**/*.ts", "src/**/*.svelte"]
 }

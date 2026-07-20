@@ -1,0 +1,32 @@
+{
+  /*
+   * Build-time configuration files run in Node, not in the webview.
+   *
+   * They get their own tsconfig so that `@types/node` never reaches `src/`.
+   * A Tauri frontend has no Node runtime — leaking `process`, `Buffer` and
+   * friends into the app's type environment would let code typecheck that
+   * cannot possibly run.
+   */
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "checkJs": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "types": ["node"]
+  },
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "svelte.config.js",
+    "eslint.config.js"
+  ]
+}
