@@ -1,6 +1,27 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+/// The Quick Pane's out-of-the-box toggle accelerator.
+///
+/// Spelled the way `toTauriAccelerator()` in `src/lib/shortcuts.ts` spells it,
+/// so `preferences.json` only ever contains one form of the same combination.
+pub const DEFAULT_QUICK_PANE_SHORTCUT: &str = "CmdOrCtrl+Shift+.";
+
+/// What a registered global shortcut is *for*.
+///
+/// The app registers more than one accelerator with the OS, but the plugin
+/// installs a single handler, so the handler needs a way to tell which
+/// registration fired. Keying the registry by purpose gives every accelerator
+/// a stable identity that survives the user rebinding it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum ShortcutPurpose {
+    /// Bring the main window forward from anywhere.
+    FocusMain,
+    /// Show or dismiss the Quick Pane.
+    QuickPane,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AppPreferences {
@@ -16,7 +37,11 @@ impl Default for AppPreferences {
             theme: "system".to_string(),
             language: None,
             global_shortcut: None,
-            quick_pane_shortcut: None,
+            // The Quick Pane ships bound so the feature is discoverable on a
+            // fresh clone. Because `#[serde(default)]` fills *missing* fields
+            // from here while an explicit `null` still deserialises to `None`,
+            // "never set" and "user cleared it" stay distinguishable.
+            quick_pane_shortcut: Some(DEFAULT_QUICK_PANE_SHORTCUT.to_string()),
         }
     }
 }
@@ -62,7 +87,40 @@ mod tests {
         assert_eq!(prefs.theme, "system");
         assert_eq!(prefs.language, None);
         assert_eq!(prefs.global_shortcut, None);
+        assert_eq!(
+            prefs.quick_pane_shortcut,
+            Some(DEFAULT_QUICK_PANE_SHORTCUT.to_string())
+        );
+    }
+
+    #[test]
+    fn missing_quick_pane_shortcut_takes_the_default() {
+        let prefs: AppPreferences = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
+        assert_eq!(
+            prefs.quick_pane_shortcut,
+            Some(DEFAULT_QUICK_PANE_SHORTCUT.to_string())
+        );
+    }
+
+    #[test]
+    fn explicit_null_quick_pane_shortcut_stays_cleared() {
+        // The distinction matters: a user who clears the binding must not have
+        // the default handed back to them on the next launch.
+        let prefs: AppPreferences =
+            serde_json::from_str(r#"{"theme":"dark","quickPaneShortcut":null}"#).unwrap();
         assert_eq!(prefs.quick_pane_shortcut, None);
+    }
+
+    #[test]
+    fn shortcut_purpose_serialises_as_camel_case() {
+        assert_eq!(
+            serde_json::to_string(&ShortcutPurpose::QuickPane).unwrap(),
+            r#""quickPane""#
+        );
+        assert_eq!(
+            serde_json::to_string(&ShortcutPurpose::FocusMain).unwrap(),
+            r#""focusMain""#
+        );
     }
 
     #[test]

@@ -10,6 +10,7 @@
     TOGGLE_THEME,
     TOGGLE_LEFT_SIDEBAR,
     TOGGLE_RIGHT_SIDEBAR,
+    TOGGLE_QUICK_PANE,
     DEMO_SEND_NOTIFICATION,
     DEMO_COPY_TO_CLIPBOARD,
     DEMO_PASTE_FROM_CLIPBOARD,
@@ -18,6 +19,9 @@
   } from '$lib/commands'
   import { toast } from '$lib/stores/toast'
   import { confirm } from '$lib/stores/confirm.svelte'
+  import { getLastQuickPaneEntry } from '$lib/stores/ui.svelte'
+  import { getPreferences } from '$lib/stores/preferences.svelte'
+  import { fromTauriAccelerator } from '$lib/shortcuts'
   import { commands, unwrapResult } from '$lib/tauri-bindings'
   import { parseShortcut } from '$lib/shortcuts'
   import { formatShortcut } from '$lib/platform-strings'
@@ -44,6 +48,18 @@
     const { key, modifiers } = parseShortcut(shortcut)
     return formatShortcut(getPlatform(), key, modifiers)
   }
+
+  /**
+   * The Quick Pane's binding lives in preferences, not the command registry —
+   * it is an OS-level accelerator, so it works even when this window is not
+   * focused, and the user can rebind it.
+   */
+  const quickPaneShortcut = $derived.by(() => {
+    const accelerator = getPreferences().quickPaneShortcut
+    if (!accelerator) return null
+    const { key, modifiers } = fromTauriAccelerator(accelerator)
+    return formatShortcut(getPlatform(), key, modifiers)
+  })
 
   async function confirmDemo(): Promise<void> {
     const confirmed = await confirm({
@@ -82,6 +98,8 @@
     descriptionKey: string
     actionKey: string
     shortcut?: string | null
+    /** Extra live text under the description — used to show received data. */
+    detail?: string | null
     run: () => void | Promise<void>
     variant?: 'default' | 'outline' | 'destructive'
   }
@@ -128,6 +146,19 @@
         return shortcutFor(TOGGLE_RIGHT_SIDEBAR)
       },
       run: () => void executeCommand(TOGGLE_RIGHT_SIDEBAR),
+    },
+    {
+      titleKey: 'welcome.tiles.quickPane.title',
+      descriptionKey: 'welcome.tiles.quickPane.description',
+      actionKey: 'welcome.tiles.quickPane.action',
+      get shortcut() {
+        return quickPaneShortcut
+      },
+      get detail() {
+        const entry = getLastQuickPaneEntry()
+        return entry ? t('welcome.tiles.quickPane.lastEntry', { text: entry }) : null
+      },
+      run: () => void executeCommand(TOGGLE_QUICK_PANE),
     },
     {
       titleKey: 'welcome.tiles.toast.title',
@@ -228,6 +259,11 @@
               {/if}
             </Card.Title>
             <Card.Description>{t(tile.descriptionKey)}</Card.Description>
+            {#if tile.detail}
+              <p class="text-foreground truncate text-sm font-medium">
+                {tile.detail}
+              </p>
+            {/if}
           </Card.Header>
           <Card.Footer class="mt-auto">
             <Button

@@ -1,7 +1,9 @@
 use tauri_specta::{collect_commands, Builder};
 
 pub fn generate_bindings() -> Builder<tauri::Wry> {
-    use crate::commands::{app_state, demo, global_shortcut, lifecycle, preferences};
+    use crate::commands::{
+        app_state, demo, global_shortcut, lifecycle, preferences, quick_pane,
+    };
 
     Builder::<tauri::Wry>::new().commands(collect_commands![
         app_state::load_app_state,
@@ -11,9 +13,13 @@ pub fn generate_bindings() -> Builder<tauri::Wry> {
         global_shortcut::unregister_global_shortcut,
         global_shortcut::is_global_shortcut_registered,
         lifecycle::confirm_close,
+        lifecycle::quit_app,
         preferences::load_preferences,
         preferences::save_preferences,
         preferences::open_preferences_file,
+        quick_pane::show_quick_pane,
+        quick_pane::dismiss_quick_pane,
+        quick_pane::toggle_quick_pane,
     ])
 }
 

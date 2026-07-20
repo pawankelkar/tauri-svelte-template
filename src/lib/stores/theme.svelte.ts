@@ -32,12 +32,31 @@ function repaint(): void {
   syncHint()
 }
 
+/**
+ * Tells the other windows to repaint.
+ *
+ * They have their own JS contexts and cannot see this store, but they can read
+ * the `localStorage` hint — which `syncHint()` has already written by the time
+ * this fires — so the payload is informational and the event is the trigger.
+ */
+function broadcast(): void {
+  void emit('theme-changed', {
+    mode: getThemeMode(),
+    resolved: getResolvedMode(),
+  })
+}
+
 export function initTheme(): () => void {
   const mq = window.matchMedia('(prefers-color-scheme: dark)')
   _systemDark = mq.matches
   const onChange = (e: MediaQueryListEvent) => {
     _systemDark = e.matches
-    if (getThemeMode() === 'system') repaint()
+    if (getThemeMode() === 'system') {
+      repaint()
+      // A system-level flip changes the resolved theme without anyone touching
+      // a preference, so the other windows need telling here too.
+      broadcast()
+    }
   }
   mq.addEventListener('change', onChange)
   return () => mq.removeEventListener('change', onChange)
@@ -50,5 +69,5 @@ export function reconcileTheme(): void {
 export function setThemeMode(mode: ThemeMode): void {
   setPreference('theme', mode)
   repaint()
-  void emit('theme-changed', { theme: mode })
+  broadcast()
 }

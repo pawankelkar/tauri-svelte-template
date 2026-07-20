@@ -16,6 +16,17 @@ export default defineConfig(async () => ({
       $lib: path.resolve(__dirname, './src/lib'),
     },
   },
+  build: {
+    rollupOptions: {
+      // The Quick Pane is a second window with its own webview, so it needs
+      // its own HTML entry. In dev, Vite serves /quick-pane.html from the
+      // project root already — this is only needed for the production build.
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        'quick-pane': path.resolve(__dirname, 'quick-pane.html'),
+      },
+    },
+  },
   clearScreen: false,
   server: {
     port: 1420,

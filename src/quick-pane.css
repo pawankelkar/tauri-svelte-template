@@ -1,0 +1,17 @@
+/*
+ * The Quick Pane shares the main window's design tokens but not its chrome.
+ *
+ * Its window is transparent and undecorated, so every layer above the pane's
+ * own card has to be see-through — otherwise the rounded corners get squared
+ * off by an opaque `body` and the drop shadow has nothing to fall on.
+ */
+@import './app.css';
+
+html,
+body,
+#quick-pane-app {
+  background: transparent !important;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}

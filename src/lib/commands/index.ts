@@ -23,6 +23,7 @@ export {
   OPEN_PREFERENCES,
   TOGGLE_LEFT_SIDEBAR,
   TOGGLE_RIGHT_SIDEBAR,
+  TOGGLE_QUICK_PANE,
   APP_QUIT,
   registerAppCommands,
 } from './app-commands'

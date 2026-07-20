@@ -94,10 +94,18 @@ pub fn run() {
         .manage(AppState::default())
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
+                // Only the main window runs the handshake. The Quick Pane is
+                // dismissed, never closed, and must not trigger a store flush.
+                if window.label() != "main" {
+                    return;
+                }
                 let state = window.state::<AppState>();
                 if !state.force_close.load(Ordering::SeqCst) {
                     api.prevent_close();
-                    let _ = window.emit("app:close-requested", ());
+                    let _ = window.emit(
+                        "app:close-requested",
+                        commands::lifecycle::CloseRequest::for_current_platform(),
+                    );
                 }
             }
         })
@@ -109,11 +117,34 @@ pub fn run() {
             );
 
             #[cfg(desktop)]
-            commands::global_shortcut::register_saved_shortcut_on_startup(app.handle());
+            commands::global_shortcut::register_saved_shortcuts_on_startup(app.handle());
+
+            // Non-fatal: the app is perfectly usable without the Quick Pane, so
+            // a window-creation failure is logged rather than aborting startup.
+            if let Err(e) = commands::quick_pane::init_quick_pane(app.handle()) {
+                log::warn!("Quick Pane unavailable: {e}");
+            }
 
             Ok(())
         })
         .invoke_handler(builder.invoke_handler())
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, event| match event {
+            // macOS keeps the process alive after the last window closes, so a
+            // dock-icon click has to bring the main window back itself.
+            #[cfg(target_os = "macos")]
+            tauri::RunEvent::Reopen { .. } => {
+                if let Some(window) = _app_handle.get_webview_window("main") {
+                    let _ = window.unminimize();
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            tauri::RunEvent::Exit => {
+                #[cfg(desktop)]
+                commands::global_shortcut::unregister_all(_app_handle);
+            }
+            _ => {}
+        });
 }

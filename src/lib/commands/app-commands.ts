@@ -1,5 +1,7 @@
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { commands, unwrapResult } from '$lib/tauri-bindings'
 import { getResolvedMode, setThemeMode } from '$lib/stores/theme.svelte'
+import { requestQuit } from '$lib/lifecycle'
+import { logger } from '$lib/logger'
 import {
   isLeftSidebarVisible,
   isRightSidebarVisible,
@@ -16,6 +18,7 @@ export const TOGGLE_THEME = 'toggle-theme'
 export const OPEN_PREFERENCES = 'open-preferences'
 export const TOGGLE_LEFT_SIDEBAR = 'toggle-left-sidebar'
 export const TOGGLE_RIGHT_SIDEBAR = 'toggle-right-sidebar'
+export const TOGGLE_QUICK_PANE = 'toggle-quick-pane'
 export const APP_QUIT = 'app-quit'
 
 const appCommands: AppCommand[] = [
@@ -66,12 +69,26 @@ const appCommands: AppCommand[] = [
     run: toggleRightSidebar,
   },
   {
+    id: TOGGLE_QUICK_PANE,
+    labelKey: 'commands.toggleQuickPane',
+    category: 'commands.category.view',
+    // No local shortcut: the pane's global accelerator already owns the
+    // gesture, and it works whether or not this window has focus.
+    run: async () => {
+      try {
+        unwrapResult(await commands.toggleQuickPane())
+      } catch (e) {
+        logger.warn('Toggling the Quick Pane failed', e)
+      }
+    },
+  },
+  {
     id: APP_QUIT,
     labelKey: 'commands.quit',
     category: 'commands.category.general',
-    run: () => {
-      getCurrentWindow().close()
-    },
+    // Not `window.close()`: on macOS that only hides the main window, so quit
+    // needs the path that actually ends the process.
+    run: requestQuit,
   },
 ]
 

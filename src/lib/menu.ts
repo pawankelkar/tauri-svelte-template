@@ -15,6 +15,7 @@ import {
   OPEN_PREFERENCES,
   TOGGLE_LEFT_SIDEBAR,
   TOGGLE_RIGHT_SIDEBAR,
+  TOGGLE_QUICK_PANE,
   APP_QUIT,
 } from '$lib/commands/app-commands'
 
@@ -116,6 +117,7 @@ export function buildMenuSpec(platform: AppPlatform): SubmenuSpec[] {
           commandItem(TOGGLE_LEFT_SIDEBAR),
           commandItem(TOGGLE_RIGHT_SIDEBAR),
           sep(),
+          commandItem(TOGGLE_QUICK_PANE),
           commandItem(TOGGLE_THEME),
         ],
       },
@@ -157,6 +159,7 @@ export function buildMenuSpec(platform: AppPlatform): SubmenuSpec[] {
         commandItem(TOGGLE_LEFT_SIDEBAR),
         commandItem(TOGGLE_RIGHT_SIDEBAR),
         sep(),
+        commandItem(TOGGLE_QUICK_PANE),
         commandItem(TOGGLE_THEME),
       ],
     },

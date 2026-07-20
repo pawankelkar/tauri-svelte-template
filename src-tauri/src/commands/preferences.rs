@@ -46,6 +46,18 @@ pub fn load_global_shortcut(app: &AppHandle) -> Option<String> {
     preferences.global_shortcut
 }
 
+/// Reads just the saved Quick Pane shortcut, synchronously. See
+/// [`load_global_shortcut`] for why this bypasses the command path.
+///
+/// Returns `None` only when the user explicitly cleared the binding — a
+/// preferences file that has never seen the key falls back to
+/// `DEFAULT_QUICK_PANE_SHORTCUT` via `AppPreferences::default()`.
+pub fn load_quick_pane_shortcut(app: &AppHandle) -> Option<String> {
+    let path = data_file_path(app, PREFERENCES_FILE).ok()?;
+    let preferences: AppPreferences = load_json(&path);
+    preferences.quick_pane_shortcut
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -108,6 +120,23 @@ mod tests {
         let loaded: AppPreferences = load(&path);
         assert_eq!(loaded.theme, "light");
         assert_eq!(loaded.language, Some("fr".to_string()));
+        assert_eq!(
+            loaded.quick_pane_shortcut,
+            Some(crate::types::DEFAULT_QUICK_PANE_SHORTCUT.to_string())
+        );
+    }
+
+    #[test]
+    fn a_cleared_quick_pane_shortcut_survives_a_round_trip() {
+        let dir = scratch_dir("cleared-quick-pane");
+        let path = dir.join("preferences.json");
+        let value = AppPreferences {
+            quick_pane_shortcut: None,
+            ..AppPreferences::default()
+        };
+
+        save(&path, &value).unwrap();
+        let loaded: AppPreferences = load(&path);
         assert_eq!(loaded.quick_pane_shortcut, None);
     }
 }

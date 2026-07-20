@@ -1,17 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { listen } from '@tauri-apps/api/event'
-  import { invoke } from '@tauri-apps/api/core'
   import { getCurrentWindow } from '@tauri-apps/api/window'
+  import { commands } from '$lib/tauri-bindings'
   import { initSquareCorners } from '$lib/stores/square-corners.svelte'
-  import {
-    initPreferences,
-    persistPreferencesNow,
-  } from '$lib/stores/preferences.svelte'
-  import {
-    initAppState,
-    persistAppStateNow,
-  } from '$lib/stores/app-state.svelte'
+  import { initPreferences } from '$lib/stores/preferences.svelte'
+  import { initAppState } from '$lib/stores/app-state.svelte'
+  import { flushAllStores } from '$lib/lifecycle'
+  import { initQuickPaneBridge } from '$lib/quick-pane/bridge'
   import { getSquareCorners } from '$lib/stores/ui.svelte'
   import { initTheme, reconcileTheme } from '$lib/stores/theme.svelte'
   import { initializeLanguage } from '$lib/i18n/language-init'
@@ -37,6 +33,7 @@
   onMount(() => {
     const cleanupCorners = initSquareCorners()
     const cleanupTheme = initTheme()
+    const cleanupQuickPane = initQuickPaneBridge()
     let cleanupCommands: (() => void) | undefined
 
     void (async () => {
@@ -50,15 +47,26 @@
     appWindow.show()
     appWindow.setFocus()
 
-    const unlistenClose = listen('app:close-requested', async () => {
-      await Promise.all([persistPreferencesNow(), persistAppStateNow()])
-      await invoke('confirm_close')
-      appWindow.close()
-    })
+    // Rust prevents the close and hands the decision back here, because only
+    // the frontend can flush the debounced stores. `hide` carries the
+    // platform's convention: macOS keeps the app running behind the dock.
+    const unlistenClose = listen<{ hide: boolean }>(
+      'app:close-requested',
+      async (event) => {
+        await flushAllStores()
+        if (event.payload.hide) {
+          await appWindow.hide()
+          return
+        }
+        await commands.confirmClose()
+        await appWindow.close()
+      },
+    )
 
     return () => {
       cleanupCorners()
       cleanupTheme()
+      cleanupQuickPane()
       cleanupCommands?.()
       unlistenClose.then((fn) => fn())
     }

@@ -33,23 +33,23 @@ async greet(name: string) : Promise<Result<string, string>> {
 }
 },
 /**
- * Registers `accelerator` with the OS, replacing whatever this module had
+ * Registers `accelerator` for `purpose`, replacing whatever that purpose had
  * registered before. No-ops when the accelerator is already the current one.
  */
-async registerGlobalShortcut(accelerator: string) : Promise<Result<null, string>> {
+async registerGlobalShortcut(purpose: ShortcutPurpose, accelerator: string) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("register_global_shortcut", { accelerator }) };
+    return { status: "ok", data: await TAURI_INVOKE("register_global_shortcut", { purpose, accelerator }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
 /**
- * Releases the accelerator this module currently holds, if any.
+ * Releases the accelerator held for `purpose`, if any.
  */
-async unregisterGlobalShortcut() : Promise<Result<null, string>> {
+async unregisterGlobalShortcut(purpose: ShortcutPurpose) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("unregister_global_shortcut") };
+    return { status: "ok", data: await TAURI_INVOKE("unregister_global_shortcut", { purpose }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -65,6 +65,16 @@ async isGlobalShortcutRegistered(accelerator: string) : Promise<Result<boolean, 
 },
 async confirmClose() : Promise<void> {
     await TAURI_INVOKE("confirm_close");
+},
+/**
+ * Quits for real, whatever the platform's close convention is.
+ * 
+ * On macOS the main window's close button only hides, so the Quit menu item
+ * and the `app-quit` command need a path that actually ends the process. The
+ * frontend flushes its stores before calling this.
+ */
+async quitApp() : Promise<void> {
+    await TAURI_INVOKE("quit_app");
 },
 async loadPreferences() : Promise<Result<AppPreferences, string>> {
     try {
@@ -89,6 +99,40 @@ async openPreferencesFile() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Positions the pane on whichever monitor the cursor is on, then shows it.
+ */
+async showQuickPane() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("show_quick_pane") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Hides the pane.
+ * 
+ * Both the blur handler and the submit handler call this, and on some
+ * platforms hiding triggers another blur, so the visibility guard keeps the
+ * double call harmless.
+ */
+async dismissQuickPane() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("dismiss_quick_pane") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async toggleQuickPane() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("toggle_quick_pane") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -104,6 +148,23 @@ async openPreferencesFile() : Promise<Result<null, string>> {
 
 export type AppPreferences = { theme: string; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null }
 export type PersistedAppState = { leftSidebarVisible: boolean; rightSidebarVisible: boolean; squareCorners: boolean; lastQuickPaneEntry: string | null; recentItems: string[]; onboardingCompleted: boolean }
+/**
+ * What a registered global shortcut is *for*.
+ * 
+ * The app registers more than one accelerator with the OS, but the plugin
+ * installs a single handler, so the handler needs a way to tell which
+ * registration fired. Keying the registry by purpose gives every accelerator
+ * a stable identity that survives the user rebinding it.
+ */
+export type ShortcutPurpose = 
+/**
+ * Bring the main window forward from anywhere.
+ */
+"focusMain" | 
+/**
+ * Show or dismiss the Quick Pane.
+ */
+"quickPane"
 
 /** tauri-specta globals **/
 

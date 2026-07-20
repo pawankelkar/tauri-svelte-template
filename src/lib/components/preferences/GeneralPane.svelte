@@ -62,5 +62,15 @@
   <p class="text-muted-foreground text-sm">
     {t('preferences.general.shortcutDescription')}
   </p>
-  <ShortcutPicker />
+  <ShortcutPicker purpose="focusMain" />
+</div>
+
+<Separator />
+
+<div class="space-y-2">
+  <Label>{t('preferences.general.quickPaneShortcutLabel')}</Label>
+  <p class="text-muted-foreground text-sm">
+    {t('preferences.general.quickPaneShortcutDescription')}
+  </p>
+  <ShortcutPicker purpose="quickPane" />
 </div>

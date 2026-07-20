@@ -1,4 +1,10 @@
-export { commands, type Result, type AppPreferences, type PersistedAppState } from './bindings'
+export {
+  commands,
+  type Result,
+  type AppPreferences,
+  type PersistedAppState,
+  type ShortcutPurpose,
+} from './bindings'
 
 export function unwrapResult<T, E>(
   result: { status: 'ok'; data: T } | { status: 'error'; error: E },

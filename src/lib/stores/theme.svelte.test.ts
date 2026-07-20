@@ -91,7 +91,26 @@ describe('setThemeMode', () => {
 
     setThemeMode('dark')
 
-    expect(emit).toHaveBeenCalledWith('theme-changed', { theme: 'dark' })
+    expect(emit).toHaveBeenCalledWith('theme-changed', {
+      mode: 'dark',
+      resolved: 'dark',
+    })
+  })
+
+  it('reports the resolved theme alongside the mode', async () => {
+    // Other windows repaint from the resolved value; 'system' alone would not
+    // tell them which way to paint.
+    const { emit } = await import('@tauri-apps/api/event')
+    matchMediaMatches = true
+    await initPreferences()
+    initTheme()
+
+    setThemeMode('system')
+
+    expect(emit).toHaveBeenCalledWith('theme-changed', {
+      mode: 'system',
+      resolved: 'dark',
+    })
   })
 })
 
@@ -136,11 +155,28 @@ describe('system mode matchMedia', () => {
     expect(document.documentElement.classList.contains('dark')).toBe(false)
   })
 
-  it('does not emit on OS change', async () => {
+  it('emits on OS change so other windows follow', async () => {
+    // No preference changed here, but the resolved theme did — and the Quick
+    // Pane has no matchMedia listener of its own while it is hidden.
     const { emit } = await import('@tauri-apps/api/event')
     await initPreferences()
     initTheme()
     setThemeMode('system')
+
+    vi.mocked(emit).mockClear()
+    matchMediaCallback!({ matches: true })
+
+    expect(emit).toHaveBeenCalledWith('theme-changed', {
+      mode: 'system',
+      resolved: 'dark',
+    })
+  })
+
+  it('does not emit on OS change when the mode is not system', async () => {
+    const { emit } = await import('@tauri-apps/api/event')
+    await initPreferences()
+    initTheme()
+    setThemeMode('light')
 
     vi.mocked(emit).mockClear()
     matchMediaCallback!({ matches: true })

@@ -11,14 +11,24 @@
   import { getPlatform } from '$lib/hooks/use-platform.svelte'
   import { toast } from '$lib/stores/toast'
   import { t } from '$lib/i18n/t.svelte'
-  import { commitGlobalShortcut } from './commit-global-shortcut'
+  import { commitShortcut, preferenceKeyFor } from './commit-shortcut'
+  import type { ShortcutPurposeId } from './commit-shortcut'
+
+  /**
+   * `purpose` selects both the Rust-side registration slot and the preference
+   * that stores it, so one picker serves every rebindable global shortcut.
+   */
+  let { purpose }: { purpose: ShortcutPurposeId } = $props()
 
   let listening = $state(false)
   let pending = $state(false)
   let error = $state<string | null>(null)
 
+  const accelerator = $derived(
+    getPreferences()[preferenceKeyFor(purpose)] as string | null,
+  )
+
   const display = $derived.by(() => {
-    const accelerator = getPreferences().globalShortcut
     if (!accelerator) return null
     const { key, modifiers } = fromTauriAccelerator(accelerator)
     return formatShortcut(getPlatform(), key, modifiers)
@@ -27,7 +37,7 @@
   async function apply(next: string | null): Promise<void> {
     pending = true
     error = null
-    const result = await commitGlobalShortcut(next)
+    const result = await commitShortcut(purpose, next)
     pending = false
 
     if (!result.ok) {

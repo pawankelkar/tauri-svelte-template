@@ -11,12 +11,21 @@ export function isThemeMode(value: unknown): value is ThemeMode {
   )
 }
 
+/**
+ * Mirrors `DEFAULT_QUICK_PANE_SHORTCUT` in `src-tauri/src/types.rs`.
+ *
+ * Rust owns the authoritative default — it registers the accelerator during
+ * `setup()`, before the frontend exists — but the value is repeated here so a
+ * failed load still shows the user what is actually bound.
+ */
+export const DEFAULT_QUICK_PANE_SHORTCUT = 'CmdOrCtrl+Shift+.'
+
 export function defaultPreferences(): AppPreferences {
   return {
     theme: 'system',
     language: null,
     globalShortcut: null,
-    quickPaneShortcut: null,
+    quickPaneShortcut: DEFAULT_QUICK_PANE_SHORTCUT,
   }
 }
 
