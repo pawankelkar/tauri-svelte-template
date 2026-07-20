@@ -22,7 +22,10 @@
     "test": "vitest",
     "test:run": "vitest run",
     "rust:test": "cd src-tauri && cargo test",
+    "rust:fmt": "cd src-tauri && cargo fmt --all -- --check",
+    "rust:clippy": "cd src-tauri && cargo clippy --all-targets --all-features -- -D warnings",
     "rust:bindings": "cd src-tauri && cargo test export_bindings -- --ignored --nocapture",
+    "check:all": "pnpm format:check && pnpm lint && pnpm check && pnpm ast-grep && pnpm knip && pnpm jscpd && pnpm test:run && pnpm rust:fmt && pnpm rust:clippy && pnpm rust:test",
     "tauri": "tauri"
   },
   "dependencies": {
