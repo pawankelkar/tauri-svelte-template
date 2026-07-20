@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import { Button } from '$lib/components/ui/button'
+  import { commands } from '$lib/tauri-bindings'
   import { logger } from '$lib/logger'
   import { toast } from '$lib/stores/toast'
   import { t } from '$lib/i18n/t.svelte'
@@ -9,11 +10,10 @@
 
   function handleError(error: unknown): void {
     logger.error('Uncaught render error', error)
-
-    // Phase 8 seam — crash recovery. Once src-tauri/src/commands/recovery.rs
-    // lands, report the crash here (fire-and-forget) so the next boot can
-    // detect it and start in a degraded-but-safe mode:
-    //   void commands.saveEmergencyData({ message: describe(error) })
+    void commands.saveEmergencyData(`crash-${Date.now()}`, {
+      message: describe(error),
+      timestamp: new Date().toISOString(),
+    })
   }
 
   function describe(error: unknown): string {

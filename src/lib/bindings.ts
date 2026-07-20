@@ -133,6 +133,22 @@ async toggleQuickPane() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async saveEmergencyData(filename: string, data: JsonValue) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_emergency_data", { filename, data }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async cleanupOldRecoveryFiles() : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cleanup_old_recovery_files") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -147,6 +163,7 @@ async toggleQuickPane() : Promise<Result<null, string>> {
 /** user-defined types **/
 
 export type AppPreferences = { theme: string; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null }
+export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
 export type PersistedAppState = { leftSidebarVisible: boolean; rightSidebarVisible: boolean; squareCorners: boolean; lastQuickPaneEntry: string | null; recentItems: string[]; onboardingCompleted: boolean }
 /**
  * What a registered global shortcut is *for*.

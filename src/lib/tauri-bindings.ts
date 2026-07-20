@@ -4,6 +4,7 @@ export {
   type AppPreferences,
   type PersistedAppState,
   type ShortcutPurpose,
+  type JsonValue,
 } from './bindings'
 
 export function unwrapResult<T, E>(

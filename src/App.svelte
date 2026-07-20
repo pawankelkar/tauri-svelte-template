@@ -41,6 +41,7 @@
       reconcileTheme()
       await initializeLanguage(prefs.language)
       cleanupCommands = initCommands()
+      void commands.cleanupOldRecoveryFiles()
     })()
 
     const appWindow = getCurrentWindow()
