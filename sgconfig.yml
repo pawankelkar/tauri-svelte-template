@@ -1,0 +1,11 @@
+# ast-grep enforces the conventions that are shaped like syntax rather than
+# like imports — the ones ESLint cannot express.
+#
+# Scope note: ast-grep has no built-in Svelte grammar. The available
+# workaround, mapping *.svelte onto the `html` language via `languageGlobs`,
+# parses a component as HTML and matches `<script>` bodies unreliably, so it
+# is deliberately not used here. `.svelte` files are covered by ESLint
+# instead (see eslint.config.js); ast-grep covers `.ts`, which includes the
+# `.svelte.ts` rune modules where these rules actually apply.
+ruleDirs:
+  - .ast-grep/rules

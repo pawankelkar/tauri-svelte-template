@@ -1,0 +1,19 @@
+id: snapshot-before-ipc
+language: TypeScript
+severity: error
+files:
+  - 'src/lib/stores/**/*.svelte.ts'
+rule:
+  pattern: commands.$METHOD($ARG)
+constraints:
+  ARG:
+    not:
+      pattern: $state.snapshot($$$)
+message: >-
+  Pass $state.snapshot(...) across the IPC boundary — a raw rune proxy does not
+  serialise.
+note: >-
+  Svelte 5 wraps $state objects in a Proxy. Handing one straight to a generated
+  command sends the proxy, not its contents, and the Rust side deserialises
+  garbage. See src/lib/stores/preferences.svelte.ts for the correct shape.
+url: https://svelte.dev/docs/svelte/$state#$state.snapshot

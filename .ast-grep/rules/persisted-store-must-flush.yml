@@ -1,0 +1,21 @@
+id: persisted-store-must-flush
+language: TypeScript
+severity: error
+rule:
+  pattern: createDebouncedPersist($$$)
+  not:
+    inside:
+      kind: program
+      stopBy: end
+      has:
+        pattern: $_.flush()
+        stopBy: end
+message: >-
+  A debounced persist must be drainable on exit — this module never calls
+  .flush().
+note: >-
+  Both ways out of the app (the window close handshake and the quit command)
+  funnel through flushAllStores() in src/lib/lifecycle.ts. A store that
+  debounces writes but exposes no flush loses whatever was still pending when
+  the app exits. Export a persistNow-style function that returns the persist
+  handle's .flush(), then register it in flushAllStores().

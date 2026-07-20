@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
+    "ast-grep": "ast-grep scan",
     "test": "vitest",
     "test:run": "vitest run",
     "rust:test": "cd src-tauri && cargo test",
@@ -41,10 +42,12 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild"
+      "esbuild",
+      "@ast-grep/cli"
     ]
   },
   "devDependencies": {
+    "@ast-grep/cli": "^0.44.1",
     "@eslint/js": "^10.0.1",
     "@internationalized/date": "^3.12.2",
     "@lucide/svelte": "^1.25.0",
