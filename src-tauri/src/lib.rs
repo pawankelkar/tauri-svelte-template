@@ -82,6 +82,14 @@ pub fn run() {
     });
 
     app_builder
+        // fs is registered but unexercised: nothing in the frontend imports
+        // @tauri-apps/plugin-fs, so `build.removeUnusedCommands` strips its
+        // IPC commands from the binary anyway. It stays here, together with
+        // the `$APPDATA/**` grant in capabilities/default.json, as the
+        // ready-to-use seam — add `@tauri-apps/plugin-fs` on the frontend and
+        // the commands come back. persisted-scope must stay directly after
+        // it: it replays scope the user granted at runtime (via a file
+        // dialog) so those grants survive a restart.
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_os::init())

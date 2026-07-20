@@ -71,6 +71,13 @@ async function buildAndShowMenu(options: MenuEntryOption[]): Promise<void> {
   await menu.popup()
 }
 
+/**
+ * Builds an arbitrary native menu from a declarative list.
+ *
+ * @public Part of the template's API surface — kept even though nothing in
+ * the starter calls it, because a custom right-click menu is the first thing
+ * most consumers reach for.
+ */
 export async function showContextMenu(
   entries: ContextMenuEntry[],
 ): Promise<void> {
@@ -78,6 +85,12 @@ export async function showContextMenu(
   await buildAndShowMenu(options)
 }
 
+/**
+ * Cut / Copy / Paste / Select All, without the Undo-Redo pair.
+ *
+ * @public For read-only surfaces where undo history is meaningless. Text
+ * inputs should use `showTextInputContextMenu()` instead.
+ */
 export async function showEditContextMenu(): Promise<void> {
   const items = await Promise.all([
     PredefinedMenuItem.new({ item: 'Cut' }),

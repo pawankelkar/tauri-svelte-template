@@ -4,10 +4,6 @@ export function isPaletteOpen(): boolean {
   return _open
 }
 
-export function openPalette(): void {
-  _open = true
-}
-
 export function closePalette(): void {
   _open = false
 }

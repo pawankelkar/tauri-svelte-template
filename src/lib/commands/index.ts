@@ -11,7 +11,6 @@ export {
 
 export {
   isPaletteOpen,
-  openPalette,
   closePalette,
   togglePalette,
   setPaletteOpen,
