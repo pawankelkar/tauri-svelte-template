@@ -18,6 +18,13 @@
   import { initCommands } from '$lib/commands'
   import TitleBar from '$lib/components/layout/TitleBar.svelte'
   import CommandPalette from '$lib/components/command-palette/CommandPalette.svelte'
+  import PreferencesDialog from '$lib/components/preferences/PreferencesDialog.svelte'
+  import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
+  import ToastContainer from '$lib/components/ToastContainer.svelte'
+  import ErrorBoundary from '$lib/components/ErrorBoundary.svelte'
+  import MainLayout from '$lib/components/layout/MainLayout.svelte'
+  import WelcomePane from '$lib/components/demo/WelcomePane.svelte'
+  import { t } from '$lib/i18n/t.svelte'
   import './app.css'
 
   $effect(() => {
@@ -60,8 +67,27 @@
 
 <div class="flex h-screen flex-col rounded-[var(--app-corner-radius)] overflow-hidden">
   <TitleBar />
+  <!-- Global overlays live outside the boundary so they stay usable, and the
+       window keeps its controls, even if the content area crashes. -->
   <CommandPalette />
-  <main class="flex-1 overflow-auto bg-background">
-    <!-- Phase 5 layout content goes here -->
+  <PreferencesDialog />
+  <ConfirmDialog />
+  <ToastContainer />
+  <main class="bg-background flex-1 overflow-hidden">
+    <ErrorBoundary>
+      <MainLayout>
+        {#snippet left()}
+          <div class="text-muted-foreground p-4 text-sm">
+            {t('sidebar.leftPlaceholder')}
+          </div>
+        {/snippet}
+        {#snippet right()}
+          <div class="text-muted-foreground p-4 text-sm">
+            {t('sidebar.rightPlaceholder')}
+          </div>
+        {/snippet}
+        <WelcomePane />
+      </MainLayout>
+    </ErrorBoundary>
   </main>
 </div>

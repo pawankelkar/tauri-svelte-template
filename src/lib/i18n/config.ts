@@ -5,6 +5,16 @@ const resources = {
   en: { translation: en },
 }
 
+/**
+ * Display names for the language picker, written in their own language.
+ *
+ * Adding a locale is a one-file change: import its JSON, add it to `resources`,
+ * and add its label here. A unit test asserts the two stay in sync.
+ */
+export const languageLabels: Record<string, string> = {
+  en: 'English',
+}
+
 const rtlLanguages = ['ar', 'he', 'fa', 'ur']
 
 i18n.init({

@@ -5,6 +5,7 @@ import {
   getPreferences,
   isPreferencesReady,
   setPreference,
+  setPreferenceImmediate,
   persistPreferencesNow,
   __resetPreferencesForTests,
 } from './preferences.svelte'
@@ -109,5 +110,42 @@ describe('persistPreferencesNow', () => {
     setPreference('theme', 'light')
     await persistPreferencesNow()
     expect(saveCalls).toHaveLength(1)
+  })
+})
+
+describe('setPreferenceImmediate', () => {
+  it('saves without waiting for the debounce', async () => {
+    vi.useFakeTimers()
+    const saveCalls: unknown[] = []
+
+    mockIPC((cmd, args) => {
+      if (cmd === 'load_preferences') return defaultPreferences()
+      if (cmd === 'save_preferences') {
+        saveCalls.push(args)
+        return null
+      }
+    })
+
+    await initPreferences()
+    await setPreferenceImmediate('globalShortcut', 'CmdOrCtrl+K')
+
+    expect(saveCalls).toHaveLength(1)
+    expect(getPreferences().globalShortcut).toBe('CmdOrCtrl+K')
+  })
+
+  it('restores the previous value and rethrows when the save fails', async () => {
+    mockIPC((cmd) => {
+      if (cmd === 'load_preferences') {
+        return { ...defaultPreferences(), globalShortcut: 'CmdOrCtrl+K' }
+      }
+      if (cmd === 'save_preferences') throw new Error('disk full')
+    })
+
+    await initPreferences()
+
+    await expect(
+      setPreferenceImmediate('globalShortcut', 'CmdOrCtrl+Shift+P'),
+    ).rejects.toThrow()
+    expect(getPreferences().globalShortcut).toBe('CmdOrCtrl+K')
   })
 })

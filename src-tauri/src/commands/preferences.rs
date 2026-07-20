@@ -35,6 +35,17 @@ pub fn open_preferences_file(app: AppHandle) -> Result<(), String> {
         .map_err(|e| format!("Failed to open preferences.json: {e}"))
 }
 
+/// Reads just the saved global shortcut, synchronously.
+///
+/// `setup()` runs before the async command path is usable, so startup
+/// registration reads the preferences file directly rather than going through
+/// `load_preferences`.
+pub fn load_global_shortcut(app: &AppHandle) -> Option<String> {
+    let path = data_file_path(app, PREFERENCES_FILE).ok()?;
+    let preferences: AppPreferences = load_json(&path);
+    preferences.global_shortcut
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -66,6 +77,22 @@ mod tests {
         save(&path, &value).unwrap();
         let loaded: AppPreferences = load(&path);
         assert_eq!(loaded, value);
+    }
+
+    #[test]
+    fn round_trips_a_populated_global_shortcut() {
+        let dir = scratch_dir("global-shortcut");
+        let path = dir.join("preferences.json");
+        let value = AppPreferences {
+            theme: "system".to_string(),
+            language: None,
+            global_shortcut: Some("CmdOrCtrl+K".to_string()),
+            quick_pane_shortcut: None,
+        };
+
+        save(&path, &value).unwrap();
+        let loaded: AppPreferences = load(&path);
+        assert_eq!(loaded.global_shortcut, Some("CmdOrCtrl+K".to_string()));
     }
 
     #[test]

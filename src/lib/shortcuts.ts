@@ -95,6 +95,55 @@ export function toTauriAccelerator(normalized: string): string {
   return parts.join('+')
 }
 
+const TAURI_MODIFIER_ALIASES: Record<string, ShortcutModifier> = {
+  cmdorctrl: 'mod',
+  commandorcontrol: 'mod',
+  cmd: 'mod',
+  command: 'mod',
+  ctrl: 'mod',
+  control: 'mod',
+  meta: 'mod',
+  super: 'mod',
+  shift: 'shift',
+  alt: 'alt',
+  altgr: 'alt',
+  option: 'alt',
+}
+
+/**
+ * Inverse of {@link toTauriAccelerator}.
+ *
+ * Global shortcuts are stored as Tauri accelerators ("CmdOrCtrl+Shift+K") so
+ * the Rust startup path can register them without parsing. This converts one
+ * back for display via `formatShortcut()`.
+ */
+export function fromTauriAccelerator(accelerator: string): ParsedShortcut {
+  const modifiers: ShortcutModifier[] = []
+  let key = ''
+
+  for (const part of accelerator.split('+').map((p) => p.trim())) {
+    if (!part) continue
+    const alias = TAURI_MODIFIER_ALIASES[part.toLowerCase()]
+    if (alias) {
+      if (!modifiers.includes(alias)) modifiers.push(alias)
+    } else {
+      key = part.toLowerCase()
+    }
+  }
+
+  modifiers.sort((a, b) => MODIFIER_ORDER.indexOf(a) - MODIFIER_ORDER.indexOf(b))
+  return { key, modifiers }
+}
+
+/**
+ * A global shortcut needs a key and at least one modifier — the OS rejects
+ * bare keys, and registering one would swallow that key everywhere.
+ */
+export function isValidGlobalShortcutCombo(combo: string): boolean {
+  const { key, modifiers } = parseShortcut(combo)
+  return key.length > 0 && modifiers.length > 0
+}
+
 export function createKeydownHandler(
   inputAllowlist: string[],
   resolveCommandId: (combo: string) => string | undefined,

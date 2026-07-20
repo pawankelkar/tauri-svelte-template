@@ -25,6 +25,26 @@
     "log:default",
     "os:default",
     "opener:default",
-    "opener:allow-open-path"
+    "opener:allow-open-path",
+    "notification:default",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-read-text",
+    "dialog:default",
+    "process:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "exec-sh",
+          "cmd": "sh",
+          "args": ["-c", "echo Hello from the tauri-plugin-shell demo"]
+        },
+        {
+          "name": "exec-cmd",
+          "cmd": "cmd",
+          "args": ["/C", "echo Hello from the tauri-plugin-shell demo"]
+        }
+      ]
+    }
   ]
 }

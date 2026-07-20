@@ -4,6 +4,8 @@ import {
   parseShortcut,
   buildCombo,
   toTauriAccelerator,
+  fromTauriAccelerator,
+  isValidGlobalShortcutCombo,
   createKeydownHandler,
 } from './shortcuts'
 
@@ -197,5 +199,57 @@ describe('createKeydownHandler', () => {
     } as unknown as KeyboardEvent)
 
     expect(dispatch).toHaveBeenCalledWith('open-palette')
+  })
+})
+
+describe('fromTauriAccelerator', () => {
+  it('round-trips with toTauriAccelerator', () => {
+    for (const combo of ['mod+k', 'mod+shift+k', 'mod+alt+p', 'mod+shift+alt+f']) {
+      const { key, modifiers } = fromTauriAccelerator(toTauriAccelerator(combo))
+      expect([...modifiers, key].join('+')).toBe(combo)
+    }
+  })
+
+  it('accepts the modifier spellings Tauri emits', () => {
+    expect(fromTauriAccelerator('CommandOrControl+Shift+.')).toEqual({
+      key: '.',
+      modifiers: ['mod', 'shift'],
+    })
+    expect(fromTauriAccelerator('Ctrl+Alt+Delete')).toEqual({
+      key: 'delete',
+      modifiers: ['mod', 'alt'],
+    })
+  })
+
+  it('sorts modifiers into canonical order regardless of input order', () => {
+    expect(fromTauriAccelerator('Alt+Shift+CmdOrCtrl+J').modifiers).toEqual([
+      'mod',
+      'shift',
+      'alt',
+    ])
+  })
+
+  it('collapses duplicate modifiers that map to the same key', () => {
+    expect(fromTauriAccelerator('Ctrl+Cmd+K').modifiers).toEqual(['mod'])
+  })
+})
+
+describe('isValidGlobalShortcutCombo', () => {
+  it('accepts a key with at least one modifier', () => {
+    expect(isValidGlobalShortcutCombo('mod+k')).toBe(true)
+    expect(isValidGlobalShortcutCombo('mod+shift+k')).toBe(true)
+  })
+
+  it('rejects modifier-only combos', () => {
+    expect(isValidGlobalShortcutCombo('mod')).toBe(false)
+    expect(isValidGlobalShortcutCombo('mod+shift')).toBe(false)
+  })
+
+  it('rejects a bare key, which would swallow it system-wide', () => {
+    expect(isValidGlobalShortcutCombo('k')).toBe(false)
+  })
+
+  it('rejects an empty combo', () => {
+    expect(isValidGlobalShortcutCombo('')).toBe(false)
   })
 })

@@ -1,12 +1,15 @@
 use tauri_specta::{collect_commands, Builder};
 
 pub fn generate_bindings() -> Builder<tauri::Wry> {
-    use crate::commands::{app_state, demo, lifecycle, preferences};
+    use crate::commands::{app_state, demo, global_shortcut, lifecycle, preferences};
 
     Builder::<tauri::Wry>::new().commands(collect_commands![
         app_state::load_app_state,
         app_state::save_app_state,
         demo::greet,
+        global_shortcut::register_global_shortcut,
+        global_shortcut::unregister_global_shortcut,
+        global_shortcut::is_global_shortcut_registered,
         lifecycle::confirm_close,
         preferences::load_preferences,
         preferences::save_preferences,

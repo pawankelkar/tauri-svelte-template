@@ -1,5 +1,4 @@
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { commands, unwrapResult } from '$lib/tauri-bindings'
 import { getResolvedMode, setThemeMode } from '$lib/stores/theme.svelte'
 import {
   isLeftSidebarVisible,
@@ -8,6 +7,7 @@ import {
   toggleRightSidebar,
 } from '$lib/stores/ui.svelte'
 import { togglePalette } from './palette-state.svelte'
+import { openPreferencesDialog } from './preferences-dialog-state.svelte'
 import { registerCommands, type AppCommand } from './registry.svelte'
 import i18n from '$lib/i18n/config'
 
@@ -37,10 +37,7 @@ const appCommands: AppCommand[] = [
     labelKey: 'commands.openPreferences',
     category: 'commands.category.general',
     shortcut: 'mod+,',
-    // Phase 5 replaces this with the Preferences dialog
-    run: async () => {
-      unwrapResult(await commands.openPreferencesFile())
-    },
+    run: openPreferencesDialog,
   },
   {
     id: TOGGLE_LEFT_SIDEBAR,

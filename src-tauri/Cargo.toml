@@ -22,6 +22,11 @@ tauri-plugin-fs = "2"
 tauri-plugin-log = "2"
 tauri-plugin-persisted-scope = "2"
 tauri-plugin-os = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-process = "2"
 log = "0.4"
 
 # Type-safe Tauri command bindings
@@ -32,10 +37,10 @@ specta-typescript = "=0.0.9"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
 tauri-plugin-window-state = "2"
+tauri-plugin-global-shortcut = "2"
 
-# Phase 5: tauri-plugin-dialog, tauri-plugin-notification, tauri-plugin-clipboard-manager
-# Phase 6: tauri-plugin-global-shortcut, tauri-nspanel (macOS)
-# Phase 8: tauri-plugin-updater, tauri-plugin-process
+# Phase 6: tauri-nspanel (macOS)
+# Phase 8: tauri-plugin-updater
 
 [profile.release]
 codegen-units = 1

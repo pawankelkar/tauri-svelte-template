@@ -32,6 +32,37 @@ async greet(name: string) : Promise<Result<string, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Registers `accelerator` with the OS, replacing whatever this module had
+ * registered before. No-ops when the accelerator is already the current one.
+ */
+async registerGlobalShortcut(accelerator: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("register_global_shortcut", { accelerator }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Releases the accelerator this module currently holds, if any.
+ */
+async unregisterGlobalShortcut() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unregister_global_shortcut") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async isGlobalShortcutRegistered(accelerator: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("is_global_shortcut_registered", { accelerator }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async confirmClose() : Promise<void> {
     await TAURI_INVOKE("confirm_close");
 },
@@ -73,8 +104,6 @@ async openPreferencesFile() : Promise<Result<null, string>> {
 
 export type AppPreferences = { theme: string; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null }
 export type PersistedAppState = { leftSidebarVisible: boolean; rightSidebarVisible: boolean; squareCorners: boolean; lastQuickPaneEntry: string | null; recentItems: string[]; onboardingCompleted: boolean }
-
-
 
 /** tauri-specta globals **/
 

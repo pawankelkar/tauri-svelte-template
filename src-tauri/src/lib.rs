@@ -44,6 +44,18 @@ pub fn run() {
         );
     }
 
+    // Global shortcut — one handler for every accelerator this app registers.
+    // Registration itself happens in setup() from the saved preference, and at
+    // runtime through the commands in commands/global_shortcut.rs.
+    #[cfg(desktop)]
+    {
+        app_builder = app_builder.plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(commands::global_shortcut::handle_shortcut_event)
+                .build(),
+        );
+    }
+
     app_builder = app_builder.plugin({
         #[allow(unused_mut)]
         let mut targets = vec![
@@ -74,6 +86,11 @@ pub fn run() {
         .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_process::init())
         .manage(AppState::default())
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
@@ -90,6 +107,10 @@ pub fn run() {
                 "App handle initialized for package: {}",
                 app.package_info().name
             );
+
+            #[cfg(desktop)]
+            commands::global_shortcut::register_saved_shortcut_on_startup(app.handle());
+
             Ok(())
         })
         .invoke_handler(builder.invoke_handler())
