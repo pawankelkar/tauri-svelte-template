@@ -15,7 +15,9 @@
   import { getSquareCorners } from '$lib/stores/ui.svelte'
   import { initTheme, reconcileTheme } from '$lib/stores/theme.svelte'
   import { initializeLanguage } from '$lib/i18n/language-init'
+  import { initCommands } from '$lib/commands'
   import TitleBar from '$lib/components/layout/TitleBar.svelte'
+  import CommandPalette from '$lib/components/command-palette/CommandPalette.svelte'
   import './app.css'
 
   $effect(() => {
@@ -28,11 +30,13 @@
   onMount(() => {
     const cleanupCorners = initSquareCorners()
     const cleanupTheme = initTheme()
+    let cleanupCommands: (() => void) | undefined
 
     void (async () => {
       const [prefs] = await Promise.all([initPreferences(), initAppState()])
       reconcileTheme()
       await initializeLanguage(prefs.language)
+      cleanupCommands = initCommands()
     })()
 
     const appWindow = getCurrentWindow()
@@ -48,6 +52,7 @@
     return () => {
       cleanupCorners()
       cleanupTheme()
+      cleanupCommands?.()
       unlistenClose.then((fn) => fn())
     }
   })
@@ -55,7 +60,8 @@
 
 <div class="flex h-screen flex-col rounded-[var(--app-corner-radius)] overflow-hidden">
   <TitleBar />
+  <CommandPalette />
   <main class="flex-1 overflow-auto bg-background">
-    <!-- Phase 3+ layout content goes here -->
+    <!-- Phase 5 layout content goes here -->
   </main>
 </div>

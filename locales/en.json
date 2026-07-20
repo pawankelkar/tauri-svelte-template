@@ -6,5 +6,24 @@
   "titlebar.hideLeftSidebar": "Hide Left Sidebar",
   "titlebar.showRightSidebar": "Show Right Sidebar",
   "titlebar.hideRightSidebar": "Hide Right Sidebar",
-  "titlebar.settings": "Settings"
+  "titlebar.settings": "Settings",
+
+  "commands.category.general": "General",
+  "commands.category.view": "View",
+  "commands.toggleTheme": "Toggle Theme",
+  "commands.openPreferences": "Open Preferences",
+  "commands.toggleLeftSidebar": "Toggle Left Sidebar",
+  "commands.toggleRightSidebar": "Toggle Right Sidebar",
+  "commands.openCommandPalette": "Open Command Palette",
+  "commands.quit": "Quit",
+
+  "commandPalette.placeholder": "Type a command or search…",
+  "commandPalette.empty": "No results found.",
+
+  "menu.file": "File",
+  "menu.edit": "Edit",
+  "menu.view": "View",
+  "menu.window": "Window",
+  "menu.help": "Help",
+  "menu.about": "About {{appName}}"
 }
