@@ -8,10 +8,20 @@
   import { initAppState } from '$lib/stores/app-state.svelte'
   import { flushAllStores } from '$lib/lifecycle'
   import { initQuickPaneBridge } from '$lib/quick-pane/bridge'
-  import { getSquareCorners } from '$lib/stores/ui.svelte'
+  import {
+    getSquareCorners,
+    toggleLeftSidebar,
+    toggleRightSidebar,
+    isLeftSidebarVisible,
+    isRightSidebarVisible,
+  } from '$lib/stores/ui.svelte'
   import { initTheme, reconcileTheme } from '$lib/stores/theme.svelte'
   import { initializeLanguage } from '$lib/i18n/language-init'
   import { initCommands } from '$lib/commands'
+  import PanelLeftIcon from '@lucide/svelte/icons/panel-left'
+  import PanelRightIcon from '@lucide/svelte/icons/panel-right'
+  import { Button } from '$lib/components/ui/button'
+  import { cn } from '$lib/utils'
   import TitleBar from '$lib/components/layout/TitleBar.svelte'
   import CommandPalette from '$lib/components/command-palette/CommandPalette.svelte'
   import PreferencesDialog from '$lib/components/preferences/PreferencesDialog.svelte'
@@ -54,7 +64,11 @@
     const unlistenClose = listen<{ hide: boolean }>(
       'app:close-requested',
       async (event) => {
-        await flushAllStores()
+        try {
+          await flushAllStores()
+        } catch (e) {
+          console.error('Failed to flush stores on close:', e)
+        }
         if (event.payload.hide) {
           await appWindow.hide()
           return
@@ -77,7 +91,30 @@
 <div
   class="flex h-screen flex-col rounded-[var(--app-corner-radius)] overflow-hidden"
 >
-  <TitleBar />
+  <TitleBar>
+    {#snippet leftActions()}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onclick={toggleLeftSidebar}
+        class={cn(!isLeftSidebarVisible() && 'opacity-50')}
+        aria-label={t('welcome.tiles.sidebars.action')}
+      >
+        <PanelLeftIcon />
+      </Button>
+    {/snippet}
+    {#snippet rightActions()}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onclick={toggleRightSidebar}
+        class={cn(!isRightSidebarVisible() && 'opacity-50')}
+        aria-label={t('welcome.tiles.rightSidebar.action')}
+      >
+        <PanelRightIcon />
+      </Button>
+    {/snippet}
+  </TitleBar>
   <!-- Global overlays live outside the boundary so they stay usable, and the
        window keeps its controls, even if the content area crashes. -->
   <CommandPalette />

@@ -51,7 +51,11 @@ import { registerNotificationCommands } from './notification-commands'
 import { registerClipboardCommands } from './clipboard-commands'
 import { registerDialogCommands } from './dialog-commands'
 import { registerShellCommands } from './shell-commands'
-import { findCommandIdForShortcut, executeCommand } from './registry.svelte'
+import {
+  findCommandIdForShortcut,
+  executeCommand,
+  unregisterAllCommands,
+} from './registry.svelte'
 import { createKeydownHandler } from '$lib/shortcuts'
 import { initMenu } from '$lib/menu'
 
@@ -79,5 +83,6 @@ export function initCommands(): () => void {
   return () => {
     window.removeEventListener('keydown', handleKeydown)
     cleanupMenu?.()
+    unregisterAllCommands()
   }
 }

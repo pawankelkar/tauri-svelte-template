@@ -29,6 +29,10 @@ export function unregisterCommand(id: string): void {
   _commands = _commands.filter((c) => c.id !== id)
 }
 
+export function unregisterAllCommands(): void {
+  _commands = []
+}
+
 export function getCommand(id: string): AppCommand | undefined {
   return _commands.find((c) => c.id === id)
 }

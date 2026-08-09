@@ -45,12 +45,6 @@
     "svelte-sonner": "^1.1.1",
     "tailwind-merge": "^3.4.0"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "@ast-grep/cli"
-    ]
-  },
   "devDependencies": {
     "@ast-grep/cli": "^0.44.1",
     "@eslint/js": "^10.0.1",

@@ -1,0 +1,19 @@
+id: no-raw-invoke
+language: TypeScript
+severity: error
+files:
+  - 'src/**/*.ts'
+  - '!src/lib/bindings.ts'
+  - '!src/lib/tauri-bindings.ts'
+rule:
+  any:
+    - pattern: invoke($$$)
+    - pattern: import { invoke } from '@tauri-apps/api/core'
+    - pattern: import { invoke } from '@tauri-apps/api/tauri'
+message: >-
+  Use the typed commands from $lib/tauri-bindings instead of raw invoke().
+note: >-
+  The generated bindings in $lib/bindings.ts provide type-safe wrappers for
+  every Rust command. Raw invoke() bypasses type checking and the
+  Result<T, String> envelope. Import { commands, unwrapResult } from
+  '$lib/tauri-bindings' and call commands.yourCommand() instead.
