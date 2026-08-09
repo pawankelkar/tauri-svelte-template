@@ -73,8 +73,9 @@
 </script>
 
 <TitleBarShell {title}>
+  <!-- drag-region="false" + self-stretch: see WindowsTitleBar.svelte. -->
   {#snippet leading()}
-    <div class="flex items-center">
+    <div data-tauri-drag-region="false" class="flex items-center self-stretch">
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         class="flex items-center gap-2 px-3 text-black active:text-black dark:text-black"
@@ -189,7 +190,10 @@
   {/snippet}
 
   {#snippet trailing()}
-    <div class="flex items-center pr-2">
+    <div
+      data-tauri-drag-region="false"
+      class="flex items-center self-stretch pr-2"
+    >
       {#if rightActions}
         {@render rightActions()}
       {/if}

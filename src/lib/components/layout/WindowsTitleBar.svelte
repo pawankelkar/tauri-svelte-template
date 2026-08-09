@@ -35,8 +35,18 @@
 </script>
 
 <TitleBarShell {title}>
+  <!--
+    `data-tauri-drag-region="false"` + `self-stretch` on both clusters: the
+    buttons are shorter than the bar, so without this the sliver of bar above
+    and below them is a live drag region — a fast second click that drifts a
+    few pixels off a button counts as a titlebar double-click and maximizes
+    the window.
+  -->
   {#snippet leading()}
-    <div class="flex items-center pl-2">
+    <div
+      data-tauri-drag-region="false"
+      class="flex items-center self-stretch pl-2"
+    >
       {#if leftActions}
         {@render leftActions()}
       {/if}
@@ -44,7 +54,7 @@
   {/snippet}
 
   {#snippet trailing()}
-    <div class="flex items-center">
+    <div data-tauri-drag-region="false" class="flex items-center self-stretch">
       {#if rightActions}
         {@render rightActions()}
       {/if}

@@ -18,6 +18,7 @@
   import { initTheme, reconcileTheme } from '$lib/stores/theme.svelte'
   import { initializeLanguage } from '$lib/i18n/language-init'
   import { initCommands } from '$lib/commands'
+  import { getPlatform } from '$lib/hooks/use-platform.svelte'
   import { logger } from '$lib/logger'
   import PanelLeftCloseIcon from '@lucide/svelte/icons/panel-left-close'
   import PanelLeftOpenIcon from '@lucide/svelte/icons/panel-left-open'
@@ -39,6 +40,13 @@
     document.documentElement.classList.toggle(
       'square-corners',
       getSquareCorners(),
+    )
+  })
+
+  $effect(() => {
+    document.documentElement.classList.toggle(
+      'platform-macos',
+      getPlatform() === 'macos',
     )
   })
 

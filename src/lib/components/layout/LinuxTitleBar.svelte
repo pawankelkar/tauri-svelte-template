@@ -19,8 +19,12 @@
 </script>
 
 <TitleBarShell {title}>
+  <!-- drag-region="false" + self-stretch: see WindowsTitleBar.svelte. -->
   {#snippet leading()}
-    <div class="flex items-center pl-2">
+    <div
+      data-tauri-drag-region="false"
+      class="flex items-center self-stretch pl-2"
+    >
       {#if leftActions}
         {@render leftActions()}
       {/if}
@@ -28,7 +32,10 @@
   {/snippet}
 
   {#snippet trailing()}
-    <div class="flex items-center pr-2">
+    <div
+      data-tauri-drag-region="false"
+      class="flex items-center self-stretch pr-2"
+    >
       {#if rightActions}
         {@render rightActions()}
       {/if}

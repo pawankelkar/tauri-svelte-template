@@ -8,9 +8,13 @@
    *
    * Two details here are load-bearing and easy to lose when copied by hand:
    *
-   * - `data-tauri-drag-region` sits on both the bar *and* the title overlay.
-   *   The overlay covers the bar, so without it the middle of the titlebar
-   *   stops dragging the window.
+   * - `data-tauri-drag-region` sits on the bar only, NOT on the title
+   *   overlay. The overlay is `pointer-events-none`, so clicks fall through
+   *   to the bar and dragging works without it. Marking the overlay too
+   *   would break the leading cluster: native drag regions (`app-region` in
+   *   WebView2) are computed in paint order, so the overlay's full-width
+   *   drag rect would re-cover the leading cluster's `no-drag` rect — a fast
+   *   double-click on the left titlebar buttons would maximize the window.
    * - The title is absolutely positioned and `pointer-events-none`. Centring
    *   it with flexbox instead would shift it whenever the leading or trailing
    *   cluster changes width — traffic lights on macOS, window buttons on
@@ -43,7 +47,6 @@
   {/if}
 
   <div
-    data-tauri-drag-region
     class="pointer-events-none absolute inset-0 flex items-center justify-center"
   >
     <span class="text-muted-foreground text-xs font-medium">{displayTitle}</span

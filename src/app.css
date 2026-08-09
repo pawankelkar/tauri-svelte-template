@@ -39,7 +39,11 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
+  /* Near-white, not a second red: this pairs *on top of* --destructive (the
+     titlebar close button turns red on hover and needs its glyph to stay
+     visible). Buttons tint with `bg-destructive/10 text-destructive` instead
+     and never read this token. */
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -78,8 +82,8 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
@@ -155,10 +159,26 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/*
+ * Only macOS rounds its own corners.
+ *
+ * The root element clips content to this radius, so the radius is only safe
+ * where the pixels outside it are actually transparent. That holds on macOS
+ * (`transparent: true` + `decorations: false`). On Windows the window is
+ * opaque, so a radius punches the window's own background through the corners
+ * — most visibly behind the red close-button hover. Windows 11 rounds
+ * undecorated windows in the compositor anyway, and Linux keeps native
+ * decorations, so both want 0.
+ */
 :root {
+  --app-corner-radius: 0px;
+}
+
+.platform-macos {
   --app-corner-radius: 12px;
 }
 
+/* Must stay last: fullscreen squares the corners on every platform. */
 .square-corners {
   --app-corner-radius: 0px;
 }
@@ -187,9 +207,23 @@
     cursor: text !important;
   }
 
-  *[data-tauri-drag-region] {
+  /*
+   * WebView2 honours `app-region` natively, and the attribute selector must
+   * not match `data-tauri-drag-region="false"` — otherwise the titlebar
+   * button clusters become native caption area, where a fast double-click
+   * maximizes the window before any JS runs. The explicit `no-drag` on the
+   * "false" subtree carves those clusters (and everything inside them) out
+   * of the surrounding drag region.
+   */
+  *[data-tauri-drag-region]:not([data-tauri-drag-region='false']) {
     -webkit-app-region: drag;
     app-region: drag;
+  }
+
+  *[data-tauri-drag-region='false'],
+  *[data-tauri-drag-region='false'] * {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
   }
 
   /*

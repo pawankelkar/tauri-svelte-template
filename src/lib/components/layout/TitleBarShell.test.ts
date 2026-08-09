@@ -35,11 +35,15 @@ afterEach(() => {
 })
 
 describe('TitleBarShell', () => {
-  it('marks both the bar and the title overlay as drag regions', () => {
-    // The overlay covers the bar, so if it is not a drag region too, the
-    // middle of the titlebar silently stops moving the window.
+  it('marks only the bar as a drag region, never the title overlay', () => {
+    // The overlay is pointer-events-none, so clicks fall through to the bar
+    // and dragging works without marking it. Marking it too would re-cover
+    // the leading cluster's no-drag rect in the native (paint-order) region
+    // computation, making fast double-clicks on the left buttons maximize.
     const el = render(TitleBarShell, { title: 'Anything' })
-    expect(el.querySelectorAll('[data-tauri-drag-region]')).toHaveLength(2)
+    expect(el.querySelectorAll('[data-tauri-drag-region]')).toHaveLength(1)
+    const overlay = el.querySelector('.absolute')
+    expect(overlay?.hasAttribute('data-tauri-drag-region')).toBe(false)
   })
 
   it('centres the title independently of the side clusters', () => {
@@ -87,7 +91,13 @@ describe('LinuxTitleBar', () => {
 
     expect(el.querySelector('[data-testid="left"]')).not.toBeNull()
     expect(el.querySelector('[data-testid="right"]')).not.toBeNull()
-    expect(el.querySelectorAll('[data-tauri-drag-region]')).toHaveLength(2)
+    // Draggable surface: the bar itself, nothing else.
+    expect(el.querySelectorAll('[data-tauri-drag-region=""]')).toHaveLength(1)
+    // The action clusters opt out of dragging so that a fast double-click
+    // beside a titlebar button cannot read as "maximize the window".
+    expect(
+      el.querySelectorAll('[data-tauri-drag-region="false"]'),
+    ).toHaveLength(2)
     expect(el.textContent).toContain('Linux')
   })
 })
