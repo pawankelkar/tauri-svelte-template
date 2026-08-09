@@ -18,10 +18,12 @@
   import { initTheme, reconcileTheme } from '$lib/stores/theme.svelte'
   import { initializeLanguage } from '$lib/i18n/language-init'
   import { initCommands } from '$lib/commands'
-  import PanelLeftIcon from '@lucide/svelte/icons/panel-left'
-  import PanelRightIcon from '@lucide/svelte/icons/panel-right'
+  import { logger } from '$lib/logger'
+  import PanelLeftCloseIcon from '@lucide/svelte/icons/panel-left-close'
+  import PanelLeftOpenIcon from '@lucide/svelte/icons/panel-left-open'
+  import PanelRightCloseIcon from '@lucide/svelte/icons/panel-right-close'
+  import PanelRightOpenIcon from '@lucide/svelte/icons/panel-right-open'
   import { Button } from '$lib/components/ui/button'
-  import { cn } from '$lib/utils'
   import TitleBar from '$lib/components/layout/TitleBar.svelte'
   import CommandPalette from '$lib/components/command-palette/CommandPalette.svelte'
   import PreferencesDialog from '$lib/components/preferences/PreferencesDialog.svelte'
@@ -40,50 +42,83 @@
     )
   })
 
+  // Production only: a stray right-click showing the webview's own menu
+  // ("Reload", "Inspect"…) breaks the native illusion. Editable fields keep
+  // their default menu unless a custom one is attached (see
+  // `textInputContextMenu`), and dev keeps right-click → Inspect.
+  function suppressContextMenu(e: MouseEvent): void {
+    const target = e.target as HTMLElement | null
+    if (target?.closest('input, textarea, [contenteditable="true"]')) return
+    e.preventDefault()
+  }
+
   onMount(() => {
     const cleanupCorners = initSquareCorners()
     const cleanupTheme = initTheme()
     const cleanupQuickPane = initQuickPaneBridge()
-    let cleanupCommands: (() => void) | undefined
 
-    void (async () => {
-      const [prefs] = await Promise.all([initPreferences(), initAppState()])
-      reconcileTheme()
-      await initializeLanguage(prefs.language)
-      cleanupCommands = initCommands()
-      void commands.cleanupOldRecoveryFiles()
-    })()
+    if (import.meta.env.PROD) {
+      window.addEventListener('contextmenu', suppressContextMenu)
+    }
+    let cleanupCommands: (() => void) | undefined
+    let unlistenClose: (() => void) | undefined
+    let destroyed = false
 
     const appWindow = getCurrentWindow()
-    appWindow.show()
-    appWindow.setFocus()
 
-    // Rust prevents the close and hands the decision back here, because only
-    // the frontend can flush the debounced stores. `hide` carries the
-    // platform's convention: macOS keeps the app running behind the dock.
-    const unlistenClose = listen<{ hide: boolean }>(
-      'app:close-requested',
-      async (event) => {
-        try {
-          await flushAllStores()
-        } catch (e) {
-          console.error('Failed to flush stores on close:', e)
-        }
-        if (event.payload.hide) {
-          await appWindow.hide()
-          return
-        }
-        await commands.confirmClose()
-        await appWindow.close()
-      },
-    )
+    void (async () => {
+      // Register the close listener before showing the window so the user
+      // can never click X before the handler exists. The flush failure is
+      // swallowed on purpose: losing a debounced write is better than a
+      // window that refuses to close.
+      const unlisten = await listen<{ hide: boolean }>(
+        'app:close-requested',
+        async (event) => {
+          try {
+            await flushAllStores()
+          } catch (e) {
+            logger.error('Flushing stores on close failed', e)
+          }
+          if (event.payload.hide) {
+            await appWindow.hide()
+            return
+          }
+          // Quit the whole app rather than closing this window: the hidden
+          // Quick Pane window would otherwise keep the process alive after
+          // the main window is gone.
+          await commands.quitApp()
+        },
+      )
+      // HMR can destroy this component while `listen` is still in flight;
+      // an orphaned listener would double-run the close handshake.
+      if (destroyed) {
+        unlisten()
+        return
+      }
+      unlistenClose = unlisten
+
+      try {
+        const [prefs] = await Promise.all([initPreferences(), initAppState()])
+        reconcileTheme()
+        await initializeLanguage(prefs.language)
+        if (!destroyed) cleanupCommands = initCommands()
+        void commands.cleanupOldRecoveryFiles()
+      } finally {
+        // Show even if an init step failed — a degraded UI beats a window
+        // that never appears.
+        appWindow.show()
+        appWindow.setFocus()
+      }
+    })()
 
     return () => {
+      destroyed = true
+      window.removeEventListener('contextmenu', suppressContextMenu)
       cleanupCorners()
       cleanupTheme()
       cleanupQuickPane()
       cleanupCommands?.()
-      unlistenClose.then((fn) => fn())
+      unlistenClose?.()
     }
   })
 </script>
@@ -97,10 +132,17 @@
         variant="ghost"
         size="icon-sm"
         onclick={toggleLeftSidebar}
-        class={cn(!isLeftSidebarVisible() && 'opacity-50')}
-        aria-label={t('welcome.tiles.sidebars.action')}
+        aria-label={t(
+          isLeftSidebarVisible()
+            ? 'titlebar.hideLeftSidebar'
+            : 'titlebar.showLeftSidebar',
+        )}
       >
-        <PanelLeftIcon />
+        {#if isLeftSidebarVisible()}
+          <PanelLeftCloseIcon />
+        {:else}
+          <PanelLeftOpenIcon />
+        {/if}
       </Button>
     {/snippet}
     {#snippet rightActions()}
@@ -108,10 +150,17 @@
         variant="ghost"
         size="icon-sm"
         onclick={toggleRightSidebar}
-        class={cn(!isRightSidebarVisible() && 'opacity-50')}
-        aria-label={t('welcome.tiles.rightSidebar.action')}
+        aria-label={t(
+          isRightSidebarVisible()
+            ? 'titlebar.hideRightSidebar'
+            : 'titlebar.showRightSidebar',
+        )}
       >
-        <PanelRightIcon />
+        {#if isRightSidebarVisible()}
+          <PanelRightCloseIcon />
+        {:else}
+          <PanelRightOpenIcon />
+        {/if}
       </Button>
     {/snippet}
   </TitleBar>
