@@ -7,8 +7,9 @@ import {
   type PaintHintPayload,
 } from '$lib/theme/paint-hint'
 import type { ThemeVariantMode } from '$lib/theme/engine'
-import { applyTokens } from '$lib/theme/apply'
+import { applyAppearanceTokens, applyTokens } from '$lib/theme/apply'
 import { applyDomState } from '$lib/theme/dom-state'
+import { resolveReducedMotion } from '$lib/theme/motion'
 import {
   getPresetById,
   profileFromPreset,
@@ -17,7 +18,12 @@ import {
   presetContentEquals,
 } from '$lib/theme/presets'
 import type { ThemePreset, ThemeProfile } from '$lib/theme/schema'
-import type { ThemeMode } from './preferences-schema'
+import {
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  type ReducedMotion,
+  type ThemeMode,
+} from './preferences-schema'
 import type { ImportedTheme } from '$lib/tauri-bindings'
 
 // The generated ImportedTheme mirrors ThemePreset but is looser (string
@@ -43,6 +49,11 @@ let _systemDark = $state(
     window.matchMedia('(prefers-color-scheme: dark)').matches,
 )
 
+let _systemReducedMotion = $state(
+  typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+)
+
 export function getThemeMode(): ThemeMode {
   return getPreferences().theme as ThemeMode
 }
@@ -65,8 +76,19 @@ export function getUserPresets(): ThemePreset[] {
 function paint(target: HTMLElement = document.documentElement): void {
   const mode = getResolvedMode()
   const profile = getProfile(mode)
+  const prefs = getPreferences()
   applyTokens(deriveTokensForProfile(profile, mode, getUserPresets()), target)
-  applyDomState(profile.presetId, mode, target)
+  applyAppearanceTokens(prefs.fontFamily, prefs.fontSize, target)
+  applyDomState(
+    profile.presetId,
+    mode,
+    resolveReducedMotion(
+      prefs.reducedMotion as ReducedMotion,
+      _systemReducedMotion,
+    ),
+    prefs.pointerCursors,
+    target,
+  )
 }
 
 function buildHintPayload(): PaintHintPayload {
@@ -80,6 +102,10 @@ function buildHintPayload(): PaintHintPayload {
       dark: getProfile('dark').presetId,
     },
     slots: { light: tokens('light'), dark: tokens('dark') },
+    fontFamily: getPreferences().fontFamily,
+    fontSize: getPreferences().fontSize,
+    reducedMotion: getPreferences().reducedMotion as ReducedMotion,
+    pointerCursors: getPreferences().pointerCursors,
   }
 }
 
@@ -120,7 +146,22 @@ export function initTheme(): () => void {
     }
   }
   mq.addEventListener('change', onChange)
-  return () => mq.removeEventListener('change', onChange)
+
+  const motionMq = window.matchMedia('(prefers-reduced-motion: reduce)')
+  _systemReducedMotion = motionMq.matches
+  const onMotionChange = (e: MediaQueryListEvent) => {
+    _systemReducedMotion = e.matches
+    if (getPreferences().reducedMotion === 'system') {
+      repaint()
+      broadcast()
+    }
+  }
+  motionMq.addEventListener('change', onMotionChange)
+
+  return () => {
+    mq.removeEventListener('change', onChange)
+    motionMq.removeEventListener('change', onMotionChange)
+  }
 }
 
 export function reconcileTheme(): void {
@@ -129,6 +170,31 @@ export function reconcileTheme(): void {
 
 export function setThemeMode(mode: ThemeMode): void {
   setPreference('theme', mode)
+  repaint()
+  broadcast()
+}
+
+/** `null` restores the platform's system font stack. */
+export function setFontFamily(family: string | null): void {
+  setPreference('fontFamily', family?.trim() || null)
+  repaint()
+  broadcast()
+}
+
+export function setFontSize(size: number): void {
+  setPreference('fontSize', clamp(size, FONT_SIZE_MIN, FONT_SIZE_MAX))
+  repaint()
+  broadcast()
+}
+
+export function setReducedMotion(mode: ReducedMotion): void {
+  setPreference('reducedMotion', mode)
+  repaint()
+  broadcast()
+}
+
+export function setPointerCursors(enabled: boolean): void {
+  setPreference('pointerCursors', enabled)
   repaint()
   broadcast()
 }

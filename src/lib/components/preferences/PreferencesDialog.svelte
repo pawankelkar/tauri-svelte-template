@@ -53,8 +53,11 @@
 
     <!-- `collapsible="none"` renders a plain flex column and skips the
          Sidebar's offcanvas/mobile-sheet machinery entirely — that is what
-         makes the sidebar safe to nest inside a dialog. -->
-    <Sidebar.Provider class="items-start">
+         makes the sidebar safe to nest inside a dialog. `min-h-0` overrides
+         the provider's default `min-h-svh`, which would stretch the dialog
+         to the full window height and leave a dead area below the content
+         column (whose own height caps at 46rem). -->
+    <Sidebar.Provider class="min-h-0 items-stretch">
       <Sidebar.Root collapsible="none" class="hidden md:flex">
         <Sidebar.Content>
           <Sidebar.Group>

@@ -200,6 +200,16 @@
     cursor: default;
   }
 
+  /*
+   * The interface-font preferences land here as inline --sd-* vars on <html>
+   * (stores/theme.svelte.ts). font-size on the root is the UI scale: every
+   * rem-based Tailwind size follows it.
+   */
+  html {
+    font-family: var(--sd-font-ui, var(--font-sans));
+    font-size: var(--sd-font-size, 16px);
+  }
+
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
@@ -215,6 +225,44 @@
   [contenteditable='true'] {
     user-select: text !important;
     cursor: text !important;
+  }
+
+  /*
+   * The "Pointer cursors" preference. The native convention (and default) is
+   * the arrow everywhere, via `* { cursor: default }` above; this allow-list
+   * opts interactive elements into the web-style hand cursor. New clickable
+   * primitives with custom roles must be added here or they silently keep
+   * the arrow while the toggle is on.
+   */
+  [data-cursor='pointer'] button:not(:disabled),
+  [data-cursor='pointer'] [role='button'],
+  [data-cursor='pointer'] [role='option'],
+  [data-cursor='pointer'] [role='radio'],
+  [data-cursor='pointer'] [role='menuitem'],
+  [data-cursor='pointer'] [role='menuitemcheckbox'],
+  [data-cursor='pointer'] [role='tab'],
+  [data-cursor='pointer'] a[href],
+  [data-cursor='pointer'] summary,
+  [data-cursor='pointer'] select,
+  [data-cursor='pointer'] label,
+  [data-cursor='pointer'] input[type='checkbox'],
+  [data-cursor='pointer'] input[type='radio'],
+  [data-cursor='pointer'] input[type='range'] {
+    cursor: pointer;
+  }
+
+  /*
+   * The "Reduced motion" preference, pre-resolved to a boolean attribute.
+   * Near-zero durations instead of `none` so transitionend/animationend
+   * still fire for any code awaiting them.
+   */
+  [data-reduced-motion='true'] *,
+  [data-reduced-motion='true'] *::before,
+  [data-reduced-motion='true'] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 
   /*

@@ -22,6 +22,21 @@ export function isThemeMode(value: unknown): value is ThemeMode {
   )
 }
 
+export type ReducedMotion = 'system' | 'on' | 'off'
+
+const REDUCED_MOTION_MODES: readonly ReducedMotion[] = ['system', 'on', 'off']
+
+export function isReducedMotion(value: unknown): value is ReducedMotion {
+  return (
+    typeof value === 'string' &&
+    (REDUCED_MOTION_MODES as readonly string[]).includes(value)
+  )
+}
+
+/** Mirrors `validate_font_size` in `src-tauri/src/types.rs`. */
+export const FONT_SIZE_MIN = 12
+export const FONT_SIZE_MAX = 20
+
 /**
  * Mirrors `DEFAULT_QUICK_PANE_SHORTCUT` in `src-tauri/src/types.rs`.
  *
@@ -37,6 +52,10 @@ export function defaultPreferences(): AppPreferences {
     lightProfile: profileFromPreset(DEFAULT_LIGHT),
     darkProfile: profileFromPreset(DEFAULT_DARK),
     importedThemes: [],
+    fontFamily: null,
+    fontSize: 16,
+    reducedMotion: 'system',
+    pointerCursors: false,
     language: null,
     globalShortcut: null,
     quickPaneShortcut: DEFAULT_QUICK_PANE_SHORTCUT,
@@ -80,6 +99,20 @@ export function sanitizePreferences(raw: unknown): AppPreferences {
     lightProfile: sanitizeProfile(r.lightProfile, defaults.lightProfile),
     darkProfile: sanitizeProfile(r.darkProfile, defaults.darkProfile),
     importedThemes: sanitizeImportedThemes(r.importedThemes),
+    fontFamily: typeof r.fontFamily === 'string' ? r.fontFamily : null,
+    fontSize:
+      typeof r.fontSize === 'number' &&
+      r.fontSize >= FONT_SIZE_MIN &&
+      r.fontSize <= FONT_SIZE_MAX
+        ? r.fontSize
+        : defaults.fontSize,
+    reducedMotion: isReducedMotion(r.reducedMotion)
+      ? r.reducedMotion
+      : defaults.reducedMotion,
+    pointerCursors:
+      typeof r.pointerCursors === 'boolean'
+        ? r.pointerCursors
+        : defaults.pointerCursors,
     language: typeof r.language === 'string' ? r.language : null,
     globalShortcut:
       typeof r.globalShortcut === 'string' ? r.globalShortcut : null,

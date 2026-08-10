@@ -14,6 +14,10 @@ import {
   reconcileTheme,
   getResolvedMode,
   getThemeMode,
+  setFontFamily,
+  setFontSize,
+  setReducedMotion,
+  setPointerCursors,
 } from './theme.svelte'
 import {
   initPreferences,
@@ -33,8 +37,12 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(() => Promise.resolve(() => {})),
 }))
 
-let matchMediaCallback: ((e: { matches: boolean }) => void) | null = null
+// initTheme registers one listener per media query (color scheme and
+// reduced motion), so callbacks are keyed by the query string.
+let matchMediaCallbacks: Record<string, (e: { matches: boolean }) => void> = {}
 let matchMediaMatches = false
+const darkSchemeChange = (e: { matches: boolean }): void =>
+  matchMediaCallbacks['(prefers-color-scheme: dark)']?.(e)
 
 beforeEach(() => {
   __resetPreferencesForTests()
@@ -44,18 +52,20 @@ beforeEach(() => {
   document.documentElement.removeAttribute('style')
   document.documentElement.removeAttribute('data-color-mode')
   document.documentElement.removeAttribute('data-theme-preset')
-  matchMediaCallback = null
+  document.documentElement.removeAttribute('data-reduced-motion')
+  document.documentElement.removeAttribute('data-cursor')
+  matchMediaCallbacks = {}
   matchMediaMatches = false
 
   vi.spyOn(window, 'matchMedia').mockImplementation(
-    () =>
+    (query: string) =>
       ({
         matches: matchMediaMatches,
         addEventListener: (
           _: string,
           cb: (e: { matches: boolean }) => void,
         ) => {
-          matchMediaCallback = cb
+          matchMediaCallbacks[query] = cb
         },
         removeEventListener: vi.fn(),
       }) as unknown as MediaQueryList,
@@ -324,11 +334,11 @@ describe('system mode matchMedia', () => {
     initTheme()
     setThemeMode('system')
 
-    expect(matchMediaCallback).not.toBeNull()
-    matchMediaCallback!({ matches: true })
+    expect(matchMediaCallbacks['(prefers-color-scheme: dark)']).toBeDefined()
+    darkSchemeChange({ matches: true })
     expect(document.documentElement.classList.contains('dark')).toBe(true)
 
-    matchMediaCallback!({ matches: false })
+    darkSchemeChange({ matches: false })
     expect(document.documentElement.classList.contains('dark')).toBe(false)
   })
 
@@ -341,7 +351,7 @@ describe('system mode matchMedia', () => {
     setThemeMode('system')
 
     vi.mocked(emit).mockClear()
-    matchMediaCallback!({ matches: true })
+    darkSchemeChange({ matches: true })
 
     expect(emit).toHaveBeenCalledWith('theme-changed', {
       mode: 'system',
@@ -356,8 +366,62 @@ describe('system mode matchMedia', () => {
     setThemeMode('light')
 
     vi.mocked(emit).mockClear()
-    matchMediaCallback!({ matches: true })
+    darkSchemeChange({ matches: true })
 
     expect(emit).not.toHaveBeenCalled()
+  })
+})
+
+describe('appearance preferences', () => {
+  it('setters persist and stamp the root element', async () => {
+    await initPreferences()
+    initTheme()
+    const root = document.documentElement
+
+    setFontFamily('Cascadia Code')
+    expect(root.style.getPropertyValue('--sd-font-ui')).toContain(
+      "'Cascadia Code'",
+    )
+
+    setFontSize(18)
+    expect(root.style.getPropertyValue('--sd-font-size')).toBe('18px')
+    // Clamped to the valid range.
+    setFontSize(99)
+    expect(root.style.getPropertyValue('--sd-font-size')).toBe('20px')
+
+    setReducedMotion('on')
+    expect(root.getAttribute('data-reduced-motion')).toBe('true')
+    setReducedMotion('off')
+    expect(root.getAttribute('data-reduced-motion')).toBe('false')
+
+    setPointerCursors(true)
+    expect(root.getAttribute('data-cursor')).toBe('pointer')
+
+    // Everything lands in the paint hint for the next launch.
+    const hint = JSON.parse(
+      localStorage.getItem(PAINT_HINT_KEY) ?? 'null',
+    ) as PaintHintPayload
+    expect(hint.fontFamily).toBe('Cascadia Code')
+    expect(hint.fontSize).toBe(20)
+    expect(hint.reducedMotion).toBe('off')
+    expect(hint.pointerCursors).toBe(true)
+  })
+
+  it('an OS reduced-motion flip repaints only under the system preference', async () => {
+    await initPreferences()
+    initTheme()
+    const root = document.documentElement
+    const motionChange = matchMediaCallbacks['(prefers-reduced-motion: reduce)']
+    if (!motionChange) throw new Error('reduced-motion listener not registered')
+
+    reconcileTheme()
+    expect(root.getAttribute('data-reduced-motion')).toBe('false')
+    motionChange({ matches: true })
+    expect(root.getAttribute('data-reduced-motion')).toBe('true')
+
+    setReducedMotion('off')
+    motionChange({ matches: false })
+    // Explicit 'off' ignores the OS.
+    expect(root.getAttribute('data-reduced-motion')).toBe('false')
   })
 })

@@ -5,9 +5,13 @@
   import DownloadIcon from '@lucide/svelte/icons/download'
   import PaletteIcon from '@lucide/svelte/icons/palette'
   import { Button } from '$lib/components/ui/button'
+  import { Label } from '$lib/components/ui/label'
+  import { Switch } from '$lib/components/ui/switch'
   import ModePreviewCards from './ModePreviewCards.svelte'
   import ThemeAnchorFields from './ThemeAnchorFields.svelte'
   import BrowseThemesDialog from './BrowseThemesDialog.svelte'
+  import FontPicker from './FontPicker.svelte'
+  import PreferenceSelect from './PreferenceSelect.svelte'
   import {
     getResolvedMode,
     getProfile,
@@ -17,7 +21,17 @@
     deleteUserPreset,
     canResetProfile,
     resetProfileToPreset,
+    setFontFamily,
+    setFontSize,
+    setReducedMotion,
+    setPointerCursors,
   } from '$lib/stores/theme.svelte'
+  import { getPreferences } from '$lib/stores/preferences.svelte'
+  import {
+    FONT_SIZE_MAX,
+    FONT_SIZE_MIN,
+    isReducedMotion,
+  } from '$lib/stores/preferences-schema'
   import { BUILTIN_PRESETS } from '$lib/theme/presets'
   import { parseJsonc } from '$lib/theme/jsonc'
   import { convertVsCodeTheme } from '$lib/theme/vscode-import'
@@ -225,6 +239,84 @@
   </div>
 
   <ThemeAnchorFields profileSlot={editingSlot} {profile} />
+</section>
+
+<section class="space-y-3 border-t pt-4">
+  <h3 class="text-sm font-semibold">
+    {t('preferences.appearance.sectionFont')}
+  </h3>
+  <div class="flex flex-wrap items-end gap-6">
+    <div class="space-y-2">
+      <Label for="appearance-font-family">
+        {t('preferences.appearance.fontFamilyLabel')}
+      </Label>
+      <FontPicker
+        value={getPreferences().fontFamily}
+        onValueChange={setFontFamily}
+      />
+    </div>
+    <div class="min-w-48 flex-1 space-y-2">
+      <div class="flex items-center justify-between">
+        <Label for="appearance-font-size">
+          {t('preferences.appearance.fontSizeLabel')}
+        </Label>
+        <span class="text-muted-foreground text-xs tabular-nums">
+          {getPreferences().fontSize}px
+        </span>
+      </div>
+      <input
+        id="appearance-font-size"
+        type="range"
+        min={FONT_SIZE_MIN}
+        max={FONT_SIZE_MAX}
+        step="1"
+        class="accent-primary w-full"
+        value={getPreferences().fontSize}
+        oninput={(e) => setFontSize(Number(e.currentTarget.value))}
+      />
+    </div>
+  </div>
+  <p class="text-muted-foreground text-xs">
+    {t('preferences.appearance.fontSizeHint')}
+  </p>
+</section>
+
+<section class="space-y-3 border-t pt-4">
+  <h3 class="text-sm font-semibold">
+    {t('preferences.appearance.sectionPreferences')}
+  </h3>
+  <PreferenceSelect
+    id="appearance-reduced-motion"
+    label={t('preferences.appearance.reducedMotionLabel')}
+    description={t('preferences.appearance.reducedMotionDescription')}
+    value={getPreferences().reducedMotion}
+    options={[
+      {
+        value: 'system',
+        label: t('preferences.appearance.reducedMotionSystem'),
+      },
+      { value: 'on', label: t('preferences.appearance.reducedMotionOn') },
+      { value: 'off', label: t('preferences.appearance.reducedMotionOff') },
+    ]}
+    onValueChange={(v) => {
+      if (isReducedMotion(v)) setReducedMotion(v)
+    }}
+  />
+  <div class="flex items-center justify-between gap-4">
+    <div class="space-y-1">
+      <Label for="appearance-pointer-cursors">
+        {t('preferences.appearance.pointerCursorsLabel')}
+      </Label>
+      <p class="text-muted-foreground text-sm">
+        {t('preferences.appearance.pointerCursorsDescription')}
+      </p>
+    </div>
+    <Switch
+      id="appearance-pointer-cursors"
+      checked={getPreferences().pointerCursors}
+      onCheckedChange={setPointerCursors}
+    />
+  </div>
 </section>
 
 <BrowseThemesDialog

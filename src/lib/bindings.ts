@@ -148,6 +148,18 @@ async cleanupOldRecoveryFiles() : Promise<Result<number, string>> {
 }
 },
 /**
+ * Async so the first enumeration (~100ms of directory walking) never blocks
+ * the main thread; later calls return the cached list.
+ */
+async listSystemFonts() : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_system_fonts") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Reads a user-picked VS Code theme file for the import flow.
  * 
  * The template ships without `tauri-plugin-fs`, so this one narrow command
@@ -174,7 +186,25 @@ async readThemeFile(path: string) : Promise<Result<string, string>> {
 
 /** user-defined types **/
 
-export type AppPreferences = { theme: string; lightProfile: ThemeProfile; darkProfile: ThemeProfile; importedThemes: ImportedTheme[]; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null }
+export type AppPreferences = { theme: string; lightProfile: ThemeProfile; darkProfile: ThemeProfile; importedThemes: ImportedTheme[]; 
+/**
+ * UI font family; `None` means the platform's system font stack.
+ */
+fontFamily: string | null; 
+/**
+ * Root font size in px. Rem-based sizing scales with it, so this acts
+ * as an overall UI scale rather than a text-only size.
+ */
+fontSize: number; 
+/**
+ * `"system"`, `"on"`, or `"off"`.
+ */
+reducedMotion: string; 
+/**
+ * Web-style hand cursor over interactive elements instead of the
+ * platform-native arrow.
+ */
+pointerCursors: boolean; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null }
 /**
  * A VS Code theme the user imported, stored as the already-converted anchor
  * profile plus workbench overrides — never the raw VS Code JSON. Mirrors

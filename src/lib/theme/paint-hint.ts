@@ -10,9 +10,12 @@
 // written, with no engine work pre-mount. Pattern ported from the author's
 // sarde-studio project (src/lib/theme/paint-hint.js).
 
+import type { ReducedMotion } from '$lib/stores/preferences-schema'
+import { isReducedMotion } from '$lib/stores/preferences-schema'
 import type { ThemeTokens, ThemeVariantMode } from './engine'
-import { applyTokens } from './apply'
+import { applyAppearanceTokens, applyTokens } from './apply'
 import { applyDomState } from './dom-state'
+import { resolveReducedMotion } from './motion'
 
 /**
  * Legacy mode hint ('light' | 'dark' | 'system'), still written on every
@@ -22,13 +25,18 @@ import { applyDomState } from './dom-state'
 export const THEME_STORAGE_KEY = 'ui-theme'
 
 export const PAINT_HINT_KEY = 'theme-paint-hint'
-export const PAINT_HINT_VERSION = 2
+export const PAINT_HINT_VERSION = 3
 
 export interface PaintHintPayload {
   v: number
   mode: 'light' | 'dark' | 'system'
   presetId: Record<ThemeVariantMode, string>
   slots: Record<ThemeVariantMode, Partial<ThemeTokens>>
+  fontFamily: string | null
+  fontSize: number
+  /** Raw preference — 'system' re-resolves via matchMedia at paint time. */
+  reducedMotion: ReducedMotion
+  pointerCursors: boolean
 }
 
 export function writePaintHint(payload: PaintHintPayload): void {
@@ -51,6 +59,10 @@ export function resolvePaintHint(
   tokens: Partial<ThemeTokens>
   mode: ThemeVariantMode
   presetId: string
+  fontFamily: string | null
+  fontSize: number
+  reducedMotion: ReducedMotion
+  pointerCursors: boolean
 } | null {
   if (!hint || typeof hint !== 'object') return null
   const h = hint as Partial<PaintHintPayload>
@@ -60,10 +72,21 @@ export function resolvePaintHint(
   const tokens = h.slots?.[mode]
   if (!tokens || typeof tokens !== 'object') return null
   const presetId = h.presetId?.[mode]
+  // Appearance fields degrade to defaults individually rather than
+  // invalidating a hint whose colour half is still perfectly usable.
   return {
     tokens,
     mode,
     presetId: typeof presetId === 'string' && presetId ? presetId : 'default',
+    fontFamily: typeof h.fontFamily === 'string' ? h.fontFamily : null,
+    fontSize:
+      typeof h.fontSize === 'number' && h.fontSize >= 12 && h.fontSize <= 20
+        ? h.fontSize
+        : 16,
+    reducedMotion: isReducedMotion(h.reducedMotion)
+      ? h.reducedMotion
+      : 'system',
+    pointerCursors: h.pointerCursors === true,
   }
 }
 
@@ -86,7 +109,17 @@ export function paintFromHint(
   const resolved = resolvePaintHint(hint, prefersDark)
   if (resolved) {
     applyTokens(resolved.tokens, target)
-    applyDomState(resolved.presetId, resolved.mode, target)
+    applyAppearanceTokens(resolved.fontFamily, resolved.fontSize, target)
+    const prefersReduce = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+    applyDomState(
+      resolved.presetId,
+      resolved.mode,
+      resolveReducedMotion(resolved.reducedMotion, prefersReduce),
+      resolved.pointerCursors,
+      target,
+    )
     return
   }
   const stored = localStorage.getItem(THEME_STORAGE_KEY)

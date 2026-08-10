@@ -19,6 +19,10 @@ const payload = (
     light: { 'bg-base': '#ffffff' },
     dark: { 'bg-base': '#282a36' },
   },
+  fontFamily: null,
+  fontSize: 16,
+  reducedMotion: 'system',
+  pointerCursors: false,
   ...overrides,
 })
 
@@ -31,6 +35,8 @@ beforeEach(() => {
   document.documentElement.removeAttribute('style')
   document.documentElement.removeAttribute('data-color-mode')
   document.documentElement.removeAttribute('data-theme-preset')
+  document.documentElement.removeAttribute('data-reduced-motion')
+  document.documentElement.removeAttribute('data-cursor')
   prefersDark = false
   vi.spyOn(window, 'matchMedia').mockImplementation(
     () => ({ matches: prefersDark }) as MediaQueryList,
@@ -62,9 +68,42 @@ describe('resolvePaintHint', () => {
     expect(resolvePaintHint(null, false)).toBeNull()
     expect(resolvePaintHint('junk', false)).toBeNull()
     expect(resolvePaintHint({ v: 999 }, false)).toBeNull()
+    // A pre-appearance v2 hint is stale under the current version.
+    expect(resolvePaintHint(payload({ v: 2 }), false)).toBeNull()
     expect(
       resolvePaintHint(payload({ slots: undefined as never }), false),
     ).toBeNull()
+  })
+
+  it('passes appearance fields through, degrading bad ones individually', () => {
+    const resolved = resolvePaintHint(
+      payload({
+        fontFamily: 'Cascadia Code',
+        fontSize: 18,
+        reducedMotion: 'on',
+        pointerCursors: true,
+      }),
+      false,
+    )
+    expect(resolved?.fontFamily).toBe('Cascadia Code')
+    expect(resolved?.fontSize).toBe(18)
+    expect(resolved?.reducedMotion).toBe('on')
+    expect(resolved?.pointerCursors).toBe(true)
+
+    const degraded = resolvePaintHint(
+      payload({
+        fontFamily: 42 as never,
+        fontSize: 99,
+        reducedMotion: 'sometimes' as never,
+        pointerCursors: 'yes' as never,
+      }),
+      false,
+    )
+    expect(degraded?.tokens['bg-base']).toBe('#282a36')
+    expect(degraded?.fontFamily).toBeNull()
+    expect(degraded?.fontSize).toBe(16)
+    expect(degraded?.reducedMotion).toBe('system')
+    expect(degraded?.pointerCursors).toBe(false)
   })
 })
 
@@ -76,6 +115,19 @@ describe('paintFromHint', () => {
     expect(root.style.getPropertyValue('--sd-bg-base')).toBe('#282a36')
     expect(root.classList.contains('dark')).toBe(true)
     expect(root.getAttribute('data-theme-preset')).toBe('dracula-theme')
+  })
+
+  it('paints appearance state from a stored payload', () => {
+    writePaintHint(
+      payload({ fontFamily: 'Georgia', fontSize: 14, pointerCursors: true }),
+    )
+    paintFromHint()
+    const root = document.documentElement
+    expect(root.style.getPropertyValue('--sd-font-ui')).toContain('Georgia')
+    expect(root.style.getPropertyValue('--sd-font-size')).toBe('14px')
+    expect(root.getAttribute('data-cursor')).toBe('pointer')
+    // reducedMotion 'system' with the mocked matchMedia (matches: false).
+    expect(root.getAttribute('data-reduced-motion')).toBe('false')
   })
 
   it('paints the light slot in light mode', () => {

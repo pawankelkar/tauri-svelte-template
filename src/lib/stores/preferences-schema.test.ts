@@ -47,6 +47,10 @@ describe('sanitizePreferences', () => {
       lightProfile: { ...validProfile, presetId: 'default-light' },
       darkProfile: validProfile,
       importedThemes: [validImportedTheme],
+      fontFamily: 'Georgia',
+      fontSize: 14,
+      reducedMotion: 'off',
+      pointerCursors: true,
       language: 'en',
       globalShortcut: 'CommandOrControl+Shift+F',
       quickPaneShortcut: 'CommandOrControl+Shift+.',
@@ -98,6 +102,41 @@ describe('sanitizePreferences', () => {
     })
     expect(result.importedThemes).toEqual([validImportedTheme])
     expect(result.darkProfile.presetId).toBe('dracula-theme')
+  })
+
+  it('accepts valid appearance fields and rejects invalid ones', () => {
+    const valid = sanitizePreferences({
+      theme: 'dark',
+      fontFamily: 'Georgia',
+      fontSize: 18,
+      reducedMotion: 'on',
+      pointerCursors: true,
+    })
+    expect(valid.fontFamily).toBe('Georgia')
+    expect(valid.fontSize).toBe(18)
+    expect(valid.reducedMotion).toBe('on')
+    expect(valid.pointerCursors).toBe(true)
+
+    const invalid = sanitizePreferences({
+      theme: 'dark',
+      fontFamily: 42,
+      fontSize: 99,
+      reducedMotion: 'sometimes',
+      pointerCursors: 'yes',
+    })
+    expect(invalid.fontFamily).toBeNull()
+    expect(invalid.fontSize).toBe(16)
+    expect(invalid.reducedMotion).toBe('system')
+    expect(invalid.pointerCursors).toBe(false)
+  })
+
+  it('fills missing appearance fields from defaults', () => {
+    // A pre-appearance-prefs preferences.json must load cleanly.
+    const result = sanitizePreferences({ theme: 'dark' })
+    expect(result.fontFamily).toBeNull()
+    expect(result.fontSize).toBe(16)
+    expect(result.reducedMotion).toBe('system')
+    expect(result.pointerCursors).toBe(false)
   })
 
   it('returns defaults for null', () => {

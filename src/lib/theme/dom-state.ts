@@ -13,13 +13,21 @@ import type { ThemeVariantMode } from './engine'
  * the `.dark` class is what the Tailwind `dark:` variant and the app.css
  * fallback palette key off. `mode` is the *painted* variant's mode — a
  * dark-only preset keeps `.dark` on even while the user's toggle says light.
+ *
+ * `reducedMotion` is the *resolved* boolean (a 'system' preference is
+ * resolved by the caller via resolveReducedMotion) so the CSS consumer is a
+ * plain `[data-reduced-motion='true']` selector.
  */
 export function applyDomState(
   presetId: string,
   mode: ThemeVariantMode,
+  reducedMotion: boolean,
+  pointerCursors: boolean,
   target: HTMLElement = document.documentElement,
 ): void {
   target.classList.toggle('dark', mode === 'dark')
   target.setAttribute('data-color-mode', mode)
   target.setAttribute('data-theme-preset', presetId)
+  target.setAttribute('data-reduced-motion', String(reducedMotion))
+  target.setAttribute('data-cursor', pointerCursors ? 'pointer' : 'default')
 }

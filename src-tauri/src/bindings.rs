@@ -3,7 +3,7 @@ use tauri_specta::{collect_commands, Builder};
 pub fn generate_bindings() -> Builder<tauri::Wry> {
     use crate::commands::{
         app_state, demo, global_shortcut, lifecycle, preferences, quick_pane, recovery,
-        theme_import,
+        system_fonts, theme_import,
     };
 
     Builder::<tauri::Wry>::new().commands(collect_commands![
@@ -22,6 +22,7 @@ pub fn generate_bindings() -> Builder<tauri::Wry> {
         quick_pane::toggle_quick_pane,
         recovery::save_emergency_data,
         recovery::cleanup_old_recovery_files,
+        system_fonts::list_system_fonts,
         theme_import::read_theme_file,
     ])
 }

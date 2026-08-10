@@ -84,6 +84,16 @@ pub struct AppPreferences {
     pub light_profile: ThemeProfile,
     pub dark_profile: ThemeProfile,
     pub imported_themes: Vec<ImportedTheme>,
+    /// UI font family; `None` means the platform's system font stack.
+    pub font_family: Option<String>,
+    /// Root font size in px. Rem-based sizing scales with it, so this acts
+    /// as an overall UI scale rather than a text-only size.
+    pub font_size: f64,
+    /// `"system"`, `"on"`, or `"off"`.
+    pub reduced_motion: String,
+    /// Web-style hand cursor over interactive elements instead of the
+    /// platform-native arrow.
+    pub pointer_cursors: bool,
     pub language: Option<String>,
     pub global_shortcut: Option<String>,
     pub quick_pane_shortcut: Option<String>,
@@ -96,6 +106,10 @@ impl Default for AppPreferences {
             light_profile: ThemeProfile::default_light(),
             dark_profile: ThemeProfile::default_dark(),
             imported_themes: Vec::new(),
+            font_family: None,
+            font_size: 16.0,
+            reduced_motion: "system".to_string(),
+            pointer_cursors: false,
             language: None,
             global_shortcut: None,
             // The Quick Pane ships bound so the feature is discoverable on a
@@ -203,6 +217,21 @@ fn validate_profile(profile: &ThemeProfile, label: &str) -> Result<(), String> {
     Ok(())
 }
 
+pub fn validate_font_size(size: f64) -> Result<(), String> {
+    if (12.0..=20.0).contains(&size) {
+        Ok(())
+    } else {
+        Err("fontSize must be between 12 and 20".to_string())
+    }
+}
+
+pub fn validate_reduced_motion(value: &str) -> Result<(), String> {
+    match value {
+        "system" | "on" | "off" => Ok(()),
+        _ => Err("Invalid reducedMotion: must be 'system', 'on', or 'off'".to_string()),
+    }
+}
+
 pub fn validate_preferences(preferences: &AppPreferences) -> Result<(), String> {
     validate_theme(&preferences.theme)?;
     validate_profile(&preferences.light_profile, "lightProfile")?;
@@ -210,6 +239,8 @@ pub fn validate_preferences(preferences: &AppPreferences) -> Result<(), String> 
     for theme in &preferences.imported_themes {
         validate_imported_theme(theme)?;
     }
+    validate_font_size(preferences.font_size)?;
+    validate_reduced_motion(&preferences.reduced_motion)?;
     Ok(())
 }
 
@@ -306,6 +337,31 @@ mod tests {
 
         let prefs = AppPreferences {
             theme: "blue".to_string(),
+            ..AppPreferences::default()
+        };
+        assert!(validate_preferences(&prefs).is_err());
+    }
+
+    #[test]
+    fn missing_appearance_fields_take_defaults() {
+        // A pre-appearance-prefs preferences.json must load cleanly.
+        let prefs: AppPreferences = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
+        assert_eq!(prefs.font_family, None);
+        assert_eq!(prefs.font_size, 16.0);
+        assert_eq!(prefs.reduced_motion, "system");
+        assert!(!prefs.pointer_cursors);
+    }
+
+    #[test]
+    fn validate_preferences_rejects_bad_appearance_values() {
+        let prefs = AppPreferences {
+            font_size: 32.0,
+            ..AppPreferences::default()
+        };
+        assert!(validate_preferences(&prefs).is_err());
+
+        let prefs = AppPreferences {
+            reduced_motion: "sometimes".to_string(),
             ..AppPreferences::default()
         };
         assert!(validate_preferences(&prefs).is_err());
