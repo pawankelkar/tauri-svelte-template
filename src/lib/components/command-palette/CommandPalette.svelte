@@ -11,7 +11,7 @@
   import { formatShortcut } from '$lib/platform-strings'
   import { getPlatform } from '$lib/hooks/use-platform.svelte'
   import { showTextInputContextMenu } from '$lib/context-menu'
-  import i18n from '$lib/i18n/config'
+  import { t } from '$lib/i18n/t.svelte'
 
   type GroupedCommands = Map<string, typeof commands>
 
@@ -32,7 +32,7 @@
   })
 
   function getLabel(cmd: (typeof commands)[number]): string {
-    return cmd.label ? cmd.label() : i18n.t(cmd.labelKey)
+    return cmd.label ? cmd.label() : t(cmd.labelKey)
   }
 
   function getShortcutDisplay(shortcut: string): string {
@@ -54,16 +54,16 @@
 <Command.Dialog
   open={isPaletteOpen()}
   onOpenChange={(v) => setPaletteOpen(v)}
-  title={i18n.t('commandPalette.placeholder')}
+  title={t('commandPalette.placeholder')}
 >
   <Command.Input
-    placeholder={i18n.t('commandPalette.placeholder')}
+    placeholder={t('commandPalette.placeholder')}
     oncontextmenu={handleInputContextMenu}
   />
   <Command.List>
-    <Command.Empty>{i18n.t('commandPalette.empty')}</Command.Empty>
+    <Command.Empty>{t('commandPalette.empty')}</Command.Empty>
     {#each grouped as [category, cmds] (category)}
-      <Command.Group heading={i18n.t(category)}>
+      <Command.Group heading={t(category)}>
         {#each cmds as cmd (cmd.id)}
           <Command.Item
             value={getLabel(cmd)}

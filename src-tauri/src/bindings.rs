@@ -12,7 +12,6 @@ pub fn generate_bindings() -> Builder<tauri::Wry> {
         global_shortcut::register_global_shortcut,
         global_shortcut::unregister_global_shortcut,
         global_shortcut::is_global_shortcut_registered,
-        lifecycle::confirm_close,
         lifecycle::quit_app,
         preferences::load_preferences,
         preferences::save_preferences,

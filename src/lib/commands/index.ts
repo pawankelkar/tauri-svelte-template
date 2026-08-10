@@ -76,11 +76,20 @@ export function initCommands(): () => void {
   window.addEventListener('keydown', handleKeydown)
 
   let cleanupMenu: (() => void) | undefined
+  let destroyed = false
   void initMenu().then((fn) => {
+    // HMR can run the cleanup below while the async menu build is still in
+    // flight; run the late-arriving teardown immediately instead of leaking
+    // the languageChanged listener it would otherwise leave behind.
+    if (destroyed) {
+      fn()
+      return
+    }
     cleanupMenu = fn
   })
 
   return () => {
+    destroyed = true
     window.removeEventListener('keydown', handleKeydown)
     cleanupMenu?.()
     unregisterAllCommands()

@@ -74,12 +74,14 @@ The app uses a two-phase close to ensure stores are flushed before exit:
    only on macOS)
 3. **Frontend** (`App.svelte`) listens, calls `flushAllStores()`
 4. On macOS (`hide: true`): hides the window (app stays running in the dock)
-5. On Windows/Linux (`hide: false`): calls `commands.confirmClose()` then
-   `appWindow.close()`
+5. On Windows/Linux (`hide: false`): calls `commands.quitApp()`, which exits
+   the whole process rather than closing just the window — the hidden Quick
+   Pane window would otherwise keep the process alive
 
-The `confirmClose` command sets a `force_close` atomic flag so the next
-`CloseRequested` event passes through without prevention.
+`quitApp` sets the `force_close` atomic flag before `app.exit(0)` so the
+window closes triggered by teardown pass through the `CloseRequested` handler
+without being re-intercepted.
 
-The quit path (`requestQuit()` in `lifecycle.ts`) is separate: it flushes
-stores then calls `commands.quitApp()`, which exits the process. This is
-needed because on macOS closing the window only hides it.
+The quit path (`requestQuit()` in `lifecycle.ts`) works the same way: it
+flushes stores then calls `commands.quitApp()`. This is also the only way to
+actually exit on macOS, where closing the window only hides it.

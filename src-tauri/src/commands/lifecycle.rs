@@ -25,12 +25,6 @@ impl CloseRequest {
     }
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn confirm_close(state: State<AppState>) {
-    state.force_close.store(true, Ordering::SeqCst);
-}
-
 /// Quits for real, whatever the platform's close convention is.
 ///
 /// On macOS the main window's close button only hides, so the Quit menu item

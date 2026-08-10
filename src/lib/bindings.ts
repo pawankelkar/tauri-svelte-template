@@ -63,9 +63,6 @@ async isGlobalShortcutRegistered(accelerator: string) : Promise<Result<boolean, 
     else return { status: "error", error: e  as any };
 }
 },
-async confirmClose() : Promise<void> {
-    await TAURI_INVOKE("confirm_close");
-},
 /**
  * Quits for real, whatever the platform's close convention is.
  * 
