@@ -48,7 +48,7 @@ Delete it when you start your own app:
 - `src/lib/commands/clipboard-commands.ts` — clipboard demo
 - `src/lib/commands/dialog-commands.ts` — file dialog demo
 - `src/lib/commands/shell-commands.ts` — shell command demo
-- `src/lib/commands/process-commands.ts` — relaunch demo
+- `src/lib/commands/process-commands.ts` — relaunch demo (`demoRelaunchApp`)
 - `src-tauri/src/commands/demo.rs` — `greet` command
 - Remove their registrations from `src/lib/commands/index.ts`
 - Remove demo locale keys (prefixed `demo.` and `welcome.`) from
