@@ -21,8 +21,8 @@ describe('isThemeMode', () => {
 })
 
 const validImportedTheme = {
-  id: 'dracula-theme',
-  name: 'Dracula Theme',
+  id: 'my-dracula',
+  name: 'My Dracula',
   mode: 'dark',
   accent: '#ff79c6',
   background: '#282a36',
@@ -83,6 +83,21 @@ describe('sanitizePreferences', () => {
       ],
     })
     expect(result.importedThemes).toEqual([validImportedTheme])
+  })
+
+  it('drops an imported theme whose id collides with a built-in preset', () => {
+    // Installed from the catalog before that theme was promoted to built-in:
+    // the built-in replaces it, and the profile's presetId keeps resolving.
+    const result = sanitizePreferences({
+      theme: 'dark',
+      darkProfile: validProfile,
+      importedThemes: [
+        { ...validImportedTheme, id: 'dracula-theme', name: 'Dracula Theme' },
+        validImportedTheme,
+      ],
+    })
+    expect(result.importedThemes).toEqual([validImportedTheme])
+    expect(result.darkProfile.presetId).toBe('dracula-theme')
   })
 
   it('returns defaults for null', () => {

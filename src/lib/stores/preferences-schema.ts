@@ -5,6 +5,7 @@ import type {
 } from '$lib/tauri-bindings'
 import { validateThemePreset, validateThemeProfile } from '$lib/theme/schema'
 import {
+  BUILTIN_PRESETS,
   DEFAULT_LIGHT,
   DEFAULT_DARK,
   profileFromPreset,
@@ -52,11 +53,19 @@ function sanitizeProfile(raw: unknown, fallback: ThemeProfile): ThemeProfile {
  * Keeps only structurally valid imported themes. A hand-edited entry that
  * fails the preset schema is dropped rather than repaired — the theme system
  * falls back to Default if the active preset disappears with it.
+ *
+ * An entry whose id collides with a built-in preset is dropped too: the
+ * built-in fully replaces a copy installed before that theme was promoted
+ * to built-in, and getPresetById's built-in-first precedence keeps profiles
+ * pointing at that presetId resolving without a duplicate grid tile.
  */
 function sanitizeImportedThemes(raw: unknown): ImportedTheme[] {
   if (!Array.isArray(raw)) return []
+  const builtinIds = new Set(BUILTIN_PRESETS.map((p) => p.id))
   return raw.filter(
-    (entry): entry is ImportedTheme => validateThemePreset(entry).length === 0,
+    (entry): entry is ImportedTheme =>
+      validateThemePreset(entry).length === 0 &&
+      !builtinIds.has((entry as ImportedTheme).id),
   )
 }
 

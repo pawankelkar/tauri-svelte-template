@@ -9,6 +9,7 @@ import {
   type ThemeTokens,
   type ThemeVariantMode,
 } from './engine'
+import { CURATED_DARK_PRESETS, CURATED_LIGHT_PRESETS } from './builtin-presets'
 import type { ThemePreset, ThemeProfile } from './schema'
 
 // The stock template palette, expressed as anchors + pinned overrides so the
@@ -55,7 +56,12 @@ export const DEFAULT_DARK: ThemePreset = {
   },
 }
 
-export const BUILTIN_PRESETS: ThemePreset[] = [DEFAULT_LIGHT, DEFAULT_DARK]
+export const BUILTIN_PRESETS: ThemePreset[] = [
+  DEFAULT_LIGHT,
+  DEFAULT_DARK,
+  ...CURATED_LIGHT_PRESETS,
+  ...CURATED_DARK_PRESETS,
+]
 
 /** Built-ins first so a user preset can never shadow a built-in id. */
 export function getPresetById(

@@ -123,6 +123,26 @@
   }
 </script>
 
+<div class="flex flex-wrap gap-2 border-b pb-4">
+  <Button
+    variant="ghost"
+    size="sm"
+    disabled={!canResetProfile(editingSlot)}
+    onclick={() => resetProfileToPreset(editingSlot)}
+  >
+    <RotateCcwIcon />
+    {t('preferences.appearance.resetToPreset')}
+  </Button>
+  <Button variant="ghost" size="sm" onclick={importTheme}>
+    <DownloadIcon />
+    {t('preferences.appearance.importThemeButton')}
+  </Button>
+  <Button variant="ghost" size="sm" onclick={() => (browseOpen = true)}>
+    <PaletteIcon />
+    {t('preferences.appearance.browseThemesButton')}
+  </Button>
+</div>
+
 <section class="space-y-2">
   <h3 class="text-sm font-semibold">
     {t('preferences.appearance.sectionMode')}
@@ -206,26 +226,6 @@
 
   <ThemeAnchorFields profileSlot={editingSlot} {profile} />
 </section>
-
-<div class="flex flex-wrap gap-2 border-t pt-4">
-  <Button
-    variant="ghost"
-    size="sm"
-    disabled={!canResetProfile(editingSlot)}
-    onclick={() => resetProfileToPreset(editingSlot)}
-  >
-    <RotateCcwIcon />
-    {t('preferences.appearance.resetToPreset')}
-  </Button>
-  <Button variant="ghost" size="sm" onclick={importTheme}>
-    <DownloadIcon />
-    {t('preferences.appearance.importThemeButton')}
-  </Button>
-  <Button variant="ghost" size="sm" onclick={() => (browseOpen = true)}>
-    <PaletteIcon />
-    {t('preferences.appearance.browseThemesButton')}
-  </Button>
-</div>
 
 <BrowseThemesDialog
   open={browseOpen}

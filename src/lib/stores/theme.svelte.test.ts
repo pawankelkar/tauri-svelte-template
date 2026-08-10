@@ -72,8 +72,8 @@ afterEach(() => {
 })
 
 const dracula = (): ThemePreset => ({
-  id: 'dracula-theme',
-  name: 'Dracula Theme',
+  id: 'my-dracula',
+  name: 'My Dracula',
   mode: 'dark',
   accent: '#ff79c6',
   background: '#282a36',
@@ -213,9 +213,9 @@ describe('presets and profiles', () => {
     setThemeMode('dark')
 
     registerUserPreset(dracula())
-    setPreset('dark', 'dracula-theme')
+    setPreset('dark', 'my-dracula')
 
-    expect(getProfile('dark').presetId).toBe('dracula-theme')
+    expect(getProfile('dark').presetId).toBe('my-dracula')
     expect(getProfile('dark').customized).toBe(false)
     expect(
       document.documentElement.style.getPropertyValue('--sd-bg-base'),
@@ -237,7 +237,7 @@ describe('presets and profiles', () => {
     initTheme()
     setThemeMode('dark')
     registerUserPreset(dracula())
-    setPreset('dark', 'dracula-theme')
+    setPreset('dark', 'my-dracula')
     expect(
       document.documentElement.style.getPropertyValue('--sd-bg-surface'),
     ).toBe('#21222c')
@@ -274,7 +274,7 @@ describe('user presets', () => {
 
     const first = registerUserPreset(dracula())
     expect(first.already).toBe(false)
-    expect(first.preset.id).toBe('dracula-theme')
+    expect(first.preset.id).toBe('my-dracula')
 
     const again = registerUserPreset(dracula())
     expect(again.already).toBe(true)
@@ -284,8 +284,8 @@ describe('user presets', () => {
       ...dracula(),
       accent: '#00b0ff',
     })
-    expect(recolored.preset.id).toBe('dracula-theme-2')
-    expect(recolored.preset.name).toBe('Dracula Theme (2)')
+    expect(recolored.preset.id).toBe('my-dracula-2')
+    expect(recolored.preset.name).toBe('My Dracula (2)')
   })
 
   it('a colliding built-in id gets suffixed', async () => {
@@ -301,9 +301,9 @@ describe('user presets', () => {
     initTheme()
     setThemeMode('dark')
     registerUserPreset(dracula())
-    setPreset('dark', 'dracula-theme')
+    setPreset('dark', 'my-dracula')
 
-    deleteUserPreset('dracula-theme')
+    deleteUserPreset('my-dracula')
 
     expect(getUserPresets()).toHaveLength(0)
     // Colors survive via the profile's own anchors...

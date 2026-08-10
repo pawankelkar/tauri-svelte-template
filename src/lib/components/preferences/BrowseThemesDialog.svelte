@@ -8,6 +8,7 @@
     loadCatalogTheme,
   } from '$lib/theme/vscode-catalog'
   import { registerUserPreset } from '$lib/stores/theme.svelte'
+  import { BUILTIN_PRESETS } from '$lib/theme/presets'
   import { toast } from '$lib/stores/toast'
   import { t } from '$lib/i18n/t.svelte'
 
@@ -33,6 +34,9 @@
     { value: 'light', labelKey: 'preferences.appearance.themeLight' },
     { value: 'dark', labelKey: 'preferences.appearance.themeDark' },
   ] as const
+
+  /** Catalog entries that now ship as built-in presets need no install. */
+  const builtinCatalogIds = new Set(BUILTIN_PRESETS.map((p) => p.id))
 
   let visible = $derived.by(() => {
     const q = query.trim().toLowerCase()
@@ -143,14 +147,22 @@
               ? t('preferences.appearance.themeLight')
               : t('preferences.appearance.themeDark')}
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={installing === entry.id}
-            onclick={() => install(entry.id)}
-          >
-            {t('preferences.appearance.installButton')}
-          </Button>
+          {#if builtinCatalogIds.has(entry.id)}
+            <span class="text-muted-foreground shrink-0 text-[10px]">
+              {t('preferences.appearance.installAlready', {
+                name: entry.displayName,
+              })}
+            </span>
+          {:else}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={installing === entry.id}
+              onclick={() => install(entry.id)}
+            >
+              {t('preferences.appearance.installButton')}
+            </Button>
+          {/if}
         </div>
       {:else}
         <p class="text-muted-foreground p-4 text-sm">

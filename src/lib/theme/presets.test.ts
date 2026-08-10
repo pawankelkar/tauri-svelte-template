@@ -10,6 +10,8 @@ import {
   presetContentEquals,
 } from './presets'
 import { validateThemePreset, type ThemePreset } from './schema'
+import { CURATED_LIGHT_PRESETS, CURATED_DARK_PRESETS } from './builtin-presets'
+import { loadCatalogTheme } from './vscode-catalog'
 
 const userPreset = (patch: Partial<ThemePreset> = {}): ThemePreset => ({
   id: 'my-import',
@@ -24,13 +26,28 @@ const userPreset = (patch: Partial<ThemePreset> = {}): ThemePreset => ({
 })
 
 describe('built-in presets', () => {
-  it('ships the Default pair, valid and one per mode', () => {
-    expect(BUILTIN_PRESETS).toEqual([DEFAULT_LIGHT, DEFAULT_DARK])
+  it('ships the Default pair plus the curated set, all valid', () => {
+    expect(BUILTIN_PRESETS[0]).toBe(DEFAULT_LIGHT)
+    expect(BUILTIN_PRESETS[1]).toBe(DEFAULT_DARK)
+    expect(CURATED_LIGHT_PRESETS).toHaveLength(5)
+    expect(CURATED_DARK_PRESETS).toHaveLength(6)
+    expect(BUILTIN_PRESETS).toHaveLength(13)
+    expect(BUILTIN_PRESETS.filter((p) => p.mode === 'light')).toHaveLength(6)
+    expect(BUILTIN_PRESETS.filter((p) => p.mode === 'dark')).toHaveLength(7)
     for (const preset of BUILTIN_PRESETS) {
       expect(validateThemePreset(preset), preset.id).toEqual([])
     }
+    expect(new Set(BUILTIN_PRESETS.map((p) => p.id)).size).toBe(13)
     expect(DEFAULT_LIGHT.mode).toBe('light')
     expect(DEFAULT_DARK.mode).toBe('dark')
+  })
+
+  it('curated built-ins match a fresh catalog conversion (no drift)', async () => {
+    for (const preset of [...CURATED_LIGHT_PRESETS, ...CURATED_DARK_PRESETS]) {
+      const fresh = await loadCatalogTheme(preset.id)
+      expect(fresh.error, preset.id).toBeUndefined()
+      expect(fresh.preset, preset.id).toEqual(preset)
+    }
   })
 
   it('the Default light preset reproduces the stock palette', () => {
