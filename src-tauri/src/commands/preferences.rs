@@ -2,7 +2,7 @@ use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
 
 use crate::commands::json_store::{data_file_path, load_json, save_json};
-use crate::types::{validate_theme, AppPreferences};
+use crate::types::{validate_preferences, AppPreferences};
 
 const PREFERENCES_FILE: &str = "preferences.json";
 
@@ -16,7 +16,7 @@ pub async fn load_preferences(app: AppHandle) -> Result<AppPreferences, String> 
 #[tauri::command]
 #[specta::specta]
 pub async fn save_preferences(app: AppHandle, preferences: AppPreferences) -> Result<(), String> {
-    validate_theme(&preferences.theme)?;
+    validate_preferences(&preferences)?;
     let path = data_file_path(&app, PREFERENCES_FILE)?;
     save_json(&path, &preferences)
 }
@@ -74,6 +74,7 @@ mod tests {
             language: Some("en".to_string()),
             global_shortcut: None,
             quick_pane_shortcut: Some("CommandOrControl+Shift+.".to_string()),
+            ..AppPreferences::default()
         };
 
         save(&path, &value).unwrap();
@@ -90,6 +91,7 @@ mod tests {
             language: None,
             global_shortcut: Some("CmdOrCtrl+K".to_string()),
             quick_pane_shortcut: None,
+            ..AppPreferences::default()
         };
 
         save(&path, &value).unwrap();

@@ -5,6 +5,8 @@
     "**/target/**",
     "src/lib/components/ui/**",
     "src/lib/bindings.ts",
+    "src/lib/theme/vscode-themes/**",
+    "src/lib/theme/vscode-catalog-index.ts",
     "**/*.test.ts"
   ],
   "minLines": 10,

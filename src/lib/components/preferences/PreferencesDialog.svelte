@@ -42,7 +42,7 @@
   onOpenChange={setPreferencesDialogOpen}
 >
   <Dialog.Content
-    class="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]"
+    class="overflow-hidden p-0 md:max-h-[85vh] md:max-w-[840px] lg:max-w-[1000px]"
   >
     <!-- The visible heading is the breadcrumb, so the dialog's own title and
          description exist for screen readers only. -->
@@ -77,7 +77,7 @@
         </Sidebar.Content>
       </Sidebar.Root>
 
-      <main class="flex h-[480px] flex-1 flex-col overflow-hidden">
+      <main class="flex h-[min(46rem,85vh)] flex-1 flex-col overflow-hidden">
         <header class="flex h-16 shrink-0 items-center gap-2 px-4">
           <Breadcrumb.Root>
             <Breadcrumb.List>

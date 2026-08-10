@@ -1,4 +1,14 @@
-import type { AppPreferences } from '$lib/tauri-bindings'
+import type {
+  AppPreferences,
+  ImportedTheme,
+  ThemeProfile,
+} from '$lib/tauri-bindings'
+import { validateThemePreset, validateThemeProfile } from '$lib/theme/schema'
+import {
+  DEFAULT_LIGHT,
+  DEFAULT_DARK,
+  profileFromPreset,
+} from '$lib/theme/presets'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -23,10 +33,31 @@ export const DEFAULT_QUICK_PANE_SHORTCUT = 'CmdOrCtrl+Shift+.'
 export function defaultPreferences(): AppPreferences {
   return {
     theme: 'system',
+    lightProfile: profileFromPreset(DEFAULT_LIGHT),
+    darkProfile: profileFromPreset(DEFAULT_DARK),
+    importedThemes: [],
     language: null,
     globalShortcut: null,
     quickPaneShortcut: DEFAULT_QUICK_PANE_SHORTCUT,
   }
+}
+
+function sanitizeProfile(raw: unknown, fallback: ThemeProfile): ThemeProfile {
+  return validateThemeProfile(raw).length === 0
+    ? (raw as ThemeProfile)
+    : fallback
+}
+
+/**
+ * Keeps only structurally valid imported themes. A hand-edited entry that
+ * fails the preset schema is dropped rather than repaired — the theme system
+ * falls back to Default if the active preset disappears with it.
+ */
+function sanitizeImportedThemes(raw: unknown): ImportedTheme[] {
+  if (!Array.isArray(raw)) return []
+  return raw.filter(
+    (entry): entry is ImportedTheme => validateThemePreset(entry).length === 0,
+  )
 }
 
 export function sanitizePreferences(raw: unknown): AppPreferences {
@@ -37,6 +68,9 @@ export function sanitizePreferences(raw: unknown): AppPreferences {
   const r = raw as Partial<AppPreferences>
   return {
     theme: isThemeMode(r.theme) ? r.theme : defaults.theme,
+    lightProfile: sanitizeProfile(r.lightProfile, defaults.lightProfile),
+    darkProfile: sanitizeProfile(r.darkProfile, defaults.darkProfile),
+    importedThemes: sanitizeImportedThemes(r.importedThemes),
     language: typeof r.language === 'string' ? r.language : null,
     globalShortcut:
       typeof r.globalShortcut === 'string' ? r.globalShortcut : null,

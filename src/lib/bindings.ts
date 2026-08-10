@@ -146,6 +146,21 @@ async cleanupOldRecoveryFiles() : Promise<Result<number, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Reads a user-picked VS Code theme file for the import flow.
+ * 
+ * The template ships without `tauri-plugin-fs`, so this one narrow command
+ * stands in for it: extension-pinned to theme JSON, size-capped, contents
+ * returned as text for the frontend's JSONC parser to make sense of.
+ */
+async readThemeFile(path: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_theme_file", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -159,7 +174,17 @@ async cleanupOldRecoveryFiles() : Promise<Result<number, string>> {
 
 /** user-defined types **/
 
-export type AppPreferences = { theme: string; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null }
+export type AppPreferences = { theme: string; lightProfile: ThemeProfile; darkProfile: ThemeProfile; importedThemes: ImportedTheme[]; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null }
+/**
+ * A VS Code theme the user imported, stored as the already-converted anchor
+ * profile plus workbench overrides — never the raw VS Code JSON. Mirrors
+ * `ThemePreset` in `src/lib/theme/schema.ts`.
+ */
+export type ImportedTheme = { id: string; name: string; 
+/**
+ * `"light"` or `"dark"` — the mode the theme was authored for.
+ */
+mode: string; accent: string; background: string; foreground: string; contrast: number; overrides: Partial<{ [key in string]: string }> | null }
 export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
 export type PersistedAppState = { leftSidebarVisible: boolean; rightSidebarVisible: boolean; squareCorners: boolean; lastQuickPaneEntry: string | null; recentItems: string[]; onboardingCompleted: boolean }
 /**
@@ -179,6 +204,12 @@ export type ShortcutPurpose =
  * Show or dismiss the Quick Pane.
  */
 "quickPane"
+/**
+ * One mode slot's stored theme state. Mirrors `ThemeProfile` in
+ * `src/lib/theme/schema.ts`; the default anchors mirror
+ * `DEFAULT_LIGHT`/`DEFAULT_DARK` in `src/lib/theme/presets.ts`.
+ */
+export type ThemeProfile = { presetId: string; customized: boolean; accent: string; background: string; foreground: string; contrast: number }
 
 /** tauri-specta globals **/
 

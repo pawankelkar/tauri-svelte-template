@@ -6,6 +6,7 @@ pub mod lifecycle;
 pub mod preferences;
 pub mod quick_pane;
 pub mod recovery;
+pub mod theme_import;
 
 #[cfg(test)]
 pub mod test_support;

@@ -4,7 +4,7 @@ import { __resetConfirmForTests } from '$lib/stores/confirm.svelte'
 import { __resetPreferencesDialogStateForTests } from '$lib/commands/preferences-dialog-state.svelte'
 import { __resetPaletteStateForTests } from '$lib/commands/palette-state.svelte'
 import { __resetPlatformCache } from '$lib/hooks/use-platform.svelte'
-import { THEME_STORAGE_KEY } from '$lib/theme/paint-hint'
+import { THEME_STORAGE_KEY, PAINT_HINT_KEY } from '$lib/theme/paint-hint'
 
 export function resetAllStores(): void {
   __resetPreferencesForTests()
@@ -14,4 +14,5 @@ export function resetAllStores(): void {
   __resetPaletteStateForTests()
   __resetPlatformCache()
   localStorage.removeItem(THEME_STORAGE_KEY)
+  localStorage.removeItem(PAINT_HINT_KEY)
 }

@@ -39,7 +39,7 @@ A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScrip
 
 ### Infrastructure
 
-- Theme system: light, dark, and system modes with flash-free startup (no white flicker in dark mode)
+- Theme system: light, dark, and system modes with flash-free startup (no white flicker in dark mode), plus full VS Code theme support — bundled presets and an importer that turns any VS Code theme JSON into an app-wide theme via an OKLCH derivation engine
 - Typed IPC via tauri-specta: every Rust command has generated TypeScript bindings
 - JSON persistence with atomic writes, corrupt-file recovery, and debounced saves
 - Internationalisation via i18next with reactive `t()`, RTL support, and menus that rebuild on language change

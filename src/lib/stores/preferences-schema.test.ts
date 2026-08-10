@@ -20,15 +20,69 @@ describe('isThemeMode', () => {
   })
 })
 
+const validImportedTheme = {
+  id: 'dracula-theme',
+  name: 'Dracula Theme',
+  mode: 'dark',
+  accent: '#ff79c6',
+  background: '#282a36',
+  foreground: '#f8f8f2',
+  contrast: 50,
+  overrides: null,
+}
+
+const validProfile = {
+  presetId: 'dracula-theme',
+  customized: false,
+  accent: '#ff79c6',
+  background: '#282a36',
+  foreground: '#f8f8f2',
+  contrast: 50,
+}
+
 describe('sanitizePreferences', () => {
   it('passes through a valid object unchanged', () => {
     const valid = {
       theme: 'dark',
+      lightProfile: { ...validProfile, presetId: 'default-light' },
+      darkProfile: validProfile,
+      importedThemes: [validImportedTheme],
       language: 'en',
       globalShortcut: 'CommandOrControl+Shift+F',
       quickPaneShortcut: 'CommandOrControl+Shift+.',
     }
     expect(sanitizePreferences(valid)).toEqual(valid)
+  })
+
+  it('fills missing theme-system fields from defaults', () => {
+    // A pre-theme-system preferences.json must load cleanly.
+    const result = sanitizePreferences({ theme: 'dark' })
+    expect(result.lightProfile.presetId).toBe('default-light')
+    expect(result.darkProfile.presetId).toBe('default-dark')
+    expect(result.importedThemes).toEqual([])
+  })
+
+  it('replaces a structurally broken profile with the default', () => {
+    const result = sanitizePreferences({
+      theme: 'dark',
+      lightProfile: { ...validProfile, background: 'nope' },
+      darkProfile: { ...validProfile, contrast: 500 },
+    })
+    expect(result.lightProfile.presetId).toBe('default-light')
+    expect(result.darkProfile.presetId).toBe('default-dark')
+  })
+
+  it('drops structurally invalid imported themes and keeps valid ones', () => {
+    const result = sanitizePreferences({
+      theme: 'dark',
+      importedThemes: [
+        validImportedTheme,
+        { ...validImportedTheme, id: '', name: 'Broken' },
+        { ...validImportedTheme, mode: 'auto' },
+        'garbage',
+      ],
+    })
+    expect(result.importedThemes).toEqual([validImportedTheme])
   })
 
   it('returns defaults for null', () => {

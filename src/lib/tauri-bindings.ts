@@ -2,6 +2,8 @@ export {
   commands,
   type Result,
   type AppPreferences,
+  type ImportedTheme,
+  type ThemeProfile,
   type PersistedAppState,
   type ShortcutPurpose,
   type JsonValue,
