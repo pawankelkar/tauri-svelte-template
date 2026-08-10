@@ -4,6 +4,7 @@ import type {
   ThemeProfile,
 } from '$lib/tauri-bindings'
 import { validateThemePreset, validateThemeProfile } from '$lib/theme/schema'
+import { normalizeShortcut, parseShortcut } from '$lib/shortcuts'
 import {
   BUILTIN_PRESETS,
   DEFAULT_LIGHT,
@@ -59,7 +60,30 @@ export function defaultPreferences(): AppPreferences {
     language: null,
     globalShortcut: null,
     quickPaneShortcut: DEFAULT_QUICK_PANE_SHORTCUT,
+    commandShortcuts: {},
   }
+}
+
+/**
+ * Keeps only well-formed override entries: `null` (explicitly unbound) or a
+ * combo that normalises to a key plus at least one modifier — the same rule
+ * the keydown dispatcher enforces, so a hand-edited entry that could never
+ * fire is dropped rather than shown as bound.
+ */
+function sanitizeCommandShortcuts(raw: unknown): Record<string, string | null> {
+  if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const out: Record<string, string | null> = {}
+  for (const [id, value] of Object.entries(raw)) {
+    if (!id) continue
+    if (value === null) {
+      out[id] = null
+    } else if (typeof value === 'string') {
+      const normalized = normalizeShortcut(value)
+      const { key, modifiers } = parseShortcut(normalized)
+      if (key && modifiers.length > 0) out[id] = normalized
+    }
+  }
+  return out
 }
 
 function sanitizeProfile(raw: unknown, fallback: ThemeProfile): ThemeProfile {
@@ -118,5 +142,6 @@ export function sanitizePreferences(raw: unknown): AppPreferences {
       typeof r.globalShortcut === 'string' ? r.globalShortcut : null,
     quickPaneShortcut:
       typeof r.quickPaneShortcut === 'string' ? r.quickPaneShortcut : null,
+    commandShortcuts: sanitizeCommandShortcuts(r.commandShortcuts),
   }
 }

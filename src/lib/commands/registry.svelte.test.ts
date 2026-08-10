@@ -12,6 +12,8 @@ import {
   getCommand,
   listCommands,
   findCommandIdForShortcut,
+  getEffectiveShortcut,
+  setShortcutOverrideResolver,
   executeCommand,
   __resetCommandsForTests,
   type AppCommand,
@@ -78,5 +80,31 @@ describe('command registry', () => {
 
   it('findCommandIdForShortcut returns undefined for no match', () => {
     expect(findCommandIdForShortcut('mod+z')).toBeUndefined()
+  })
+
+  it('getEffectiveShortcut returns the default without an override', () => {
+    const cmd = makeCommand({ shortcut: 'mod+k' })
+    expect(getEffectiveShortcut(cmd)).toBe('mod+k')
+  })
+
+  it('a string override replaces the default shortcut', () => {
+    setShortcutOverrideResolver((id) =>
+      id === 'test-cmd' ? 'mod+p' : undefined,
+    )
+    const cmd = makeCommand({ shortcut: 'mod+k' })
+    expect(getEffectiveShortcut(cmd)).toBe('mod+p')
+
+    registerCommand(cmd)
+    expect(findCommandIdForShortcut('mod+p')).toBe('test-cmd')
+    expect(findCommandIdForShortcut('mod+k')).toBeUndefined()
+  })
+
+  it('a null override unbinds the shortcut', () => {
+    setShortcutOverrideResolver(() => null)
+    const cmd = makeCommand({ shortcut: 'mod+k' })
+    expect(getEffectiveShortcut(cmd)).toBeUndefined()
+
+    registerCommand(cmd)
+    expect(findCommandIdForShortcut('mod+k')).toBeUndefined()
   })
 })

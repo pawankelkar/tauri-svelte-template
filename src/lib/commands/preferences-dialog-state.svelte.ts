@@ -1,4 +1,5 @@
-export type PreferencesPaneId = 'general' | 'appearance' | 'advanced'
+export type PreferencesPaneId =
+  'general' | 'appearance' | 'shortcuts' | 'advanced'
 
 let _open = $state(false)
 let _activePane = $state<PreferencesPaneId>('general')

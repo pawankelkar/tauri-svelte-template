@@ -11,7 +11,7 @@ interface AppCommand {
   labelKey: string        // i18n key for display in the palette and menus
   label?: () => string    // optional dynamic label (e.g. "Hide Left Sidebar")
   category: string        // i18n key for palette grouping
-  shortcut?: string       // normalised combo, e.g. 'mod+k'
+  shortcut?: string       // default combo, e.g. 'mod+k' (user-rebindable)
   run: () => void | Promise<void>
 }
 ```
@@ -53,8 +53,11 @@ Delete them when you start building your own app.
 `App.svelte`'s boot sequence. It:
 
 1. Registers all command modules
-2. Creates a `keydown` handler via `createKeydownHandler(['mod+k'], ...)`
-3. Initialises the native menu bar via `initMenu()`
+2. Points the registry's shortcut-override resolver at the persisted
+   `commandShortcuts` preference (`initCommandShortcutOverrides()`)
+3. Creates a `keydown` handler via `createKeydownHandler(...)` whose input
+   allowlist follows the palette's effective shortcut
+4. Initialises the native menu bar via `initMenu()`
 
 Returns a cleanup function that removes the keydown listener and the menu's
 `languageChanged` subscription.
@@ -118,7 +121,8 @@ interface ParsedShortcut {
 
 ```ts
 createKeydownHandler(
-  inputAllowlist: string[],     // combos that fire even in text inputs
+  // combos that fire even in text inputs; a function re-evaluates per event
+  inputAllowlist: string[] | (() => string[]),
   resolveCommandId: (combo: string) => string | undefined,
   dispatch: (commandId: string) => void,
 ): (event: KeyboardEvent) => void
@@ -127,6 +131,29 @@ createKeydownHandler(
 The handler skips editable targets (`<input>`, `<textarea>`,
 `contentEditable`) unless the combo is in the allowlist. This prevents
 shortcuts from swallowing user typing.
+
+### Rebindable in-app shortcuts
+
+A command's `shortcut` is only its *default*. The user can rebind or unbind
+any command from the Shortcuts pane in Preferences; overrides persist in the
+`commandShortcuts` preference (`Record<commandId, combo | null>` — `null`
+means explicitly unbound, a missing key means default).
+
+`src/lib/commands/command-shortcuts.ts` owns the feature:
+
+| Function | Purpose |
+| --- | --- |
+| `initCommandShortcutOverrides()` | Wires the registry to the preference (called by `initCommands()`) |
+| `setCommandShortcut(id, combo \| null)` | Rebind/unbind; storing a command's default removes the override |
+| `resetCommandShortcut(id)` | Back to the default |
+| `isShortcutCustomized(id)` | Drives the reset affordance in the UI |
+| `findShortcutConflict(combo, excludeId)` | Checks other commands' *effective* combos and both OS-level global shortcuts |
+
+Everything that displays or dispatches a shortcut goes through
+`getEffectiveShortcut(command)` on the registry (palette, native menu,
+keydown resolver, Shortcuts pane), so a rebind takes effect everywhere at
+once; `setCommandShortcut` also calls `rebuildMenu()` because native menu
+accelerator text is static once built.
 
 ### Global shortcuts
 

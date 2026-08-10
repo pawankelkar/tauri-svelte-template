@@ -1,8 +1,5 @@
 <script lang="ts">
-  import { Label } from '$lib/components/ui/label'
-  import { Separator } from '$lib/components/ui/separator'
   import PreferenceSelect from './PreferenceSelect.svelte'
-  import ShortcutPicker from './ShortcutPicker.svelte'
   import { availableLanguages, languageLabels } from '$lib/i18n/config'
   import { initializeLanguage } from '$lib/i18n/language-init'
   import { getPreferences, setPreference } from '$lib/stores/preferences.svelte'
@@ -37,23 +34,3 @@
   {options}
   onValueChange={handleLanguageChange}
 />
-
-<Separator />
-
-<div class="space-y-2">
-  <Label>{t('preferences.general.shortcutLabel')}</Label>
-  <p class="text-muted-foreground text-sm">
-    {t('preferences.general.shortcutDescription')}
-  </p>
-  <ShortcutPicker purpose="focusMain" />
-</div>
-
-<Separator />
-
-<div class="space-y-2">
-  <Label>{t('preferences.general.quickPaneShortcutLabel')}</Label>
-  <p class="text-muted-foreground text-sm">
-    {t('preferences.general.quickPaneShortcutDescription')}
-  </p>
-  <ShortcutPicker purpose="quickPane" />
-</div>

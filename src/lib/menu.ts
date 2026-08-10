@@ -7,7 +7,7 @@ import {
 import type { AppPlatform } from '$lib/hooks/use-platform.svelte'
 import { getPlatform } from '$lib/hooks/use-platform.svelte'
 import { executeCommand } from '$lib/commands/registry.svelte'
-import { getCommand } from '$lib/commands/registry.svelte'
+import { getCommand, getEffectiveShortcut } from '$lib/commands/registry.svelte'
 import { toTauriAccelerator } from '$lib/shortcuts'
 import i18n from '$lib/i18n/config'
 import {
@@ -62,7 +62,7 @@ function commandItem(
   labelKeyOverride?: string,
 ): MenuItemSpec {
   const command = getCommand(commandId)
-  const shortcut = command?.shortcut
+  const shortcut = command ? getEffectiveShortcut(command) : undefined
   return {
     id: commandId,
     labelKey: labelKeyOverride ?? command?.labelKey ?? commandId,
@@ -217,6 +217,15 @@ async function buildAndApplyMenu(): Promise<void> {
   // attaching would add a second menu strip above it.
   // Uncomment below if switching to native decorations:
   // await menu.setAsWindowMenu()
+}
+
+/**
+ * Rebuilds the menu so it reflects registry state that changed after boot —
+ * currently called when the user rebinds a command shortcut, mirroring the
+ * languageChanged rebuild below.
+ */
+export async function rebuildMenu(): Promise<void> {
+  await buildAndApplyMenu()
 }
 
 export async function initMenu(): Promise<() => void> {

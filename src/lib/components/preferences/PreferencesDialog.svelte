@@ -5,8 +5,10 @@
   import SettingsIcon from '@lucide/svelte/icons/settings-2'
   import PaintbrushIcon from '@lucide/svelte/icons/paintbrush'
   import SlidersIcon from '@lucide/svelte/icons/sliders-horizontal'
+  import KeyboardIcon from '@lucide/svelte/icons/keyboard'
   import GeneralPane from './GeneralPane.svelte'
   import AppearancePane from './AppearancePane.svelte'
+  import ShortcutsPane from './ShortcutsPane.svelte'
   import AdvancedPane from './AdvancedPane.svelte'
   import {
     getActivePreferencesPane,
@@ -28,6 +30,11 @@
       icon: PaintbrushIcon,
       labelKey: 'preferences.nav.appearance',
     },
+    {
+      id: 'shortcuts',
+      icon: KeyboardIcon,
+      labelKey: 'preferences.nav.shortcuts',
+    },
     { id: 'advanced', icon: SlidersIcon, labelKey: 'preferences.nav.advanced' },
   ]
 
@@ -42,7 +49,7 @@
   onOpenChange={setPreferencesDialogOpen}
 >
   <Dialog.Content
-    class="overflow-hidden p-0 md:max-h-[85vh] md:max-w-[840px] lg:max-w-[1000px]"
+    class="overflow-hidden p-0 md:max-h-[90vh] md:max-w-[90vw] lg:max-w-[1200px]"
   >
     <!-- The visible heading is the breadcrumb, so the dialog's own title and
          description exist for screen readers only. -->
@@ -80,7 +87,7 @@
         </Sidebar.Content>
       </Sidebar.Root>
 
-      <main class="flex h-[min(46rem,85vh)] flex-1 flex-col overflow-hidden">
+      <main class="flex h-[min(54rem,90vh)] flex-1 flex-col overflow-hidden">
         <header class="flex h-16 shrink-0 items-center gap-2 px-4">
           <Breadcrumb.Root>
             <Breadcrumb.List>
@@ -99,6 +106,8 @@
             <GeneralPane />
           {:else if getActivePreferencesPane() === 'appearance'}
             <AppearancePane />
+          {:else if getActivePreferencesPane() === 'shortcuts'}
+            <ShortcutsPane />
           {:else}
             <AdvancedPane />
           {/if}

@@ -97,6 +97,11 @@ pub struct AppPreferences {
     pub language: Option<String>,
     pub global_shortcut: Option<String>,
     pub quick_pane_shortcut: Option<String>,
+    /// Per-command overrides for in-app shortcuts, keyed by command id.
+    /// A missing key means "use the command's built-in default"; an explicit
+    /// `None` means the user unbound the shortcut. Values are normalised
+    /// frontend combos (e.g. `"mod+shift+k"`), not Tauri accelerators.
+    pub command_shortcuts: std::collections::BTreeMap<String, Option<String>>,
 }
 
 impl Default for AppPreferences {
@@ -117,6 +122,7 @@ impl Default for AppPreferences {
             // from here while an explicit `null` still deserialises to `None`,
             // "never set" and "user cleared it" stay distinguishable.
             quick_pane_shortcut: Some(DEFAULT_QUICK_PANE_SHORTCUT.to_string()),
+            command_shortcuts: std::collections::BTreeMap::new(),
         }
     }
 }
@@ -241,6 +247,18 @@ pub fn validate_preferences(preferences: &AppPreferences) -> Result<(), String> 
     }
     validate_font_size(preferences.font_size)?;
     validate_reduced_motion(&preferences.reduced_motion)?;
+    for (id, combo) in &preferences.command_shortcuts {
+        if id.is_empty() {
+            return Err("commandShortcuts keys must not be empty".to_string());
+        }
+        if let Some(combo) = combo {
+            if combo.is_empty() {
+                return Err(format!(
+                    "commandShortcuts['{id}'] must be a combo or null, not an empty string"
+                ));
+            }
+        }
+    }
     Ok(())
 }
 
@@ -383,6 +401,47 @@ mod tests {
         let prefs: AppPreferences =
             serde_json::from_str(r#"{"theme":"dark","quickPaneShortcut":null}"#).unwrap();
         assert_eq!(prefs.quick_pane_shortcut, None);
+    }
+
+    #[test]
+    fn missing_command_shortcuts_take_the_default() {
+        // A pre-override preferences.json must load cleanly.
+        let prefs: AppPreferences = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
+        assert!(prefs.command_shortcuts.is_empty());
+    }
+
+    #[test]
+    fn command_shortcuts_distinguish_unbound_from_custom() {
+        let prefs: AppPreferences = serde_json::from_str(
+            r#"{"commandShortcuts":{"open-command-palette":"mod+p","toggle-theme":null}}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            prefs.command_shortcuts.get("open-command-palette"),
+            Some(&Some("mod+p".to_string()))
+        );
+        assert_eq!(prefs.command_shortcuts.get("toggle-theme"), Some(&None));
+    }
+
+    #[test]
+    fn validate_preferences_rejects_bad_command_shortcuts() {
+        let mut prefs = AppPreferences::default();
+        prefs
+            .command_shortcuts
+            .insert(String::new(), Some("mod+k".to_string()));
+        assert!(validate_preferences(&prefs).is_err());
+
+        let mut prefs = AppPreferences::default();
+        prefs
+            .command_shortcuts
+            .insert("toggle-theme".to_string(), Some(String::new()));
+        assert!(validate_preferences(&prefs).is_err());
+
+        let mut prefs = AppPreferences::default();
+        prefs
+            .command_shortcuts
+            .insert("toggle-theme".to_string(), None);
+        assert!(validate_preferences(&prefs).is_ok());
     }
 
     #[test]

@@ -149,11 +149,17 @@ export function isValidGlobalShortcutCombo(combo: string): boolean {
 }
 
 export function createKeydownHandler(
-  inputAllowlist: string[],
+  // A function so the allowlist can follow runtime state (the user rebinding
+  // the palette shortcut must not strand the old combo in the allowlist).
+  inputAllowlist: string[] | (() => string[]),
   resolveCommandId: (combo: string) => string | undefined,
   dispatch: (commandId: string) => void,
 ): (event: KeyboardEvent) => void {
-  const allowSet = new Set(inputAllowlist)
+  const allowed = (combo: string): boolean => {
+    const list =
+      typeof inputAllowlist === 'function' ? inputAllowlist() : inputAllowlist
+    return list.includes(combo)
+  }
 
   return (event: KeyboardEvent) => {
     const combo = buildCombo(event)
@@ -162,7 +168,7 @@ export function createKeydownHandler(
     const commandId = resolveCommandId(combo)
     if (!commandId) return
 
-    if (isEditableTarget(event.target) && !allowSet.has(combo)) return
+    if (isEditableTarget(event.target) && !allowed(combo)) return
 
     event.preventDefault()
     dispatch(commandId)

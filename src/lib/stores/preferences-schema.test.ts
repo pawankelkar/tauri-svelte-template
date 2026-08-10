@@ -54,8 +54,42 @@ describe('sanitizePreferences', () => {
       language: 'en',
       globalShortcut: 'CommandOrControl+Shift+F',
       quickPaneShortcut: 'CommandOrControl+Shift+.',
+      commandShortcuts: {
+        'open-command-palette': 'mod+p',
+        'toggle-theme': null,
+      },
     }
     expect(sanitizePreferences(valid)).toEqual(valid)
+  })
+
+  it('sanitizes commandShortcuts entries individually', () => {
+    const result = sanitizePreferences({
+      theme: 'dark',
+      commandShortcuts: {
+        'custom-combo': 'Ctrl+Shift+K', // aliases normalise
+        unbound: null,
+        'no-modifier': 'k', // could never fire — dropped
+        'modifier-only': 'mod+shift', // no key — dropped
+        'wrong-type': 42, // dropped
+        '': 'mod+j', // empty id — dropped
+      },
+    })
+    expect(result.commandShortcuts).toEqual({
+      'custom-combo': 'mod+shift+k',
+      unbound: null,
+    })
+  })
+
+  it('replaces a non-object commandShortcuts with an empty map', () => {
+    expect(
+      sanitizePreferences({ theme: 'dark', commandShortcuts: ['mod+k'] })
+        .commandShortcuts,
+    ).toEqual({})
+    expect(
+      sanitizePreferences({ theme: 'dark', commandShortcuts: 'mod+k' })
+        .commandShortcuts,
+    ).toEqual({})
+    expect(sanitizePreferences({ theme: 'dark' }).commandShortcuts).toEqual({})
   })
 
   it('fills missing theme-system fields from defaults', () => {

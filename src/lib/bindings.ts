@@ -204,7 +204,14 @@ reducedMotion: string;
  * Web-style hand cursor over interactive elements instead of the
  * platform-native arrow.
  */
-pointerCursors: boolean; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null }
+pointerCursors: boolean; language: string | null; globalShortcut: string | null; quickPaneShortcut: string | null; 
+/**
+ * Per-command overrides for in-app shortcuts, keyed by command id.
+ * A missing key means "use the command's built-in default"; an explicit
+ * `None` means the user unbound the shortcut. Values are normalised
+ * frontend combos (e.g. `"mod+shift+k"`), not Tauri accelerators.
+ */
+commandShortcuts: Partial<{ [key in string]: string | null }> }
 /**
  * A VS Code theme the user imported, stored as the already-converted anchor
  * profile plus workbench overrides — never the raw VS Code JSON. Mirrors

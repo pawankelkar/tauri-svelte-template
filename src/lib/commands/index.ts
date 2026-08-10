@@ -5,6 +5,7 @@ export {
   getCommand,
   listCommands,
   findCommandIdForShortcut,
+  getEffectiveShortcut,
   executeCommand,
   type AppCommand,
 } from './registry.svelte'
@@ -37,6 +38,15 @@ export {
   type PreferencesPaneId,
 } from './preferences-dialog-state.svelte'
 
+export {
+  initCommandShortcutOverrides,
+  isShortcutCustomized,
+  findShortcutConflict,
+  setCommandShortcut,
+  resetCommandShortcut,
+  type ShortcutConflict,
+} from './command-shortcuts'
+
 export { DEMO_SEND_NOTIFICATION } from './notification-commands'
 export {
   DEMO_COPY_TO_CLIPBOARD,
@@ -46,13 +56,16 @@ export { DEMO_OPEN_FILE_DIALOG } from './dialog-commands'
 export { DEMO_RUN_SHELL_COMMAND } from './shell-commands'
 export { demoRelaunchApp } from './process-commands'
 
-import { registerAppCommands } from './app-commands'
+import { OPEN_COMMAND_PALETTE, registerAppCommands } from './app-commands'
+import { initCommandShortcutOverrides } from './command-shortcuts'
 import { registerNotificationCommands } from './notification-commands'
 import { registerClipboardCommands } from './clipboard-commands'
 import { registerDialogCommands } from './dialog-commands'
 import { registerShellCommands } from './shell-commands'
 import {
   findCommandIdForShortcut,
+  getCommand,
+  getEffectiveShortcut,
   executeCommand,
   unregisterAllCommands,
 } from './registry.svelte'
@@ -68,8 +81,16 @@ export function initCommands(): () => void {
   registerDialogCommands()
   registerShellCommands()
 
+  initCommandShortcutOverrides()
+
   const handleKeydown = createKeydownHandler(
-    ['mod+k'],
+    // The palette must stay reachable while an input is focused, whatever
+    // the user has rebound it to.
+    () => {
+      const palette = getCommand(OPEN_COMMAND_PALETTE)
+      const shortcut = palette ? getEffectiveShortcut(palette) : undefined
+      return shortcut ? [shortcut] : []
+    },
     findCommandIdForShortcut,
     (id) => void executeCommand(id),
   )

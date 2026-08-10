@@ -5,6 +5,7 @@
     setPaletteOpen,
     closePalette,
     listCommands,
+    getEffectiveShortcut,
     executeCommand,
   } from '$lib/commands'
   import { parseShortcut, type ParsedShortcut } from '$lib/shortcuts'
@@ -70,9 +71,10 @@
             onSelect={() => handleSelect(cmd.id)}
           >
             {getLabel(cmd)}
-            {#if cmd.shortcut}
+            {@const shortcut = getEffectiveShortcut(cmd)}
+            {#if shortcut}
               <Command.Shortcut>
-                {getShortcutDisplay(cmd.shortcut)}
+                {getShortcutDisplay(shortcut)}
               </Command.Shortcut>
             {/if}
           </Command.Item>

@@ -11,6 +11,29 @@ export interface AppCommand {
 
 let _commands = $state<AppCommand[]>([])
 
+/**
+ * Resolves a user override for a command's shortcut: `undefined` means "no
+ * override, use the command's default", `null` means "explicitly unbound",
+ * and a string is a custom combo. Injected (rather than importing the
+ * preferences store here) so the registry stays dependency-free.
+ */
+type ShortcutOverrideResolver = (commandId: string) => string | null | undefined
+
+let _resolveShortcutOverride: ShortcutOverrideResolver = () => undefined
+
+export function setShortcutOverrideResolver(
+  resolver: ShortcutOverrideResolver,
+): void {
+  _resolveShortcutOverride = resolver
+}
+
+/** The shortcut that actually fires: the user override, or the default. */
+export function getEffectiveShortcut(command: AppCommand): string | undefined {
+  const override = _resolveShortcutOverride(command.id)
+  if (override === undefined) return command.shortcut
+  return override ?? undefined
+}
+
 export function registerCommand(command: AppCommand): void {
   if (_commands.some((c) => c.id === command.id)) {
     warn(`Command "${command.id}" is already registered, skipping`)
@@ -42,7 +65,7 @@ export function listCommands(): AppCommand[] {
 }
 
 export function findCommandIdForShortcut(combo: string): string | undefined {
-  return _commands.find((c) => c.shortcut === combo)?.id
+  return _commands.find((c) => getEffectiveShortcut(c) === combo)?.id
 }
 
 export async function executeCommand(id: string): Promise<void> {
@@ -56,4 +79,5 @@ export async function executeCommand(id: string): Promise<void> {
 
 export function __resetCommandsForTests(): void {
   _commands = []
+  _resolveShortcutOverride = () => undefined
 }
