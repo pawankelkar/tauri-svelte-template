@@ -26,7 +26,7 @@
         "visible": false,
         "decorations": true,
         "alwaysOnTop": false,
-        "transparent": false,
+        "transparent": true,
         "shadow": true,
         "dragDropEnabled": true
       }

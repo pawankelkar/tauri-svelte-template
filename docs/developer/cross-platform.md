@@ -93,6 +93,18 @@ predefined items use OS-native labels — no i18n needed for them.
 Types: `ContextMenuItem`, `ContextMenuSeparator`, `ContextMenuEntry`, with an
 `isSeparator()` type guard.
 
+## Tray icon (`src-tauri/src/tray.rs`)
+
+A minimal tray icon, built entirely in Rust (no JS IPC, so no capability
+entries). Left-click shows/focuses the main window; the menu offers Show and
+Quit. Quit emits `tray:quit-requested`, which `App.svelte` routes through the
+store-flushing quit path — see the two-phase close in `error-handling.md`.
+
+The menu is OS-native, so its labels are static English (webview translations
+don't reach native menus). On macOS `icon_as_template(true)` turns the colored
+default icon into an auto-tinted silhouette; shipping apps should provide a
+dedicated monochrome tray asset.
+
 ## Square corners
 
 On macOS the OS rounds window corners. On Windows and Linux, fullscreen

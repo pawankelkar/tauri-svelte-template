@@ -23,6 +23,7 @@ const payload = (
   fontSize: 16,
   reducedMotion: 'system',
   pointerCursors: false,
+  windowEffects: false,
   ...overrides,
 })
 
@@ -37,6 +38,7 @@ beforeEach(() => {
   document.documentElement.removeAttribute('data-theme-preset')
   document.documentElement.removeAttribute('data-reduced-motion')
   document.documentElement.removeAttribute('data-cursor')
+  document.documentElement.removeAttribute('data-window-effects')
   prefersDark = false
   vi.spyOn(window, 'matchMedia').mockImplementation(
     () => ({ matches: prefersDark }) as MediaQueryList,
@@ -82,6 +84,7 @@ describe('resolvePaintHint', () => {
         fontSize: 18,
         reducedMotion: 'on',
         pointerCursors: true,
+        windowEffects: true,
       }),
       false,
     )
@@ -89,6 +92,7 @@ describe('resolvePaintHint', () => {
     expect(resolved?.fontSize).toBe(18)
     expect(resolved?.reducedMotion).toBe('on')
     expect(resolved?.pointerCursors).toBe(true)
+    expect(resolved?.windowEffects).toBe(true)
 
     const degraded = resolvePaintHint(
       payload({
@@ -96,6 +100,7 @@ describe('resolvePaintHint', () => {
         fontSize: 99,
         reducedMotion: 'sometimes' as never,
         pointerCursors: 'yes' as never,
+        windowEffects: 'yes' as never,
       }),
       false,
     )
@@ -104,6 +109,7 @@ describe('resolvePaintHint', () => {
     expect(degraded?.fontSize).toBe(16)
     expect(degraded?.reducedMotion).toBe('system')
     expect(degraded?.pointerCursors).toBe(false)
+    expect(degraded?.windowEffects).toBe(false)
   })
 })
 

@@ -33,6 +33,7 @@ src-tauri/                    Backend (Rust)
     lib.rs                    Plugin chain, setup(), close handshake, RunEvent
     bindings.rs               specta command registration + TS export
     types.rs                  AppPreferences, PersistedAppState, ShortcutPurpose
+    tray.rs                   Tray icon — show/focus on click, Show/Quit menu
     commands/                 json_store, preferences, app_state, global_shortcut,
                               quick_pane, recovery, lifecycle, demo
   capabilities/               Per-window permission grants
@@ -71,9 +72,11 @@ two bundles. See [Quick Panes](quick-panes.md) for the full multi-window story.
 3. `initQuickPaneBridge()` — listens for `quick-pane-submit` events
 4. `initPreferences()` + `initAppState()` — load from disk in parallel
 5. `reconcileTheme()` — authoritative preferences override the localStorage hint
-6. `initializeLanguage(prefs.language)` — set i18next language
-7. `initCommands()` — register all commands, wire keydown handler, build menus
-8. `cleanupOldRecoveryFiles()` — purge crash data older than 7 days
+6. `applyWindowEffects(prefs.windowEffects)` — native vibrancy IPC, before the
+   window is shown so there is no opaque→translucent pop
+7. `initializeLanguage(prefs.language)` — set i18next language
+8. `initCommands()` — register all commands, wire keydown handler, build menus
+9. `cleanupOldRecoveryFiles()` — purge crash data older than 7 days
 
 The main window is created with `visible: false` in `tauri.conf.json`.
 `App.svelte` calls `appWindow.show()` + `appWindow.setFocus()` after mount,

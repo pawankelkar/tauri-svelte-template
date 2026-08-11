@@ -18,6 +18,7 @@ tokens, so components need zero edits to follow a theme.
 | Import | `src/lib/theme/vscode-import.ts`, `jsonc.ts`, `anchor-validation.ts` | Theme JSON → validated preset, contrast-gated |
 | Apply | `src/lib/theme/apply.ts`, `dom-state.ts` | Inline `--sd-*` props + `.dark` class + `data-*` attributes |
 | Pre-mount paint | `src/lib/theme/paint-hint.ts` | Cached token payload painted before mount |
+| Native effects | `src/lib/theme/window-effects.ts` | Vibrancy IPC for the Window Effects preference (Mica/Acrylic on Windows, translucency on macOS) |
 | Store | `src/lib/stores/theme.svelte.ts` | Mode + per-slot profiles, user presets, repaint, cross-window broadcast |
 | UI | `src/lib/components/preferences/` | Mode cards, preset gallery, anchor editing, browse dialog |
 | Bridge | `src/app.css` | `--background: var(--sd-bg-base, <fallback>)` etc. |

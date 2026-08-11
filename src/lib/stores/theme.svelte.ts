@@ -87,6 +87,7 @@ function paint(target: HTMLElement = document.documentElement): void {
       _systemReducedMotion,
     ),
     prefs.pointerCursors,
+    prefs.windowEffects,
     target,
   )
 }
@@ -106,6 +107,7 @@ function buildHintPayload(): PaintHintPayload {
     fontSize: getPreferences().fontSize,
     reducedMotion: getPreferences().reducedMotion as ReducedMotion,
     pointerCursors: getPreferences().pointerCursors,
+    windowEffects: getPreferences().windowEffects,
   }
 }
 
@@ -195,6 +197,17 @@ export function setReducedMotion(mode: ReducedMotion): void {
 
 export function setPointerCursors(enabled: boolean): void {
   setPreference('pointerCursors', enabled)
+  repaint()
+  broadcast()
+}
+
+/**
+ * Persists the vibrancy preference and repaints the CSS side. The native
+ * `setEffects` IPC (`applyWindowEffects`) is async and called separately by
+ * the toggle handler — it is not part of the sync paint pipeline.
+ */
+export function setWindowEffects(enabled: boolean): void {
+  setPreference('windowEffects', enabled)
   repaint()
   broadcast()
 }

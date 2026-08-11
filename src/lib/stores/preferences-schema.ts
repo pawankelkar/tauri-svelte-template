@@ -57,6 +57,7 @@ export function defaultPreferences(): AppPreferences {
     fontSize: 16,
     reducedMotion: 'system',
     pointerCursors: false,
+    windowEffects: false,
     language: null,
     globalShortcut: null,
     quickPaneShortcut: DEFAULT_QUICK_PANE_SHORTCUT,
@@ -137,6 +138,10 @@ export function sanitizePreferences(raw: unknown): AppPreferences {
       typeof r.pointerCursors === 'boolean'
         ? r.pointerCursors
         : defaults.pointerCursors,
+    windowEffects:
+      typeof r.windowEffects === 'boolean'
+        ? r.windowEffects
+        : defaults.windowEffects,
     language: typeof r.language === 'string' ? r.language : null,
     globalShortcut:
       typeof r.globalShortcut === 'string' ? r.globalShortcut : null,

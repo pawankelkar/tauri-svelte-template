@@ -23,6 +23,7 @@ export function applyDomState(
   mode: ThemeVariantMode,
   reducedMotion: boolean,
   pointerCursors: boolean,
+  windowEffects: boolean,
   target: HTMLElement = document.documentElement,
 ): void {
   target.classList.toggle('dark', mode === 'dark')
@@ -30,4 +31,5 @@ export function applyDomState(
   target.setAttribute('data-theme-preset', presetId)
   target.setAttribute('data-reduced-motion', String(reducedMotion))
   target.setAttribute('data-cursor', pointerCursors ? 'pointer' : 'default')
+  target.setAttribute('data-window-effects', String(windowEffects))
 }

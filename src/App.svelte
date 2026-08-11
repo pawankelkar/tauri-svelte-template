@@ -6,7 +6,7 @@
   import { initSquareCorners } from '$lib/stores/square-corners.svelte'
   import { initPreferences } from '$lib/stores/preferences.svelte'
   import { initAppState } from '$lib/stores/app-state.svelte'
-  import { flushAllStores } from '$lib/lifecycle'
+  import { flushAllStores, requestQuit } from '$lib/lifecycle'
   import { initQuickPaneBridge } from '$lib/quick-pane/bridge'
   import {
     getSquareCorners,
@@ -16,6 +16,7 @@
     isRightSidebarVisible,
   } from '$lib/stores/ui.svelte'
   import { initTheme, reconcileTheme } from '$lib/stores/theme.svelte'
+  import { applyWindowEffects } from '$lib/theme/window-effects'
   import { initializeLanguage } from '$lib/i18n/language-init'
   import { initCommands } from '$lib/commands'
   import { getPlatform } from '$lib/hooks/use-platform.svelte'
@@ -70,6 +71,7 @@
     }
     let cleanupCommands: (() => void) | undefined
     let unlistenClose: (() => void) | undefined
+    let unlistenTrayQuit: (() => void) | undefined
     let destroyed = false
 
     const appWindow = getCurrentWindow()
@@ -105,9 +107,23 @@
       }
       unlistenClose = unlisten
 
+      // Tray "Quit" reuses the palette's flush-then-quit path wholesale, so
+      // stores are flushed before the process ends.
+      const unlistenTray = await listen('tray:quit-requested', () => {
+        void requestQuit()
+      })
+      if (destroyed) {
+        unlistenTray()
+        return
+      }
+      unlistenTrayQuit = unlistenTray
+
       try {
         const [prefs] = await Promise.all([initPreferences(), initAppState()])
         reconcileTheme()
+        // Before show() so a vibrancy user never sees an opaque→translucent
+        // pop. The CSS side is already painted via the paint hint.
+        await applyWindowEffects(prefs.windowEffects)
         await initializeLanguage(prefs.language)
         if (!destroyed) cleanupCommands = initCommands()
         void commands.cleanupOldRecoveryFiles()
@@ -127,6 +143,7 @@
       cleanupQuickPane()
       cleanupCommands?.()
       unlistenClose?.()
+      unlistenTrayQuit?.()
     }
   })
 </script>

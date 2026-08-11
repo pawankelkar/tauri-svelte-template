@@ -37,6 +37,7 @@ export interface PaintHintPayload {
   /** Raw preference — 'system' re-resolves via matchMedia at paint time. */
   reducedMotion: ReducedMotion
   pointerCursors: boolean
+  windowEffects: boolean
 }
 
 export function writePaintHint(payload: PaintHintPayload): void {
@@ -63,6 +64,7 @@ export function resolvePaintHint(
   fontSize: number
   reducedMotion: ReducedMotion
   pointerCursors: boolean
+  windowEffects: boolean
 } | null {
   if (!hint || typeof hint !== 'object') return null
   const h = hint as Partial<PaintHintPayload>
@@ -87,6 +89,9 @@ export function resolvePaintHint(
       ? h.reducedMotion
       : 'system',
     pointerCursors: h.pointerCursors === true,
+    // Additive field — a hint written before the vibrancy preference existed
+    // degrades to opaque, matching the preference's default.
+    windowEffects: h.windowEffects === true,
   }
 }
 
@@ -118,6 +123,7 @@ export function paintFromHint(
       resolved.mode,
       resolveReducedMotion(resolved.reducedMotion, prefersReduce),
       resolved.pointerCursors,
+      resolved.windowEffects,
       target,
     )
     return

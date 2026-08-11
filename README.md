@@ -34,6 +34,8 @@ A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScrip
 - Command palette with fuzzy search (Ctrl+K)
 - Preferences dialog with sidebar navigation (General, Appearance, Advanced)
 - Quick Pane: a floating always-on-top window triggered by a global shortcut, even while another app has focus
+- Window Effects preference: native vibrancy behind the app (Mica/Acrylic on Windows, translucency on macOS), off by default
+- Tray icon: left-click shows/focuses the window, menu with Show/Quit (quit flushes stores first)
 - Toast notifications and a promise-based confirm dialog
 - Error boundary with crash recovery (saves diagnostics to disk, shows a reload fallback)
 

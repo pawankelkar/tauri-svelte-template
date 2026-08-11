@@ -1,6 +1,8 @@
 mod bindings;
 mod commands;
 mod state;
+#[cfg(desktop)]
+mod tray;
 mod types;
 
 use std::sync::atomic::Ordering;
@@ -135,6 +137,13 @@ pub fn run() {
             // a window-creation failure is logged rather than aborting startup.
             if let Err(e) = commands::quick_pane::init_quick_pane(app.handle()) {
                 log::warn!("Quick Pane unavailable: {e}");
+            }
+
+            // Same non-fatal treatment: no tray is a cosmetic loss, not a
+            // reason to abort startup.
+            #[cfg(desktop)]
+            if let Err(e) = tray::init_tray(app.handle()) {
+                log::warn!("Tray icon unavailable: {e}");
             }
 
             Ok(())

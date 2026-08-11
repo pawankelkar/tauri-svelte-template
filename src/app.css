@@ -228,6 +228,16 @@
   }
 
   /*
+   * The "Window Effects" preference. The window itself is always transparent
+   * (a creation-time flag, tauri.conf.json); this is the only place the
+   * desktop actually shows through — body only, so dialogs, sidebars, and
+   * other surfaces stay opaque for legibility.
+   */
+  [data-window-effects='true'] body {
+    background-color: color-mix(in oklab, var(--background) 72%, transparent);
+  }
+
+  /*
    * The "Pointer cursors" preference. The native convention (and default) is
    * the arrow everywhere, via `* { cursor: default }` above; this allow-list
    * opts interactive elements into the web-style hand cursor. New clickable

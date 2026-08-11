@@ -94,6 +94,9 @@ pub struct AppPreferences {
     /// Web-style hand cursor over interactive elements instead of the
     /// platform-native arrow.
     pub pointer_cursors: bool,
+    /// Native window translucency (Mica/Acrylic on Windows, vibrancy on
+    /// macOS) behind the app canvas. No effect on Linux.
+    pub window_effects: bool,
     pub language: Option<String>,
     pub global_shortcut: Option<String>,
     pub quick_pane_shortcut: Option<String>,
@@ -115,6 +118,7 @@ impl Default for AppPreferences {
             font_size: 16.0,
             reduced_motion: "system".to_string(),
             pointer_cursors: false,
+            window_effects: false,
             language: None,
             global_shortcut: None,
             // The Quick Pane ships bound so the feature is discoverable on a
@@ -368,6 +372,13 @@ mod tests {
         assert_eq!(prefs.font_size, 16.0);
         assert_eq!(prefs.reduced_motion, "system");
         assert!(!prefs.pointer_cursors);
+    }
+
+    #[test]
+    fn missing_window_effects_defaults_to_off() {
+        // A pre-vibrancy preferences.json must load cleanly.
+        let prefs: AppPreferences = serde_json::from_str(r#"{"theme":"dark"}"#).unwrap();
+        assert!(!prefs.window_effects);
     }
 
     #[test]

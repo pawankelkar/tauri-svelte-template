@@ -25,7 +25,10 @@
     setFontSize,
     setReducedMotion,
     setPointerCursors,
+    setWindowEffects,
   } from '$lib/stores/theme.svelte'
+  import { applyWindowEffects } from '$lib/theme/window-effects'
+  import { getPlatform } from '$lib/hooks/use-platform.svelte'
   import { getPreferences } from '$lib/stores/preferences.svelte'
   import {
     FONT_SIZE_MAX,
@@ -315,6 +318,30 @@
       id="appearance-pointer-cursors"
       checked={getPreferences().pointerCursors}
       onCheckedChange={setPointerCursors}
+    />
+  </div>
+  <div class="flex items-center justify-between gap-4">
+    <div class="space-y-1">
+      <Label for="appearance-window-effects">
+        {t('preferences.appearance.windowEffectsLabel')}
+      </Label>
+      <p class="text-muted-foreground text-sm">
+        {t('preferences.appearance.windowEffectsDescription')}
+      </p>
+      {#if getPlatform() === 'linux'}
+        <p class="text-muted-foreground text-sm">
+          {t('preferences.appearance.windowEffectsLinuxNote')}
+        </p>
+      {/if}
+    </div>
+    <Switch
+      id="appearance-window-effects"
+      checked={getPreferences().windowEffects}
+      disabled={getPlatform() === 'linux'}
+      onCheckedChange={(v) => {
+        setWindowEffects(v)
+        void applyWindowEffects(v)
+      }}
     />
   </div>
 </section>

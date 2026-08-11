@@ -85,3 +85,7 @@ without being re-intercepted.
 The quit path (`requestQuit()` in `lifecycle.ts`) works the same way: it
 flushes stores then calls `commands.quitApp()`. This is also the only way to
 actually exit on macOS, where closing the window only hides it.
+
+The tray menu's Quit follows the same discipline: `tray.rs` emits
+`tray:quit-requested` (never `app.exit()` directly), and `App.svelte` routes
+it into `requestQuit()`, so a tray quit flushes stores like any other quit.

@@ -51,6 +51,7 @@ describe('sanitizePreferences', () => {
       fontSize: 14,
       reducedMotion: 'off',
       pointerCursors: true,
+      windowEffects: true,
       language: 'en',
       globalShortcut: 'CommandOrControl+Shift+F',
       quickPaneShortcut: 'CommandOrControl+Shift+.',
@@ -145,11 +146,13 @@ describe('sanitizePreferences', () => {
       fontSize: 18,
       reducedMotion: 'on',
       pointerCursors: true,
+      windowEffects: true,
     })
     expect(valid.fontFamily).toBe('Georgia')
     expect(valid.fontSize).toBe(18)
     expect(valid.reducedMotion).toBe('on')
     expect(valid.pointerCursors).toBe(true)
+    expect(valid.windowEffects).toBe(true)
 
     const invalid = sanitizePreferences({
       theme: 'dark',
@@ -157,11 +160,13 @@ describe('sanitizePreferences', () => {
       fontSize: 99,
       reducedMotion: 'sometimes',
       pointerCursors: 'yes',
+      windowEffects: 'yes',
     })
     expect(invalid.fontFamily).toBeNull()
     expect(invalid.fontSize).toBe(16)
     expect(invalid.reducedMotion).toBe('system')
     expect(invalid.pointerCursors).toBe(false)
+    expect(invalid.windowEffects).toBe(false)
   })
 
   it('fills missing appearance fields from defaults', () => {
@@ -171,6 +176,7 @@ describe('sanitizePreferences', () => {
     expect(result.fontSize).toBe(16)
     expect(result.reducedMotion).toBe('system')
     expect(result.pointerCursors).toBe(false)
+    expect(result.windowEffects).toBe(false)
   })
 
   it('returns defaults for null', () => {
