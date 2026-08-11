@@ -32,12 +32,14 @@ A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScrip
 - Custom titlebar with platform-native controls (macOS traffic lights, Windows buttons, Linux native)
 - Dual resizable sidebars with persistent width and visibility
 - Command palette with fuzzy search (Ctrl+K)
-- Preferences dialog with sidebar navigation (General, Appearance, Advanced)
+- Preferences dialog with sidebar navigation (General, Appearance, Shortcuts, Advanced, About)
 - Quick Pane: a floating always-on-top window triggered by a global shortcut, even while another app has focus
 - Window Effects preference: native vibrancy behind the app (Mica/Acrylic on Windows, translucency on macOS), off by default
 - Tray icon: left-click shows/focuses the window, menu with Show/Quit (quit flushes stores first)
 - First-run onboarding dialog highlighting the command palette, preferences, and Quick Pane
 - Launch-at-login toggle in Preferences, reading the OS registration live so it never drifts
+- Shortcuts pane with rebindable in-app keyboard shortcuts
+- About pane with version info, system details, links, and an update checker
 - Toast notifications and a promise-based confirm dialog
 - Error boundary with crash recovery (saves diagnostics to disk, shows a reload fallback)
 
@@ -51,6 +53,11 @@ A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScrip
 - Native menu bar and right-click context menus, all dispatching through a single command registry
 - Platform-aware shortcut formatting ("⌘K" on macOS, "Ctrl+K" on Windows)
 - Global shortcuts with register/persist/rollback and a ShortcutPicker component
+- Single-instance enforcement — only one copy of the app can run at a time
+- Window state persistence — saves/restores position, size, and maximized state across restarts
+- Square corners on fullscreen (Windows/Linux) with smooth transitions
+- Native-feel CSS defaults: `overscroll-behavior: none`, `user-select: none` with selective re-enable on text inputs
+- Platform-specific Tauri configs (macOS, Windows, Linux overrides)
 - Frontend logger that forwards warnings and errors to the Tauri backend in production
 
 ### Developer experience
@@ -62,7 +69,7 @@ A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScrip
 - CI workflow (frontend + Rust on Ubuntu and Windows) and multi-platform release workflow
 - `prepare-release.js`: version sync, quality gate, commit, tag
 - Auto-updater pre-wired with signed artifacts
-- Claude Code skills (`/setup`, `/check`, `/cleanup`, `/change-package-manager`) and subagents
+- Claude Code skills (`/setup`, `/check`, `/cleanup`, `/change-package-manager`, `/run-app`) and subagents
 
 ## Quick start
 
