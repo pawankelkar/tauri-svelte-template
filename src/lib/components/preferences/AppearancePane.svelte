@@ -142,7 +142,7 @@
 
 <div class="flex flex-wrap gap-2 border-b pb-4">
   <Button
-    variant="ghost"
+    variant="outline"
     size="sm"
     disabled={!canResetProfile(editingSlot)}
     onclick={() => resetProfileToPreset(editingSlot)}
@@ -150,11 +150,11 @@
     <RotateCcwIcon />
     {t('preferences.appearance.resetToPreset')}
   </Button>
-  <Button variant="ghost" size="sm" onclick={importTheme}>
+  <Button variant="outline" size="sm" onclick={importTheme}>
     <DownloadIcon />
     {t('preferences.appearance.importThemeButton')}
   </Button>
-  <Button variant="ghost" size="sm" onclick={() => (browseOpen = true)}>
+  <Button variant="outline" size="sm" onclick={() => (browseOpen = true)}>
     <PaletteIcon />
     {t('preferences.appearance.browseThemesButton')}
   </Button>
