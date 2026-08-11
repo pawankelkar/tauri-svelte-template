@@ -54,6 +54,9 @@
   "preferences.nav.advanced": "Advanced",
   "preferences.general.languageLabel": "Language",
   "preferences.general.languageSystemOption": "System",
+  "preferences.general.autostartLabel": "Launch at Login",
+  "preferences.general.autostartDescription": "Start this app automatically when you sign in to your computer.",
+  "preferences.general.autostartError": "Couldn't change the launch-at-login setting.",
   "preferences.general.shortcutLabel": "Global Shortcut",
   "preferences.general.shortcutDescription": "Press a key combination to bring this window to the front from anywhere.",
   "preferences.general.quickPaneShortcutLabel": "Quick Pane Shortcut",
@@ -151,6 +154,18 @@
   "preferences.advanced.editFileButton": "Open File",
   "preferences.advanced.editFileError": "Couldn't open preferences.json. Change a preference first to create it.",
 
+  "onboarding.title": "Welcome",
+  "onboarding.description": "A quick tour of the app's main entry points.",
+  "onboarding.welcomeHeading": "Welcome to Tauri App",
+  "onboarding.welcomeBody": "Three things worth knowing before you start.",
+  "onboarding.highlightPaletteTitle": "Command Palette",
+  "onboarding.highlightPaletteBody": "Every command in the app, one fuzzy search away.",
+  "onboarding.highlightPreferencesTitle": "Preferences",
+  "onboarding.highlightPreferencesBody": "Themes, fonts, shortcuts, and language — all persisted.",
+  "onboarding.highlightQuickPaneTitle": "Quick Pane",
+  "onboarding.highlightQuickPaneBody": "A floating input you can summon from any app.",
+  "onboarding.getStarted": "Get started",
+
   "shortcutPicker.placeholder": "Click to record a shortcut",
   "shortcutPicker.listening": "Press a key combination… (Esc to cancel)",
   "shortcutPicker.clear": "Clear",
@@ -159,6 +174,8 @@
   "quickPane.placeholder": "Type something and press Enter…",
   "quickPane.submitHint": "Enter",
   "quickPane.received": "Quick Pane: {{text}}",
+
+  "deepLink.receivedToast": "Deep link received: {{url}}",
 
   "demo.notificationTitle": "Hello from Tauri",
   "demo.notificationBody": "This notification came from tauri-plugin-notification.",

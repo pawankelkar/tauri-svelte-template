@@ -36,6 +36,8 @@ A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScrip
 - Quick Pane: a floating always-on-top window triggered by a global shortcut, even while another app has focus
 - Window Effects preference: native vibrancy behind the app (Mica/Acrylic on Windows, translucency on macOS), off by default
 - Tray icon: left-click shows/focuses the window, menu with Show/Quit (quit flushes stores first)
+- First-run onboarding dialog highlighting the command palette, preferences, and Quick Pane
+- Launch-at-login toggle in Preferences, reading the OS registration live so it never drifts
 - Toast notifications and a promise-based confirm dialog
 - Error boundary with crash recovery (saves diagnostics to disk, shows a reload fallback)
 
@@ -44,7 +46,8 @@ A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScrip
 - Theme system: light, dark, and system modes with flash-free startup (no white flicker in dark mode), plus full VS Code theme support — bundled presets and an importer that turns any VS Code theme JSON into an app-wide theme via an OKLCH derivation engine
 - Typed IPC via tauri-specta: every Rust command has generated TypeScript bindings
 - JSON persistence with atomic writes, corrupt-file recovery, and debounced saves
-- Internationalisation via i18next with reactive `t()`, RTL support, and menus that rebuild on language change
+- Internationalisation via i18next with reactive `t()`, RTL support, and menus that rebuild on language change — shipped in English and French with a key-parity test
+- Deep linking: a custom URL scheme routed through single-instance on Windows/Linux and native events on macOS
 - Native menu bar and right-click context menus, all dispatching through a single command registry
 - Platform-aware shortcut formatting ("⌘K" on macOS, "Ctrl+K" on Windows)
 - Global shortcuts with register/persist/rollback and a ShortcutPicker component

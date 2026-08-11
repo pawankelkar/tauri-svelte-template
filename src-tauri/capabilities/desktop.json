@@ -2,5 +2,10 @@
   "identifier": "desktop-capability",
   "platforms": ["macOS", "windows", "linux"],
   "windows": ["main"],
-  "permissions": ["window-state:default", "updater:default"]
+  "permissions": [
+    "window-state:default",
+    "updater:default",
+    "autostart:default",
+    "deep-link:default"
+  ]
 }

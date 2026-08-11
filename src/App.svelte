@@ -5,9 +5,12 @@
   import { commands } from '$lib/tauri-bindings'
   import { initSquareCorners } from '$lib/stores/square-corners.svelte'
   import { initPreferences } from '$lib/stores/preferences.svelte'
-  import { initAppState } from '$lib/stores/app-state.svelte'
+  import { getAppState, initAppState } from '$lib/stores/app-state.svelte'
+  import { openOnboardingDialog } from '$lib/commands/onboarding-dialog-state.svelte'
   import { flushAllStores, requestQuit } from '$lib/lifecycle'
   import { initQuickPaneBridge } from '$lib/quick-pane/bridge'
+  import { registerDeepLinkSchemeInDev } from '$lib/deep-link'
+  import { toast } from '$lib/stores/toast'
   import {
     getSquareCorners,
     toggleLeftSidebar,
@@ -29,6 +32,7 @@
   import TitleBar from '$lib/components/layout/TitleBar.svelte'
   import CommandPalette from '$lib/components/command-palette/CommandPalette.svelte'
   import PreferencesDialog from '$lib/components/preferences/PreferencesDialog.svelte'
+  import OnboardingDialog from '$lib/components/onboarding/OnboardingDialog.svelte'
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
   import ToastContainer from '$lib/components/ToastContainer.svelte'
   import ErrorBoundary from '$lib/components/ErrorBoundary.svelte'
@@ -72,6 +76,7 @@
     let cleanupCommands: (() => void) | undefined
     let unlistenClose: (() => void) | undefined
     let unlistenTrayQuit: (() => void) | undefined
+    let unlistenDeepLink: (() => void) | undefined
     let destroyed = false
 
     const appWindow = getCurrentWindow()
@@ -118,6 +123,25 @@
       }
       unlistenTrayQuit = unlistenTray
 
+      // Demo deep-link handling: surface the URL and come forward. Replace
+      // the toast with real routing (parse the URL, dispatch a command or
+      // navigate) when your app has destinations to route to.
+      const unlistenDeep = await listen<string[]>(
+        'app:deep-link-received',
+        (event) => {
+          for (const url of event.payload) {
+            toast.info(t('deepLink.receivedToast', { url }))
+          }
+          void appWindow.unminimize()
+          void appWindow.setFocus()
+        },
+      )
+      if (destroyed) {
+        unlistenDeep()
+        return
+      }
+      unlistenDeepLink = unlistenDeep
+
       try {
         const [prefs] = await Promise.all([initPreferences(), initAppState()])
         reconcileTheme()
@@ -126,6 +150,12 @@
         await applyWindowEffects(prefs.windowEffects)
         await initializeLanguage(prefs.language)
         if (!destroyed) cleanupCommands = initCommands()
+        // Before show() so the first frame the user ever sees already has
+        // the greeting up — no post-boot pop-in.
+        if (!destroyed && !getAppState().onboardingCompleted) {
+          openOnboardingDialog()
+        }
+        void registerDeepLinkSchemeInDev()
         void commands.cleanupOldRecoveryFiles()
       } finally {
         // Show even if an init step failed — a degraded UI beats a window
@@ -144,6 +174,7 @@
       cleanupCommands?.()
       unlistenClose?.()
       unlistenTrayQuit?.()
+      unlistenDeepLink?.()
     }
   })
 </script>
@@ -193,6 +224,7 @@
        window keeps its controls, even if the content area crashes. -->
   <CommandPalette />
   <PreferencesDialog />
+  <OnboardingDialog />
   <ConfirmDialog />
   <ToastContainer />
   <main class="bg-background flex-1 overflow-hidden">

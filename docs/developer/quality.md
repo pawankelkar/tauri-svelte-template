@@ -56,6 +56,15 @@ Run with `pnpm rust:test` or `cd src-tauri && cargo test`.
 CI runs `cargo test` on both Ubuntu and Windows — the Windows matrix catches
 platform-specific issues like the `comctl32.dll` delay-load fix in `build.rs`.
 
+### Manual UI verification
+
+The frontend renders in a plain browser once the Tauri globals are stubbed.
+The `run-app` skill (`.claude/skills/run-app/SKILL.md`) documents the working
+recipe — dev server + Playwright with stubbed `__TAURI_INTERNALS__` /
+`__TAURI_OS_PLUGIN_INTERNALS__` — including its two footguns (the synchronous
+plugin-os global and the `/@fs/` import-URL rule). Anything crossing real IPC
+still needs `pnpm tauri dev`.
+
 ---
 
 ## Static analysis

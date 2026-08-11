@@ -93,6 +93,30 @@ predefined items use OS-native labels — no i18n needed for them.
 Types: `ContextMenuItem`, `ContextMenuSeparator`, `ContextMenuEntry`, with an
 `isSeparator()` type guard.
 
+## Deep linking (`tauri-app://` scheme)
+
+The custom URL scheme is declared in `tauri.conf.json`
+(`plugins.deep-link.desktop.schemes`) and mirrored as `DEEP_LINK_SCHEME` in
+`src/lib/deep-link.ts`; the `/setup` skill renames both. Delivery differs by
+platform:
+
+- **Windows/Linux**: opening a scheme URL launches a second instance with the
+  URL in argv. The single-instance plugin (registered first, built with its
+  `deep-link` feature) forwards those args to the deep-link plugin before its
+  own focus-the-window callback runs.
+- **macOS**: the OS delivers the URL to the running app directly; schemes are
+  registered from the bundle's Info.plist, so deep links only work in a built
+  app, not `pnpm tauri dev`.
+
+Both paths converge on the `on_open_url` handler in `lib.rs`, which emits
+`app:deep-link-received` to the frontend — URL routing stays a frontend
+concern. The demo listener in `App.svelte` shows a toast and focuses the
+window; replace it with real routing when the app has destinations.
+
+Dev builds on Windows/Linux self-register the scheme at startup
+(`registerDeepLinkSchemeInDev()` in `src/lib/deep-link.ts`), because only
+installers perform the registration otherwise.
+
 ## Tray icon (`src-tauri/src/tray.rs`)
 
 A minimal tray icon, built entirely in Rust (no JS IPC, so no capability

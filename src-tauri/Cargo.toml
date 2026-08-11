@@ -36,7 +36,11 @@ tauri-specta = { version = "=2.0.0-rc.21", features = ["typescript"] }
 specta-typescript = "=0.0.9"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-deep-link = "2"
+# The deep-link feature forwards a second launch's argv to the deep-link
+# plugin, which is how scheme URLs reach a running app on Windows/Linux.
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 tauri-plugin-window-state = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-updater = "2"

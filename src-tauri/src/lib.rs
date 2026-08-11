@@ -56,6 +56,27 @@ pub fn run() {
         );
     }
 
+    // Deep link — receives scheme URLs. On Windows/Linux a second launch
+    // carries the URL in argv; the single-instance plugin (registered first,
+    // with its `deep-link` feature) forwards those args to this plugin
+    // before running its own callback. On macOS the OS delivers the URL
+    // directly. Both paths land in the on_open_url handler in setup().
+    #[cfg(desktop)]
+    {
+        app_builder = app_builder.plugin(tauri_plugin_deep_link::init());
+    }
+
+    // Autostart — the OS launch-at-login registration is the source of
+    // truth (no mirror field in AppPreferences), so the General pane reads
+    // isEnabled() live and can never drift from what the OS actually does.
+    #[cfg(desktop)]
+    {
+        app_builder = app_builder.plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ));
+    }
+
     // Auto-updater — checks the configured endpoint for a newer version.
     // The pubkey and endpoints are placeholders until replaced; the plugin
     // compiles and registers but won't connect.
@@ -144,6 +165,22 @@ pub fn run() {
             #[cfg(desktop)]
             if let Err(e) = tray::init_tray(app.handle()) {
                 log::warn!("Tray icon unavailable: {e}");
+            }
+
+            // Deep links are relayed to the frontend as a bare event — the
+            // same shape as `tray:quit-requested` — so URL routing stays a
+            // frontend concern (see the listener in App.svelte).
+            #[cfg(desktop)]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+
+                let handle = app.handle().clone();
+                app.deep_link().on_open_url(move |event| {
+                    let urls: Vec<String> = event.urls().iter().map(|u| u.to_string()).collect();
+                    if let Err(e) = handle.emit("app:deep-link-received", urls) {
+                        log::warn!("Could not relay a deep link: {e}");
+                    }
+                });
             }
 
             Ok(())

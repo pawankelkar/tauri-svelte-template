@@ -1,8 +1,10 @@
 import i18n from 'i18next'
 import en from '../../../locales/en.json'
+import fr from '../../../locales/fr.json'
 
 const resources = {
   en: { translation: en },
+  fr: { translation: fr },
 }
 
 /**
@@ -13,6 +15,7 @@ const resources = {
  */
 export const languageLabels: Record<string, string> = {
   en: 'English',
+  fr: 'Français',
 }
 
 const rtlLanguages = ['ar', 'he', 'fa', 'ur']
