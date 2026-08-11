@@ -6,10 +6,12 @@
   import PaintbrushIcon from '@lucide/svelte/icons/paintbrush'
   import SlidersIcon from '@lucide/svelte/icons/sliders-horizontal'
   import KeyboardIcon from '@lucide/svelte/icons/keyboard'
+  import InfoIcon from '@lucide/svelte/icons/info'
   import GeneralPane from './GeneralPane.svelte'
   import AppearancePane from './AppearancePane.svelte'
   import ShortcutsPane from './ShortcutsPane.svelte'
   import AdvancedPane from './AdvancedPane.svelte'
+  import AboutPane from './AboutPane.svelte'
   import {
     getActivePreferencesPane,
     isPreferencesDialogOpen,
@@ -36,6 +38,7 @@
       labelKey: 'preferences.nav.shortcuts',
     },
     { id: 'advanced', icon: SlidersIcon, labelKey: 'preferences.nav.advanced' },
+    { id: 'about', icon: InfoIcon, labelKey: 'preferences.nav.about' },
   ]
 
   const activeLabelKey = $derived(
@@ -108,8 +111,10 @@
             <AppearancePane />
           {:else if getActivePreferencesPane() === 'shortcuts'}
             <ShortcutsPane />
-          {:else}
+          {:else if getActivePreferencesPane() === 'advanced'}
             <AdvancedPane />
+          {:else}
+            <AboutPane />
           {/if}
         </div>
       </main>
