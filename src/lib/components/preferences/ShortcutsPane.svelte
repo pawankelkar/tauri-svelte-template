@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Kbd } from '$lib/components/ui/kbd'
   import { Label } from '$lib/components/ui/label'
   import { Separator } from '$lib/components/ui/separator'
   import { Input } from '$lib/components/ui/input'
@@ -201,9 +202,11 @@
                         <RotateCcwIcon class="size-3.5" />
                       </Button>
                     {/if}
-                    <span class="text-muted-foreground font-mono text-xs">
-                      {shortcut ? getShortcutDisplay(shortcut) : '—'}
-                    </span>
+                    {#if shortcut}
+                      <Kbd>{getShortcutDisplay(shortcut)}</Kbd>
+                    {:else}
+                      <span class="text-muted-foreground text-xs">—</span>
+                    {/if}
                     <Button
                       variant="ghost"
                       size="icon"

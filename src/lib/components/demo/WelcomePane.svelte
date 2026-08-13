@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as Card from '$lib/components/ui/card'
   import { Button } from '$lib/components/ui/button'
+  import { Kbd } from '$lib/components/ui/kbd'
   import {
     executeCommand,
     getCommand,
@@ -255,11 +256,7 @@
             >
               <span>{t(tile.titleKey)}</span>
               {#if tile.shortcut}
-                <kbd
-                  class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs"
-                >
-                  {tile.shortcut}
-                </kbd>
+                <Kbd>{tile.shortcut}</Kbd>
               {/if}
             </Card.Title>
             <Card.Description>{t(tile.descriptionKey)}</Card.Description>

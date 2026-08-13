@@ -9,10 +9,10 @@ Clone or use GitHub's "Use this template" button:
 # Click "Use this template" on the repo page
 
 # Option 2: degit (no git history)
-npx degit your-username/tauri-svelte-template my-app
+npx degit frostybee/tauri-svelte-template my-app
 
 # Option 3: clone
-git clone https://github.com/your-username/tauri-svelte-template my-app
+git clone https://github.com/frostybee/tauri-svelte-template my-app
 cd my-app && rm -rf .git && git init
 ```
 

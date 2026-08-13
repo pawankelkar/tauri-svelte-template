@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as Dialog from '$lib/components/ui/dialog'
   import { Button } from '$lib/components/ui/button'
+  import { Kbd } from '$lib/components/ui/kbd'
   import CommandIcon from '@lucide/svelte/icons/command'
   import Settings2Icon from '@lucide/svelte/icons/settings-2'
   import ZapIcon from '@lucide/svelte/icons/zap'
@@ -87,11 +88,7 @@
             <div class="flex items-center gap-2">
               <span class="text-sm font-medium">{t(highlight.titleKey)}</span>
               {#if highlight.shortcut()}
-                <kbd
-                  class="bg-muted text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-xs"
-                >
-                  {highlight.shortcut()}
-                </kbd>
+                <Kbd>{highlight.shortcut()}</Kbd>
               {/if}
             </div>
             <p class="text-muted-foreground text-sm">{t(highlight.bodyKey)}</p>

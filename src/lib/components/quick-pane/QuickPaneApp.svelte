@@ -7,6 +7,7 @@
   import { QUICK_PANE_SUBMIT_EVENT } from '$lib/quick-pane/events'
   import { t } from '$lib/i18n/t.svelte'
   import { textInputContextMenu } from '$lib/actions/context-menu-actions'
+  import { Kbd } from '$lib/components/ui/kbd'
   import { logger } from '$lib/logger'
 
   /**
@@ -105,10 +106,8 @@
       autocomplete="off"
       use:textInputContextMenu
     />
-    <kbd
-      class="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 font-mono text-xs"
-    >
+    <Kbd class="shrink-0">
       {t('quickPane.submitHint')}
-    </kbd>
+    </Kbd>
   </div>
 </div>
