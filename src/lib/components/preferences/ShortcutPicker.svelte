@@ -51,6 +51,11 @@
 
   function handleKeydown(event: KeyboardEvent): void {
     event.preventDefault()
+    // Recording swallows the key outright. Without this the event keeps
+    // bubbling to the dialog's escape layer (Esc would close Preferences) and
+    // to the in-app shortcut dispatcher (the combo being recorded would also
+    // run its command).
+    event.stopPropagation()
 
     if (event.key === 'Escape') {
       listening = false

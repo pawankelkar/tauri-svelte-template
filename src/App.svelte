@@ -23,6 +23,7 @@
   import { initializeLanguage } from '$lib/i18n/language-init'
   import { initCommands } from '$lib/commands'
   import { getPlatform } from '$lib/hooks/use-platform.svelte'
+  import { initBrowserKeySuppression } from '$lib/browser-keys'
   import { logger } from '$lib/logger'
   import PanelLeftCloseIcon from '@lucide/svelte/icons/panel-left-close'
   import PanelLeftOpenIcon from '@lucide/svelte/icons/panel-left-open'
@@ -69,6 +70,9 @@
     const cleanupCorners = initSquareCorners()
     const cleanupTheme = initTheme()
     const cleanupQuickPane = initQuickPaneBridge()
+    const cleanupBrowserKeys = initBrowserKeySuppression(getPlatform(), {
+      reload: true,
+    })
 
     if (import.meta.env.PROD) {
       window.addEventListener('contextmenu', suppressContextMenu)
@@ -168,6 +172,7 @@
     return () => {
       destroyed = true
       window.removeEventListener('contextmenu', suppressContextMenu)
+      cleanupBrowserKeys()
       cleanupCorners()
       cleanupTheme()
       cleanupQuickPane()

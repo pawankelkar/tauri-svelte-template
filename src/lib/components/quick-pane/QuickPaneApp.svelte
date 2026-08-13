@@ -7,6 +7,8 @@
   import { QUICK_PANE_SUBMIT_EVENT } from '$lib/quick-pane/events'
   import { t } from '$lib/i18n/t.svelte'
   import { textInputContextMenu } from '$lib/actions/context-menu-actions'
+  import { initBrowserKeySuppression } from '$lib/browser-keys'
+  import { getPlatform } from '$lib/hooks/use-platform.svelte'
   import { Kbd } from '$lib/components/ui/kbd'
   import { logger } from '$lib/logger'
 
@@ -60,6 +62,12 @@
   onMount(() => {
     const window = getCurrentWindow()
 
+    // Its own webview, so it needs its own suppressor — Ctrl+F would otherwise
+    // drop a find bar over a pane that is one text field tall.
+    const cleanupBrowserKeys = initBrowserKeySuppression(getPlatform(), {
+      reload: true,
+    })
+
     const unlistenTheme = listen('theme-changed', () => {
       paintFromHint()
     })
@@ -77,6 +85,7 @@
     })
 
     return () => {
+      cleanupBrowserKeys()
       void unlistenTheme.then((fn) => fn())
       void unlistenFocus.then((fn) => fn())
     }
