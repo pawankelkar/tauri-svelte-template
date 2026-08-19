@@ -37,6 +37,14 @@
   "confirm.confirm": "Confirmer",
   "confirm.cancel": "Annuler",
 
+  "quit.unsavedTitle": "Modifications non enregistrées",
+  "quit.unsavedDescription": "Vous avez des modifications non enregistrées. Fermer quand même ?",
+  "quit.confirmQuit": "Quitter",
+  "quit.cancel": "Annuler",
+
+  "crash.recoveredMessage": "L'application a récupéré après un plantage.",
+  "crash.copyReport": "Copier le rapport",
+
   "errorBoundary.title": "Une erreur est survenue",
   "errorBoundary.copyDetails": "Copier les détails",
   "errorBoundary.reload": "Recharger",
@@ -153,6 +161,18 @@
   "preferences.advanced.editFileDescription": "Ouvrir preferences.json dans votre éditeur par défaut.",
   "preferences.advanced.editFileButton": "Ouvrir le fichier",
   "preferences.advanced.editFileError": "Impossible d'ouvrir preferences.json. Modifiez d'abord une préférence pour le créer.",
+  "preferences.advanced.unsavedChangesLabel": "Simuler des modifications non enregistrées",
+  "preferences.advanced.unsavedChangesDescription": "Activez cette option pour tester la confirmation de fermeture. Non persisté.",
+  "preferences.advanced.diagnosticsSection": "Diagnostics",
+  "preferences.advanced.diagnosticsDescription": "Copier les informations système et de l'application pour les rapports de bogues.",
+  "preferences.advanced.diagnosticsCopyButton": "Copier les diagnostics",
+  "preferences.advanced.diagnosticsCopied": "Diagnostics copiés dans le presse-papiers.",
+  "preferences.advanced.diagnosticsCopyError": "Impossible de copier les diagnostics.",
+  "preferences.advanced.crashReportsSection": "Rapports de plantage",
+  "preferences.advanced.crashReportsCount": "{{count}} rapport(s) de plantage sur le disque.",
+  "preferences.advanced.clearCrashReportsButton": "Effacer les rapports de plantage",
+  "preferences.advanced.clearCrashReportsSuccess": "Rapports de plantage effacés.",
+  "preferences.advanced.clearCrashReportsError": "Impossible d'effacer les rapports de plantage.",
 
   "onboarding.title": "Bienvenue",
   "onboarding.description": "Un tour rapide des principaux points d'entrée de l'application.",

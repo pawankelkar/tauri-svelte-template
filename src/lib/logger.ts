@@ -41,6 +41,9 @@ class Logger {
     if (level === 'warn' || level === 'error') {
       this.forwardToBackend(level, message, args)
     }
+    if (level === 'error') {
+      this.forwardToCrashReporter(message, args)
+    }
   }
 
   private forwardToBackend(
@@ -56,6 +59,18 @@ class Logger {
           args.length > 0 ? `${message} ${JSON.stringify(args)}` : message
         if (level === 'warn') logWarn(fullMessage)
         else logError(fullMessage)
+      } catch {
+        // Logging must never throw
+      }
+    })()
+  }
+  private forwardToCrashReporter(message: string, args: unknown[]): void {
+    void (async () => {
+      try {
+        const { commands } = await import('$lib/tauri-bindings')
+        const fullMessage =
+          args.length > 0 ? `${message} ${JSON.stringify(args)}` : message
+        await commands.logFrontendError(fullMessage, null, null)
       } catch {
         // Logging must never throw
       }

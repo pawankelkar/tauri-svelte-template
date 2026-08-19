@@ -2,12 +2,16 @@
   import { onMount } from 'svelte'
   import { listen } from '@tauri-apps/api/event'
   import { getCurrentWindow } from '@tauri-apps/api/window'
-  import { commands } from '$lib/tauri-bindings'
+  import { commands, unwrapResult } from '$lib/tauri-bindings'
   import { initSquareCorners } from '$lib/stores/square-corners.svelte'
   import { initPreferences } from '$lib/stores/preferences.svelte'
   import { getAppState, initAppState } from '$lib/stores/app-state.svelte'
   import { openOnboardingDialog } from '$lib/commands/onboarding-dialog-state.svelte'
-  import { flushAllStores, requestQuit } from '$lib/lifecycle'
+  import {
+    confirmQuitIfDirty,
+    flushAllStores,
+    requestQuit,
+  } from '$lib/lifecycle'
   import { initQuickPaneBridge } from '$lib/quick-pane/bridge'
   import { registerDeepLinkSchemeInDev } from '$lib/deep-link'
   import { toast } from '$lib/stores/toast'
@@ -66,6 +70,27 @@
     e.preventDefault()
   }
 
+  async function checkForRecentCrash(): Promise<void> {
+    try {
+      const result = unwrapResult(await commands.hasRecentCrash())
+      if (!result) return
+      const report = unwrapResult(
+        await commands.getCrashReport(result.filename),
+      )
+      toast.warning(t('crash.recoveredMessage'), {
+        duration: 10000,
+        action: {
+          label: t('crash.copyReport'),
+          onClick: () => {
+            void navigator.clipboard.writeText(report)
+          },
+        },
+      })
+    } catch {
+      // Silent — crash detection is best-effort
+    }
+  }
+
   onMount(() => {
     const cleanupCorners = initSquareCorners()
     const cleanupTheme = initTheme()
@@ -93,6 +118,7 @@
       const unlisten = await listen<{ hide: boolean }>(
         'app:close-requested',
         async (event) => {
+          if (!(await confirmQuitIfDirty())) return
           try {
             await flushAllStores()
           } catch (e) {
@@ -102,9 +128,6 @@
             await appWindow.hide()
             return
           }
-          // Quit the whole app rather than closing this window: the hidden
-          // Quick Pane window would otherwise keep the process alive after
-          // the main window is gone.
           await commands.quitApp()
         },
       )
@@ -161,6 +184,7 @@
         }
         void registerDeepLinkSchemeInDev()
         void commands.cleanupOldRecoveryFiles()
+        void checkForRecentCrash()
       } finally {
         // Show even if an init step failed — a degraded UI beats a window
         // that never appears.

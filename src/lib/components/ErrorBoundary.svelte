@@ -14,6 +14,11 @@
       message: describe(error),
       timestamp: new Date().toISOString(),
     })
+    void commands.logFrontendError(
+      describe(error),
+      error instanceof Error ? (error.stack ?? null) : null,
+      null,
+    )
   }
 
   function describe(error: unknown): string {

@@ -24,6 +24,60 @@ async saveAppState(appState: PersistedAppState) : Promise<Result<null, string>> 
     else return { status: "error", error: e  as any };
 }
 },
+async setHasUnsavedChanges(dirty: boolean) : Promise<void> {
+    await TAURI_INVOKE("set_has_unsaved_changes", { dirty });
+},
+async hasUnsavedChanges() : Promise<boolean> {
+    return await TAURI_INVOKE("has_unsaved_changes");
+},
+async logFrontendError(message: string, stack: string | null, componentStack: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("log_frontend_error", { message, stack, componentStack }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async hasRecentCrash() : Promise<Result<CrashReportSummary | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("has_recent_crash") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listCrashReports() : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_crash_reports") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getCrashReport(name: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_crash_report", { name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearCrashReports() : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_crash_reports") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async collectDiagnostics(tauriVersion: string) : Promise<Result<DiagnosticsReport, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("collect_diagnostics", { tauriVersion }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async greet(name: string) : Promise<Result<string, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("greet", { name }) };
@@ -217,6 +271,8 @@ windowEffects: boolean; language: string | null; globalShortcut: string | null; 
  * frontend combos (e.g. `"mod+shift+k"`), not Tauri accelerators.
  */
 commandShortcuts: Partial<{ [key in string]: string | null }> }
+export type CrashReportSummary = { filename: string; timestampSecs: number; secondsAgo: number }
+export type DiagnosticsReport = { appName: string; appVersion: string; osName: string; osArch: string; osVersion: string; tauriVersion: string; settings: JsonValue; recentCrashReports: string[]; memoryUsageBytes: number | null; uptimeSecs: number | null }
 /**
  * A VS Code theme the user imported, stored as the already-converted anchor
  * profile plus workbench overrides — never the raw VS Code JSON. Mirrors

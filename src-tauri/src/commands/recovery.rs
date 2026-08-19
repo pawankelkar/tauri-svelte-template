@@ -4,28 +4,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde_json::Value;
 use tauri::AppHandle;
 
-use super::json_store::data_file_path;
+use super::json_store::{data_file_path, validate_filename};
 
 const RECOVERY_DIR: &str = "recovery";
 const MAX_RECOVERY_BYTES: usize = 10 * 1024 * 1024;
 const MAX_AGE_SECS: u64 = 7 * 24 * 60 * 60;
 const MAX_FILENAME_LEN: usize = 200;
-
-fn validate_filename(name: &str) -> Result<(), String> {
-    if name.is_empty() {
-        return Err("Filename must not be empty".to_string());
-    }
-    if name.len() > MAX_FILENAME_LEN {
-        return Err(format!("Filename exceeds {MAX_FILENAME_LEN} characters"));
-    }
-    if name.starts_with('.') {
-        return Err("Filename must not start with '.'".to_string());
-    }
-    if name.contains('/') || name.contains('\\') || name.contains("..") {
-        return Err("Filename must not contain path separators or '..'".to_string());
-    }
-    Ok(())
-}
 
 fn recovery_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     let base = data_file_path(app, RECOVERY_DIR)?;
@@ -40,7 +24,7 @@ pub async fn save_emergency_data(
     filename: String,
     data: Value,
 ) -> Result<(), String> {
-    validate_filename(&filename)?;
+    validate_filename(&filename, MAX_FILENAME_LEN)?;
 
     let json =
         serde_json::to_string_pretty(&data).map_err(|e| format!("Serializing crash data: {e}"))?;
@@ -120,32 +104,32 @@ mod tests {
 
     #[test]
     fn validate_rejects_empty() {
-        assert!(validate_filename("").is_err());
+        assert!(validate_filename("", MAX_FILENAME_LEN).is_err());
     }
 
     #[test]
     fn validate_rejects_dot_prefix() {
-        assert!(validate_filename(".hidden").is_err());
+        assert!(validate_filename(".hidden", MAX_FILENAME_LEN).is_err());
     }
 
     #[test]
     fn validate_rejects_path_separators() {
-        assert!(validate_filename("../escape").is_err());
-        assert!(validate_filename("sub/file").is_err());
-        assert!(validate_filename("sub\\file").is_err());
+        assert!(validate_filename("../escape", MAX_FILENAME_LEN).is_err());
+        assert!(validate_filename("sub/file", MAX_FILENAME_LEN).is_err());
+        assert!(validate_filename("sub\\file", MAX_FILENAME_LEN).is_err());
     }
 
     #[test]
     fn validate_rejects_too_long() {
         let long = "a".repeat(MAX_FILENAME_LEN + 1);
-        assert!(validate_filename(&long).is_err());
+        assert!(validate_filename(&long, MAX_FILENAME_LEN).is_err());
     }
 
     #[test]
     fn validate_accepts_normal_names() {
-        assert!(validate_filename("crash-1234567890").is_ok());
-        assert!(validate_filename("error_report").is_ok());
-        assert!(validate_filename("a").is_ok());
+        assert!(validate_filename("crash-1234567890", MAX_FILENAME_LEN).is_ok());
+        assert!(validate_filename("error_report", MAX_FILENAME_LEN).is_ok());
+        assert!(validate_filename("a", MAX_FILENAME_LEN).is_ok());
     }
 
     #[test]

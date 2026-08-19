@@ -1,5 +1,7 @@
 pub mod app_state;
+pub mod crash_reporter;
 pub mod demo;
+pub mod diagnostics;
 pub mod global_shortcut;
 pub mod json_store;
 pub mod lifecycle;

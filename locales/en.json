@@ -37,6 +37,14 @@
   "confirm.confirm": "Confirm",
   "confirm.cancel": "Cancel",
 
+  "quit.unsavedTitle": "Unsaved Changes",
+  "quit.unsavedDescription": "You have unsaved changes. Close anyway?",
+  "quit.confirmQuit": "Quit",
+  "quit.cancel": "Cancel",
+
+  "crash.recoveredMessage": "The app recovered from a crash.",
+  "crash.copyReport": "Copy Report",
+
   "errorBoundary.title": "Something went wrong",
   "errorBoundary.copyDetails": "Copy details",
   "errorBoundary.reload": "Reload",
@@ -153,6 +161,18 @@
   "preferences.advanced.editFileDescription": "Open preferences.json in your default editor.",
   "preferences.advanced.editFileButton": "Open File",
   "preferences.advanced.editFileError": "Couldn't open preferences.json. Change a preference first to create it.",
+  "preferences.advanced.unsavedChangesLabel": "Simulate Unsaved Changes",
+  "preferences.advanced.unsavedChangesDescription": "Flip this on to test the quit-confirmation dialog. Not persisted.",
+  "preferences.advanced.diagnosticsSection": "Diagnostics",
+  "preferences.advanced.diagnosticsDescription": "Copy system and app information for bug reports.",
+  "preferences.advanced.diagnosticsCopyButton": "Copy Diagnostics",
+  "preferences.advanced.diagnosticsCopied": "Diagnostics copied to the clipboard.",
+  "preferences.advanced.diagnosticsCopyError": "Couldn't copy the diagnostics.",
+  "preferences.advanced.crashReportsSection": "Crash Reports",
+  "preferences.advanced.crashReportsCount": "{{count}} crash report(s) on disk.",
+  "preferences.advanced.clearCrashReportsButton": "Clear Crash Reports",
+  "preferences.advanced.clearCrashReportsSuccess": "Crash reports cleared.",
+  "preferences.advanced.clearCrashReportsError": "Couldn't clear the crash reports.",
 
   "onboarding.title": "Welcome",
   "onboarding.description": "A quick tour of the app's main entry points.",

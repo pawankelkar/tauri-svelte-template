@@ -2,13 +2,21 @@ use tauri_specta::{collect_commands, Builder};
 
 pub fn generate_bindings() -> Builder<tauri::Wry> {
     use crate::commands::{
-        app_state, demo, global_shortcut, lifecycle, preferences, quick_pane, recovery,
-        system_fonts, theme_import,
+        app_state, crash_reporter, demo, diagnostics, global_shortcut, lifecycle, preferences,
+        quick_pane, recovery, system_fonts, theme_import,
     };
 
     Builder::<tauri::Wry>::new().commands(collect_commands![
         app_state::load_app_state,
         app_state::save_app_state,
+        app_state::set_has_unsaved_changes,
+        app_state::has_unsaved_changes,
+        crash_reporter::log_frontend_error,
+        crash_reporter::has_recent_crash,
+        crash_reporter::list_crash_reports,
+        crash_reporter::get_crash_report,
+        crash_reporter::clear_crash_reports,
+        diagnostics::collect_diagnostics,
         demo::greet,
         global_shortcut::register_global_shortcut,
         global_shortcut::unregister_global_shortcut,

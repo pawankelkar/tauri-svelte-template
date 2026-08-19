@@ -13,6 +13,8 @@ use state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    commands::crash_reporter::install_panic_hook();
+
     let builder = bindings::generate_bindings();
 
     #[cfg(debug_assertions)]
@@ -145,6 +147,9 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            commands::crash_reporter::set_app_crash_dir(app.handle());
+            commands::diagnostics::mark_startup();
+
             log::info!("Application starting up");
             log::debug!(
                 "App handle initialized for package: {}",

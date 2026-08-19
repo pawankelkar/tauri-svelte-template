@@ -1,6 +1,9 @@
-use tauri::AppHandle;
+use std::sync::atomic::Ordering;
+
+use tauri::{AppHandle, State};
 
 use crate::commands::json_store::{data_file_path, load_json, save_json};
+use crate::state::AppState;
 use crate::types::PersistedAppState;
 
 const APP_STATE_FILE: &str = "state.json";
@@ -17,6 +20,18 @@ pub async fn load_app_state(app: AppHandle) -> Result<PersistedAppState, String>
 pub async fn save_app_state(app: AppHandle, app_state: PersistedAppState) -> Result<(), String> {
     let path = data_file_path(&app, APP_STATE_FILE)?;
     save_json(&path, &app_state)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_has_unsaved_changes(state: State<AppState>, dirty: bool) {
+    state.has_unsaved_changes.store(dirty, Ordering::SeqCst);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn has_unsaved_changes(state: State<AppState>) -> bool {
+    state.has_unsaved_changes.load(Ordering::SeqCst)
 }
 
 #[cfg(test)]
@@ -42,6 +57,21 @@ mod tests {
         save(&path, &value).unwrap();
         let loaded: PersistedAppState = load(&path);
         assert_eq!(loaded, value);
+    }
+
+    #[test]
+    fn dirty_flag_defaults_to_false() {
+        let state = AppState::default();
+        assert!(!state.has_unsaved_changes.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn dirty_flag_round_trips() {
+        let state = AppState::default();
+        state.has_unsaved_changes.store(true, Ordering::SeqCst);
+        assert!(state.has_unsaved_changes.load(Ordering::SeqCst));
+        state.has_unsaved_changes.store(false, Ordering::SeqCst);
+        assert!(!state.has_unsaved_changes.load(Ordering::SeqCst));
     }
 
     #[test]

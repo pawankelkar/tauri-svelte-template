@@ -2,6 +2,8 @@ export {
   commands,
   type Result,
   type AppPreferences,
+  type CrashReportSummary,
+  type DiagnosticsReport,
   type ImportedTheme,
   type ThemeProfile,
   type PersistedAppState,

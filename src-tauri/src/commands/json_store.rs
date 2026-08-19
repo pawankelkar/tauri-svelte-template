@@ -6,6 +6,23 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tauri::{AppHandle, Manager, Runtime};
 
+/// Guards a user-supplied filename against path traversal and degenerate names.
+pub fn validate_filename(name: &str, max_len: usize) -> Result<(), String> {
+    if name.is_empty() {
+        return Err("Filename must not be empty".to_string());
+    }
+    if name.len() > max_len {
+        return Err(format!("Filename exceeds {max_len} characters"));
+    }
+    if name.starts_with('.') {
+        return Err("Filename must not start with '.'".to_string());
+    }
+    if name.contains('/') || name.contains('\\') || name.contains("..") {
+        return Err("Filename must not contain path separators or '..'".to_string());
+    }
+    Ok(())
+}
+
 /// Resolves `<app-data-dir>/<file_name>`, creating the directory if needed.
 pub fn data_file_path<R: Runtime>(app: &AppHandle<R>, file_name: &str) -> Result<PathBuf, String> {
     let dir = app
