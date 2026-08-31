@@ -12,80 +12,133 @@
   <a href="USING_THIS_TEMPLATE.md"><strong>Using this template</strong></a> ·
   <a href="docs/developer/README.md">Developer docs</a> ·
   <a href="#quick-start">Quick start</a> ·
-  <a href="#whats-included">Features</a> ·
+  <a href="#whats-already-built">Features</a> ·
   <a href="https://github.com/frostybee/tauri-svelte-template/releases">Releases</a>
 </p>
 
-A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScript. Clone it, rename a few strings, and start building on a foundation that already handles the parts every desktop app needs.
+A "batteries-included" template for building production-ready desktop applications with **Tauri v2**, **Svelte 5**, and **TypeScript**. Clone it, rename a few strings, and start building on a foundation that already handles the parts every desktop app needs.
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="The template's welcome pane running on Windows" width="860">
-  <br>
-  <em>Every tile documents a built-in feature and triggers it — command palette, sidebars, Quick Pane, toasts, native dialogs, and the typed Rust bridge.</em>
+  <img src="docs/demo.gif" alt="Demo of the template's features: command palette, theme switching, Quick Pane, preferences, and more" width="860">
 </p>
 
+## Why This Template?
 
-## What's included
+Most Tauri starters give you a blank canvas. This template gives you a **working application** with patterns already established:
 
-### UI
+- **Type-safe Rust-TypeScript bridge** via tauri-specta with generated bindings
+- **Performance patterns enforced by tooling** including ast-grep rules for Svelte 5 IPC footguns
+- **Multi-window architecture** already working (Quick Pane with global shortcut as a demo)
+- **Cross-platform ready** with platform-specific titlebars, window controls, and native menu integration
+- **i18n built-in** with RTL support, reactive translations, and menus that rebuild on language change
+- **VS Code theme support** with an OKLCH derivation engine that turns any VS Code theme JSON into a full app theme
 
-- Custom titlebar with platform-native controls (macOS traffic lights, Windows buttons, Linux native)
-- Dual resizable sidebars with persistent width and visibility
-- Command palette with fuzzy search (Ctrl+K)
-- Preferences dialog with sidebar navigation (General, Appearance, Shortcuts, Advanced, About)
-- Quick Pane: a floating always-on-top window triggered by a global shortcut, even while another app has focus
-- Window Effects preference: native vibrancy behind the app (Mica/Acrylic on Windows, translucency on macOS), off by default
-- Tray icon: left-click shows/focuses the window, menu with Show/Quit (quit flushes stores first)
-- First-run onboarding dialog highlighting the command palette, preferences, and Quick Pane
-- Launch-at-login toggle in Preferences, reading the OS registration live so it never drifts
-- Shortcuts pane with rebindable in-app keyboard shortcuts
-- About pane with version info, system details, links, and an update checker
-- Toast notifications and a promise-based confirm dialog
-- Error boundary with crash recovery (saves diagnostics to disk, shows a reload fallback)
-- Crash reporter: automatic Rust panic capture and frontend error logging to disk, with startup notification
-- Diagnostics bundle: one-click export of app/OS/memory/settings info for bug reports
-- Quit confirmation with an unsaved-changes gate across all exit paths
+## Stack
 
-### Infrastructure
+| Layer | Technologies |
+| --- | --- |
+| Frontend | Svelte 5, TypeScript, Vite |
+| UI | shadcn-svelte, Tailwind CSS v4, Lucide Svelte |
+| State | Svelte 5 runes, JSON store persistence, paneforge |
+| Backend | Tauri v2, Rust |
+| Testing | Vitest |
+| i18n | i18next |
+| Quality | Prettier, ESLint, ast-grep, knip, jscpd, clippy |
 
-- Theme system: light, dark, and system modes with flash-free startup (no white flicker in dark mode), plus full VS Code theme support — bundled presets and an importer that turns any VS Code theme JSON into an app-wide theme via an OKLCH derivation engine
-- Typed IPC via tauri-specta: every Rust command has generated TypeScript bindings
-- JSON persistence with atomic writes, corrupt-file recovery, and debounced saves
-- Internationalisation via i18next with reactive `t()`, RTL support, and menus that rebuild on language change — shipped in English and French with a key-parity test
-- Deep linking: a custom URL scheme routed through single-instance on Windows/Linux and native events on macOS
-- Native menu bar and right-click context menus, all dispatching through a single command registry
-- Platform-aware shortcut formatting ("⌘K" on macOS, "Ctrl+K" on Windows)
-- Global shortcuts with register/persist/rollback and a ShortcutPicker component
-- Single-instance enforcement — only one copy of the app can run at a time
-- Window state persistence — saves/restores position, size, and maximized state across restarts
-- Square corners on fullscreen (Windows/Linux) with smooth transitions
-- Native-feel CSS defaults: `overscroll-behavior: none`, `user-select: none` with selective re-enable on text inputs
-- Platform-specific Tauri configs (macOS, Windows, Linux overrides)
-- Frontend logger that forwards warnings and errors to the Tauri backend in production, plus crash report files for prod errors
+## What's Already Built
 
-### Developer experience
+The template includes a working application with these features implemented:
 
-- `check:all` pipeline: 10 gates from formatting to Rust tests, cheapest first
-- ast-grep rules catching Svelte 5 IPC footguns and missing store flushes
-- knip (unused code detection) and jscpd (copy-paste detection)
-- CodeRabbit config for AI-powered PR reviews
-- CI workflow (frontend + Rust on Ubuntu and Windows) and multi-platform release workflow
-- `prepare-release.js`: version sync, quality gate, commit, tag
-- Auto-updater pre-wired with signed artifacts
-- Claude Code skills (`/setup`, `/check`, `/cleanup`, `/change-package-manager`, `/run-app`) and subagents
+### Core Features
 
-## Quick start
+- **Command Palette** (`Ctrl/Cmd+K`) with fuzzy search and keyboard navigation
+- **Quick Pane** with a global shortcut that opens a floating always-on-top window, even while another app has focus
+- **Dual Resizable Sidebars** with persistent width and visibility
+- **Preferences Dialog** with sidebar navigation (General, Appearance, Shortcuts, Advanced, About)
+- **Keyboard Shortcuts** with rebindable in-app shortcuts and a ShortcutPicker component
+- **Native Menus** built from JavaScript with full i18n support, plus right-click context menus
+- **Theme System** with light, dark, and system modes, flash-free startup, and VS Code theme importing
+- **Window Effects** preference for native vibrancy (Mica/Acrylic on Windows, translucency on macOS), off by default
+- **Tray Icon** with left-click to show/focus the window and a menu with Show/Quit (quit flushes stores first)
+- **Toast Notifications** and a promise-based confirm dialog
+- **Auto-updates** via the Tauri updater plugin with GitHub Releases integration
+- **Single-instance Enforcement** so only one copy of the app can run at a time
+- **Window State Persistence** that saves/restores position, size, and maximized state across restarts
+- **Launch-at-login Toggle** in Preferences, reading the OS registration live so it never drifts
+- **Deep Linking** with a custom URL scheme routed through single-instance on Windows/Linux and native events on macOS
+- **Font Picker** with system font enumeration from Rust for selecting the app's UI font
+- **Browser Key Suppression** that blocks browser accelerator keys (Ctrl+F, Ctrl+P, etc.) so they don't leak through to the webview
+- **First-run Onboarding** dialog highlighting the command palette, preferences, and Quick Pane
+
+### Reliability
+
+- **Error Boundary** with crash recovery that saves diagnostics to disk and shows a reload fallback
+- **Crash Reporter** with automatic Rust panic capture and frontend error logging to disk, plus a startup notification if the app crashed recently
+- **Diagnostics Bundle** for one-click export of app/OS/memory/settings info for bug reports
+- **Quit Confirmation** with an unsaved-changes gate across all exit paths (window close, tray quit, command palette)
+- **JSON Persistence** with atomic writes, corrupt-file recovery, and debounced saves
+
+### Cross-Platform
+
+| Platform | Title Bar | Window Controls | Bundle Format |
+| --- | --- | --- | --- |
+| macOS | Custom with vibrancy | Traffic lights | `.dmg` |
+| Windows | Custom (Mica/Acrylic optional) | Right side | `.msi` |
+| Linux | Custom | Native | `.AppImage` |
+
+Platform detection utilities, platform-specific UI strings ("Reveal in Finder" vs "Show in Explorer"), separate Tauri configs per platform, square corners on fullscreen (Windows/Linux), and native-feel CSS defaults (`overscroll-behavior: none`, `user-select: none` with selective re-enable on text inputs) are all set up.
+
+### Developer Experience
+
+- **Type-safe Tauri commands** with tauri-specta generating TypeScript bindings from Rust
+- **Static analysis** with Prettier, ESLint, ast-grep (architecture enforcement), knip (unused code), jscpd (duplication)
+- **Single quality gate** with `pnpm check:all` running 10 gates from formatting to Rust tests, cheapest first
+- **CI workflow** on Ubuntu and Windows, plus a multi-platform release workflow
+- **`prepare-release.js`** for version sync, quality gate, commit, and tag
+- **CodeRabbit config** for AI-powered PR reviews
+
+## Tauri Plugins Included
+
+| Plugin | Purpose |
+| --- | --- |
+| single-instance | Prevent multiple app instances |
+| window-state | Remember window position/size |
+| fs | File system access |
+| dialog | Native open/save dialogs |
+| notification | System notifications |
+| clipboard-manager | Clipboard access |
+| global-shortcut | System-wide keyboard shortcuts |
+| updater | In-app auto-updates |
+| opener | Open URLs/files with default app |
+| autostart | Launch at login |
+| deep-link | Custom URL scheme routing |
+| log | Structured backend logging |
+| os | Platform detection |
+| shell | Shell command execution |
+| process | Process management |
+| persisted-scope | Persist FS permissions across restarts |
+
+## AI-Ready Development
+
+This template is designed to work well with AI coding agents like Claude Code:
+
+- **Comprehensive documentation** in `docs/developer/` covering all patterns. Human readable but designed to explain the "why" of certain patterns to AI agents.
+- **Claude Code integration** with custom skills (`/setup`, `/check`, `/cleanup`, `/change-package-manager`, `/run-app`) and specialized subagents
+- **Sensible file organization** with Svelte code in `src/` (clear separation of components, stores, utils, commands) and Rust in `src-tauri/src/` with modular command organization. Predictable structure for both humans and AI.
+
+## Quick Start
 
 ```bash
+# Prerequisites: Node.js 18+, Rust (latest stable), pnpm
+# See https://tauri.app/start/prerequisites/ for platform-specific deps
+
+git clone <your-repo>
+cd your-app
 pnpm install
 pnpm tauri dev
 ```
 
 See [USING_THIS_TEMPLATE.md](USING_THIS_TEMPLATE.md) for the full onboarding guide: renaming placeholders, removing demo content, adding your own commands and preferences.
-
-## Stack
-
-Tauri v2 · Svelte 5 · TypeScript · Tailwind v4 · shadcn-svelte · tauri-specta · i18next · paneforge · Vitest
 
 ## Scripts
 
@@ -97,39 +150,10 @@ Tauri v2 · Svelte 5 · TypeScript · Tailwind v4 · shadcn-svelte · tauri-spec
 | `pnpm rust:bindings` | Regenerate TypeScript bindings after changing a Rust command |
 | `pnpm release v1.0.0` | Bump versions, run checks, commit, and tag |
 
-## Project structure
-
-```
-src/
-  main.ts                    Entry point (flash-free theme paint, then mount)
-  App.svelte                 Root component: boot sequence, close handshake, layout
-  lib/
-    commands/                Command registry, palette state, command modules
-    components/              Layout, preferences, demo, shadcn ui primitives
-    stores/                  Preferences, app state, theme, UI convenience
-    i18n/                    i18next config, language init, reactive t()
-    quick-pane/              Cross-window event bridge
-    shortcuts.ts             Shortcut parsing, normalisation, keydown dispatch
-    menu.ts                  Native menu bar (rebuilt on language change)
-    context-menu.ts          Native right-click menus
-    tauri-bindings.ts        Typed IPC re-export with unwrapResult()
-    logger.ts                Frontend logging (console in dev, backend in prod)
-
-src-tauri/
-  src/
-    lib.rs                   Plugin chain, setup, close handshake
-    commands/                json_store, preferences, app_state, global_shortcut,
-                             quick_pane, recovery, crash_reporter,
-                             diagnostics, lifecycle
-    types.rs                 AppPreferences, PersistedAppState, ShortcutPurpose
-  capabilities/              Per-window permission grants
-  tauri.conf.json            App config (with platform overrides)
-```
-
 ## Documentation
 
-- [Using This Template](USING_THIS_TEMPLATE.md): how to clone, rename, customise, and ship
-- [Developer Docs](docs/developer/README.md): reference docs for every subsystem (architecture, state, commands, theme, i18n, cross-platform, and more)
+- **[Using This Template](USING_THIS_TEMPLATE.md)** for setup, renaming, and customization
+- **[Developer Docs](docs/developer/README.md)** for architecture, patterns, and detailed subsystem guides
 
 ## License
 
@@ -139,4 +163,4 @@ Tauri Svelte Template is licensed under the [MIT License](LICENSE). The UI primi
 
 ---
 
-Getting started: [USING_THIS_TEMPLATE.md](USING_THIS_TEMPLATE.md) · Subsystem reference: [docs/developer](docs/developer/README.md)
+Built with [Tauri](https://tauri.app) · [Svelte](https://svelte.dev) · [shadcn-svelte](https://shadcn-svelte.com)
