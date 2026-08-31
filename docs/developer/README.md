@@ -17,7 +17,7 @@
 | [Internationalisation](i18n.md) | i18next setup, locale management, RTL support, adding languages |
 | [Cross-Platform](cross-platform.md) | Platform detection, titlebar variants, context menus, capabilities |
 | [Quick Panes](quick-panes.md) | Multi-window architecture, Vite dual-entry, cross-window events |
-| [Error Handling](error-handling.md) | Error boundary, logging, Result discipline, two-phase close |
+| [Error Handling](error-handling.md) | Error boundary, logging, crash reporting, diagnostics, quit confirmation, two-phase close |
 
 ## Tooling
 

@@ -52,6 +52,18 @@ Thin wrappers over `app-state` fields: `isLeftSidebarVisible()`,
 `toggleLeftSidebar()`, `getLastQuickPaneEntry()`, etc. These exist so
 components don't need to know about the app-state store directly.
 
+### Dirty flag (`dirty.svelte.ts`)
+
+A non-persisted boolean that tracks whether the app has unsaved changes. Resets
+each launch.
+
+- `getHasUnsavedChanges()` — read the flag
+- `setHasUnsavedChanges(value)` — update + mirror to Rust (`AppState.has_unsaved_changes`)
+
+The flag gates all quit paths via `confirmQuitIfDirty()` in `lifecycle.ts`,
+which shows the in-app confirmation dialog when dirty. See
+[Error Handling](error-handling.md) for the full close sequence.
+
 ### Theme (`theme.svelte.ts`)
 
 Manages the light/dark/system mode. See [Theme System](theme-system.md).
@@ -105,12 +117,13 @@ export function flushAllStores(): Promise<void> {
 }
 ```
 
-Both exit paths use it:
+Both exit paths use it, after the unsaved-changes gate:
 
 1. **Close handshake** — Rust prevents the window close, emits
-   `app:close-requested`; `App.svelte` calls `flushAllStores()` then confirms
-2. **Quit command** — `requestQuit()` in `lifecycle.ts` flushes, then calls
-   `commands.quitApp()`
+   `app:close-requested`; `App.svelte` calls `confirmQuitIfDirty()`, then
+   `flushAllStores()`, then confirms
+2. **Quit command** — `requestQuit()` in `lifecycle.ts` checks
+   `confirmQuitIfDirty()`, flushes, then calls `commands.quitApp()`
 
 Adding a new persisted store: export a `flush()`, call it from
 `flushAllStores()`.

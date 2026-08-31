@@ -14,7 +14,8 @@ On error:
 
 1. Logs via `logger.error()`
 2. Saves crash data to disk via `commands.saveEmergencyData()`
-3. Renders a fallback UI with "Copy details" and "Reload" buttons
+3. Writes a crash report via `commands.logFrontendError()` (see Crash reporting below)
+4. Renders a fallback UI with "Copy details" and "Reload" buttons
 
 The reload is a full `location.reload()`, not a soft `_reset()`. Re-running
 `main.ts` re-hydrates from disk, recovering from more states than a
@@ -29,6 +30,33 @@ Those need their own try/catch at the call site.
 writes crash data to `<app-data-dir>/recovery/<filename>.json`. On startup,
 `cleanup_old_recovery_files()` purges files older than 7 days. See
 [Persistence & Recovery](persistence-and-recovery.md) for details.
+
+## Crash reporting
+
+`src-tauri/src/commands/crash_reporter.rs` provides automatic crash capture
+at two levels:
+
+**Rust panics** — `install_panic_hook()` is called as the very first line of
+`run()`, before the Tauri Builder is constructed. It chains
+`std::panic::take_hook()` and writes structured `.log` files to
+`<app-data-dir>/crash-reports/` with message, location, backtrace, OS info,
+and app version. Uses a `OnceLock<PathBuf>` for the crash directory, set via
+`set_app_crash_dir()` in `setup()`, with a fallback to
+`~/.app-crash-reports/` for panics that happen before setup completes.
+
+**Frontend errors** — `log_frontend_error()` writes
+`frontend-error-<timestamp>.log` to the same directory. Called from:
+
+- `ErrorBoundary.svelte` on render crashes (alongside `saveEmergencyData`)
+- `logger.ts` on all prod-level `error()` calls (via `forwardToCrashReporter`)
+
+**Startup notification** — `checkForRecentCrash()` in `App.svelte` calls
+`hasRecentCrash()` on boot. If a crash report exists within the last 300
+seconds, a warning toast appears with a "Copy Report" action button.
+
+**Management UI** — the Advanced preferences pane shows the crash report count
+and a "Clear Crash Reports" button. The "Copy Diagnostics" button (see
+Diagnostics below) also includes recent crash report filenames.
 
 ## Result discipline
 
@@ -50,6 +78,7 @@ throws the error string. Every `commands.*` call goes through it.
 | --- | --- | --- |
 | `trace` / `debug` / `info` | Console with `[ISO-timestamp] [LEVEL]` prefix | Silent |
 | `warn` / `error` | Console with prefix | Forwarded to `@tauri-apps/plugin-log` backend |
+| `error` (additional) | — | Also writes a crash report via `logFrontendError` |
 
 The plugin-log import is lazy (`import()`) so it doesn't add to the critical
 path. Logging never throws — the `forwardToBackend` catch block is a silent
@@ -72,7 +101,9 @@ The app uses a two-phase close to ensure stores are flushed before exit:
 1. **Rust** intercepts `CloseRequested` and calls `api.prevent_close()`
 2. **Rust** emits `app:close-requested` with `{ hide: bool }` (`hide: true`
    only on macOS)
-3. **Frontend** (`App.svelte`) listens, calls `flushAllStores()`
+3. **Frontend** (`App.svelte`) listens, calls `confirmQuitIfDirty()` — if the
+   dirty flag is set, shows a confirmation dialog; returns early on cancel
+4. **Frontend** calls `flushAllStores()`
 4. On macOS (`hide: true`): hides the window (app stays running in the dock)
 5. On Windows/Linux (`hide: false`): calls `commands.quitApp()`, which exits
    the whole process rather than closing just the window — the hidden Quick
@@ -83,8 +114,37 @@ window closes triggered by teardown pass through the `CloseRequested` handler
 without being re-intercepted.
 
 The quit path (`requestQuit()` in `lifecycle.ts`) works the same way: it
-flushes stores then calls `commands.quitApp()`. This is also the only way to
-actually exit on macOS, where closing the window only hides it.
+checks `confirmQuitIfDirty()`, flushes stores, then calls
+`commands.quitApp()`. This is also the only way to actually exit on macOS,
+where closing the window only hides it.
+
+## Unsaved-changes gate
+
+`src/lib/stores/dirty.svelte.ts` exposes `getHasUnsavedChanges()` and
+`setHasUnsavedChanges(value)`. The flag mirrors to a Rust-side `AtomicBool`
+on `AppState` (for potential native affordances like macOS's "edited" dot)
+but the actual gate is frontend-owned: `confirmQuitIfDirty()` in
+`lifecycle.ts` shows the in-app confirmation dialog when dirty and clears the
+flag on accept. All three quit paths (window close, tray quit, command
+palette) converge through this gate.
+
+The Advanced preferences pane includes a "Simulate Unsaved Changes" toggle
+for manual testing.
+
+## Diagnostics
+
+`src-tauri/src/commands/diagnostics.rs` provides `collect_diagnostics()`,
+which bundles app name, version, OS, memory usage, uptime, sanitised
+settings, and recent crash reports into a single `DiagnosticsReport`. The
+`tauri_version` is passed from the frontend (no reliable Rust-side constant).
+
+Settings are sanitised via an explicit allowlist (theme, language, fontSize,
+reducedMotion, pointerCursors, windowEffects) — shortcuts, imported themes,
+and profile colours are excluded.
+
+The Advanced preferences pane has a "Copy Diagnostics" button that formats
+the report as plain text (via `src/lib/diagnostics.ts`) and copies it to the
+clipboard.
 
 The tray menu's Quit follows the same discipline: `tray.rs` emits
 `tray:quit-requested` (never `app.exit()` directly), and `App.svelte` routes

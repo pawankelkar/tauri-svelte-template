@@ -42,6 +42,9 @@ A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScrip
 - About pane with version info, system details, links, and an update checker
 - Toast notifications and a promise-based confirm dialog
 - Error boundary with crash recovery (saves diagnostics to disk, shows a reload fallback)
+- Crash reporter: automatic Rust panic capture and frontend error logging to disk, with startup notification
+- Diagnostics bundle: one-click export of app/OS/memory/settings info for bug reports
+- Quit confirmation with an unsaved-changes gate across all exit paths
 
 ### Infrastructure
 
@@ -58,7 +61,7 @@ A starter template for desktop apps built with Tauri v2, Svelte 5, and TypeScrip
 - Square corners on fullscreen (Windows/Linux) with smooth transitions
 - Native-feel CSS defaults: `overscroll-behavior: none`, `user-select: none` with selective re-enable on text inputs
 - Platform-specific Tauri configs (macOS, Windows, Linux overrides)
-- Frontend logger that forwards warnings and errors to the Tauri backend in production
+- Frontend logger that forwards warnings and errors to the Tauri backend in production, plus crash report files for prod errors
 
 ### Developer experience
 
@@ -116,7 +119,8 @@ src-tauri/
   src/
     lib.rs                   Plugin chain, setup, close handshake
     commands/                json_store, preferences, app_state, global_shortcut,
-                             quick_pane, recovery, lifecycle
+                             quick_pane, recovery, crash_reporter,
+                             diagnostics, lifecycle
     types.rs                 AppPreferences, PersistedAppState, ShortcutPurpose
   capabilities/              Per-window permission grants
   tauri.conf.json            App config (with platform overrides)
