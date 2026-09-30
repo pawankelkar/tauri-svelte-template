@@ -26,7 +26,12 @@ const appCommands: AppCommand[] = [
     id: OPEN_COMMAND_PALETTE,
     labelKey: 'commands.openCommandPalette',
     category: 'commands.category.general',
-    shortcut: 'mod+k',
+    // Not mod+k: that is the de-facto "insert link" chord in editors, and a
+    // palette bound there would steal it from every text surface.
+    shortcut: 'mod+shift+p',
+    // The palette must stay reachable while an input is focused, whatever
+    // the user has rebound it to.
+    allowInInput: true,
     run: togglePalette,
   },
   {
@@ -40,13 +45,16 @@ const appCommands: AppCommand[] = [
     labelKey: 'commands.openPreferences',
     category: 'commands.category.general',
     shortcut: 'mod+,',
-    run: openPreferencesDialog,
+    // Wrapped: `run` receives the command's args, which are not a pane id.
+    run: () => openPreferencesDialog(),
   },
   {
     id: TOGGLE_LEFT_SIDEBAR,
     labelKey: 'commands.toggleLeftSidebar',
     category: 'commands.category.view',
-    shortcut: 'mod+b',
+    // mod+b is bold in any rich-text surface, so the sidebars sit on the
+    // backslash key instead.
+    shortcut: 'mod+\\',
     label: () =>
       i18n.t(
         isLeftSidebarVisible()
@@ -59,7 +67,7 @@ const appCommands: AppCommand[] = [
     id: TOGGLE_RIGHT_SIDEBAR,
     labelKey: 'commands.toggleRightSidebar',
     category: 'commands.category.view',
-    shortcut: 'mod+shift+b',
+    shortcut: 'mod+alt+\\',
     label: () =>
       i18n.t(
         isRightSidebarVisible()

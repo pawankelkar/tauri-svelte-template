@@ -62,7 +62,10 @@ function commandItem(
   labelKeyOverride?: string,
 ): MenuItemSpec {
   const command = getCommand(commandId)
-  const shortcut = command ? getEffectiveShortcut(command) : undefined
+  // A native accelerator fires whatever has focus, so it would bypass a
+  // context-scoped command's `when`. Those stay keyboard-dispatched only.
+  const shortcut =
+    command && !command.when?.trim() ? getEffectiveShortcut(command) : undefined
   return {
     id: commandId,
     labelKey: labelKeyOverride ?? command?.labelKey ?? commandId,

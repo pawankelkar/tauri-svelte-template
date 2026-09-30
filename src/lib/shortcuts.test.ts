@@ -8,6 +8,7 @@ import {
   isValidGlobalShortcutCombo,
   createKeydownHandler,
 } from './shortcuts'
+import { formatShortcut } from './platform-strings'
 
 describe('normalizeShortcut', () => {
   it('lowercases and sorts modifiers', () => {
@@ -90,6 +91,43 @@ describe('buildCombo', () => {
   it('returns plain key with no modifiers', () => {
     expect(buildCombo(makeEvent({}))).toBe('k')
   })
+
+  it('builds mod+\\ from the backslash key', () => {
+    expect(buildCombo(makeEvent({ key: '\\', metaKey: true }))).toBe('mod+\\')
+  })
+
+  it('reads the physical key when macOS Option composes a character', () => {
+    // ⌥⌘\ reports « and ⌥⌘P reports π on a US layout.
+    expect(
+      buildCombo(
+        makeEvent({ key: '«', code: 'Backslash', metaKey: true, altKey: true }),
+      ),
+    ).toBe('mod+alt+\\')
+    expect(
+      buildCombo(
+        makeEvent({ key: 'π', code: 'KeyP', metaKey: true, altKey: true }),
+      ),
+    ).toBe('mod+alt+p')
+    expect(
+      buildCombo(makeEvent({ key: 'Dead', code: 'KeyE', altKey: true })),
+    ).toBe('alt+e')
+  })
+
+  it('keeps an ASCII character AltGr produced', () => {
+    // German layout: AltGr+ß types \ and reports Ctrl+Alt.
+    expect(
+      buildCombo(
+        makeEvent({ key: '\\', code: 'Minus', ctrlKey: true, altKey: true }),
+      ),
+    ).toBe('mod+alt+\\')
+  })
+
+  it('spells out the space bar', () => {
+    expect(buildCombo(makeEvent({ key: ' ', metaKey: true }))).toBe('mod+space')
+    expect(
+      buildCombo(makeEvent({ key: ' ', code: 'Space', altKey: true })),
+    ).toBe('alt+space')
+  })
 })
 
 describe('toTauriAccelerator', () => {
@@ -107,24 +145,31 @@ describe('toTauriAccelerator', () => {
 })
 
 describe('createKeydownHandler', () => {
-  it('dispatches matching combo', () => {
-    const dispatch = vi.fn()
-    const handler = createKeydownHandler(
-      [],
-      (combo) => (combo === 'mod+k' ? 'open-palette' : undefined),
-      dispatch,
-    )
-
-    const event = {
-      key: 'k',
+  function keydown(
+    key: string,
+    target: EventTarget,
+    extra: Partial<KeyboardEvent> = {},
+  ): KeyboardEvent {
+    return {
+      key,
       ctrlKey: true,
       metaKey: false,
       shiftKey: false,
       altKey: false,
-      target: document.createElement('div'),
+      target,
       preventDefault: vi.fn(),
+      ...extra,
     } as unknown as KeyboardEvent
+  }
 
+  it('dispatches matching combo', () => {
+    const dispatch = vi.fn()
+    const handler = createKeydownHandler(
+      (combo) => (combo === 'mod+k' ? { id: 'open-palette' } : undefined),
+      dispatch,
+    )
+
+    const event = keydown('k', document.createElement('div'))
     handler(event)
     expect(dispatch).toHaveBeenCalledWith('open-palette')
     expect(event.preventDefault).toHaveBeenCalled()
@@ -132,63 +177,89 @@ describe('createKeydownHandler', () => {
 
   it('does not dispatch when no match', () => {
     const dispatch = vi.fn()
-    const handler = createKeydownHandler([], () => undefined, dispatch)
+    const handler = createKeydownHandler(() => undefined, dispatch)
 
-    handler({
-      key: 'j',
-      ctrlKey: true,
-      metaKey: false,
-      shiftKey: false,
-      altKey: false,
-      target: document.createElement('div'),
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent)
+    const event = keydown('j', document.createElement('div'))
+    handler(event)
+
+    expect(dispatch).not.toHaveBeenCalled()
+    expect(event.preventDefault).not.toHaveBeenCalled()
+  })
+
+  it('suppresses commands without allowInInput in editable targets', () => {
+    const dispatch = vi.fn()
+    const handler = createKeydownHandler(
+      (combo) => (combo === 'mod+b' ? { id: 'toggle-sidebar' } : undefined),
+      dispatch,
+    )
+
+    const editable = document.createElement('div')
+    editable.contentEditable = 'true'
+    // jsdom does not implement isContentEditable.
+    Object.defineProperty(editable, 'isContentEditable', { value: true })
+    for (const target of [
+      document.createElement('input'),
+      document.createElement('textarea'),
+      editable,
+    ]) {
+      const event = keydown('b', target)
+      handler(event)
+      // The keystroke is left alone so the field still receives it.
+      expect(event.preventDefault).not.toHaveBeenCalled()
+    }
 
     expect(dispatch).not.toHaveBeenCalled()
   })
 
-  it('suppresses non-allowlisted combos in editable targets', () => {
+  it('dispatches allowInInput commands in editable targets', () => {
     const dispatch = vi.fn()
     const handler = createKeydownHandler(
-      ['mod+k'],
-      (combo) => (combo === 'mod+b' ? 'toggle-sidebar' : undefined),
+      (combo) =>
+        combo === 'mod+shift+p'
+          ? { id: 'open-palette', allowInInput: true }
+          : undefined,
       dispatch,
     )
 
-    const input = document.createElement('input')
-    handler({
-      key: 'b',
-      ctrlKey: true,
-      metaKey: false,
-      shiftKey: false,
-      altKey: false,
-      target: input,
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent)
-
-    expect(dispatch).not.toHaveBeenCalled()
-  })
-
-  it('allows allowlisted combos in editable targets', () => {
-    const dispatch = vi.fn()
-    const handler = createKeydownHandler(
-      ['mod+k'],
-      (combo) => (combo === 'mod+k' ? 'open-palette' : undefined),
-      dispatch,
-    )
-
-    const input = document.createElement('input')
-    handler({
-      key: 'k',
-      ctrlKey: true,
-      metaKey: false,
-      shiftKey: false,
-      altKey: false,
-      target: input,
-      preventDefault: vi.fn(),
-    } as unknown as KeyboardEvent)
+    handler(keydown('P', document.createElement('input'), { shiftKey: true }))
 
     expect(dispatch).toHaveBeenCalledWith('open-palette')
+  })
+
+  it('ignores bare keys without a modifier', () => {
+    const resolve = vi.fn(() => ({ id: 'x' }))
+    const dispatch = vi.fn()
+    const handler = createKeydownHandler(resolve, dispatch)
+
+    handler(keydown('k', document.createElement('div'), { ctrlKey: false }))
+
+    expect(resolve).not.toHaveBeenCalled()
+    expect(dispatch).not.toHaveBeenCalled()
+  })
+})
+
+describe('backslash bindings', () => {
+  it('normalizes and parses a backslash key', () => {
+    expect(normalizeShortcut('Cmd+\\')).toBe('mod+\\')
+    expect(normalizeShortcut('Alt+Cmd+\\')).toBe('mod+alt+\\')
+    expect(parseShortcut('mod+alt+\\')).toEqual({
+      key: '\\',
+      modifiers: ['mod', 'alt'],
+    })
+  })
+
+  it('round-trips through the Tauri accelerator form', () => {
+    expect(toTauriAccelerator('mod+\\')).toBe('CmdOrCtrl+\\')
+    const { key, modifiers } = fromTauriAccelerator(
+      toTauriAccelerator('mod+alt+\\'),
+    )
+    expect([...modifiers, key].join('+')).toBe('mod+alt+\\')
+  })
+
+  it('formats for display on every platform', () => {
+    expect(formatShortcut('macos', '\\', ['mod'])).toBe('⌘\\')
+    expect(formatShortcut('macos', '\\', ['mod', 'alt'])).toBe('⌥⌘\\')
+    expect(formatShortcut('windows', '\\', ['mod', 'alt'])).toBe('Ctrl+Alt+\\')
   })
 })
 

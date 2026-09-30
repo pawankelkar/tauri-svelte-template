@@ -13,35 +13,33 @@
     getEffectiveShortcut,
     isShortcutCustomized,
     findShortcutConflict,
+    isBlockingConflict,
+    isCommandVisible,
     setCommandShortcut,
     resetCommandShortcut,
     getCommand,
+    formatCombo,
     type AppCommand,
     type ShortcutConflict,
   } from '$lib/commands'
-  import {
-    buildCombo,
-    isValidGlobalShortcutCombo,
-    parseShortcut,
-    type ParsedShortcut,
-  } from '$lib/shortcuts'
-  import { formatShortcut } from '$lib/platform-strings'
-  import { getPlatform } from '$lib/hooks/use-platform.svelte'
+  import { buildCombo, isValidGlobalShortcutCombo } from '$lib/shortcuts'
   import { t } from '$lib/i18n/t.svelte'
 
   let query = $state('')
   let editingId = $state<string | null>(null)
-  let conflict = $state<ShortcutConflict | null>(null)
+  /**
+   * The message under a row: a blocking conflict while recording, or a
+   * warning about a context-scoped overlap after the combo was saved. Keyed
+   * by command so a warning stays with its row after recording ends.
+   */
+  let notice = $state<{ commandId: string; conflict: ShortcutConflict } | null>(
+    null,
+  )
 
-  let commands = $derived(listCommands())
+  let commands = $derived(listCommands().filter(isCommandVisible))
 
   function getLabel(cmd: AppCommand): string {
     return cmd.label ? cmd.label() : t(cmd.labelKey)
-  }
-
-  function getShortcutDisplay(shortcut: string): string {
-    const parsed: ParsedShortcut = parseShortcut(shortcut)
-    return formatShortcut(getPlatform(), parsed.key, parsed.modifiers)
   }
 
   let grouped = $derived.by(() => {
@@ -64,12 +62,16 @@
   })
 
   function conflictMessage(c: ShortcutConflict): string {
-    if (c.kind === 'command') {
+    if (c.kind === 'conflict' || c.kind === 'warning') {
       const owner = getCommand(c.commandId)
-      return t('preferences.shortcuts.conflict', {
-        label: owner ? getLabel(owner) : c.commandId,
-      })
+      return t(
+        c.kind === 'conflict'
+          ? 'preferences.shortcuts.conflict'
+          : 'preferences.shortcuts.conflictWarning',
+        { label: owner ? getLabel(owner) : c.commandId },
+      )
     }
+    if (c.reason === 'os') return t('preferences.shortcuts.reserved')
     return t('preferences.shortcuts.conflict', {
       label: t(
         c.purpose === 'focusMain'
@@ -81,12 +83,14 @@
 
   function beginEdit(id: string): void {
     editingId = id
-    conflict = null
+    notice = null
   }
 
   function stopEdit(): void {
     editingId = null
-    conflict = null
+    // A warning outlives recording (the combo was saved); a blocking
+    // conflict belonged to the attempt the user just abandoned.
+    if (notice && isBlockingConflict(notice.conflict)) notice = null
   }
 
   function handleEditKeydown(event: KeyboardEvent, cmd: AppCommand): void {
@@ -113,13 +117,14 @@
     if (!isValidGlobalShortcutCombo(combo)) return
 
     const found = findShortcutConflict(combo, cmd.id)
-    if (found) {
+    if (found && isBlockingConflict(found)) {
       // Stay in recording mode so the user can try another combo.
-      conflict = found
+      notice = { commandId: cmd.id, conflict: found }
       return
     }
 
     setCommandShortcut(cmd.id, combo)
+    notice = found ? { commandId: cmd.id, conflict: found } : null
     stopEdit()
   }
 
@@ -208,7 +213,7 @@
                       </Button>
                     {/if}
                     {#if shortcut}
-                      <Kbd>{getShortcutDisplay(shortcut)}</Kbd>
+                      <Kbd>{formatCombo(shortcut)}</Kbd>
                     {:else}
                       <span class="text-muted-foreground text-xs">—</span>
                     {/if}
@@ -229,9 +234,16 @@
                   </span>
                 {/if}
               </div>
-              {#if editingId === cmd.id && conflict}
-                <p class="text-destructive pb-1 text-right text-xs">
-                  {conflictMessage(conflict)}
+              {#if notice?.commandId === cmd.id}
+                <p
+                  class={[
+                    'pb-1 text-right text-xs',
+                    isBlockingConflict(notice.conflict)
+                      ? 'text-destructive'
+                      : 'text-muted-foreground',
+                  ]}
+                >
+                  {conflictMessage(notice.conflict)}
                 </p>
               {/if}
             </div>

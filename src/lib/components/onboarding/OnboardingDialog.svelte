@@ -14,9 +14,12 @@
   import { getPlatform } from '$lib/hooks/use-platform.svelte'
   import { formatShortcut } from '$lib/platform-strings'
   import { fromTauriAccelerator } from '$lib/shortcuts'
+  import { OPEN_COMMAND_PALETTE, formatCommandShortcut } from '$lib/commands'
   import { t } from '$lib/i18n/t.svelte'
 
-  const paletteShortcut = $derived(formatShortcut(getPlatform(), 'k', ['mod']))
+  // Follows the user's binding (and hides when it is cleared) instead of
+  // hardcoding a chord that may have been moved.
+  const paletteShortcut = $derived(formatCommandShortcut(OPEN_COMMAND_PALETTE))
 
   // The Quick Pane accelerator is stored as a Tauri accelerator string; a
   // cleared binding shows the row without a chip rather than a stale default.

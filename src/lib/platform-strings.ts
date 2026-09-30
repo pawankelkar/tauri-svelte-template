@@ -73,15 +73,43 @@ const STANDARD_MODIFIER_LABELS: Record<ShortcutModifier, string> = {
   alt: 'Alt',
 }
 
+/**
+ * Named keys whose display differs from "capitalise the first letter".
+ * macOS menus draw arrows as glyphs; Windows and Linux spell them out.
+ * Keys are the lowercased `KeyboardEvent.key` values bindings are stored in.
+ */
+const MAC_KEY_LABELS: Record<string, string> = {
+  arrowleft: '←',
+  arrowright: '→',
+  arrowup: '↑',
+  arrowdown: '↓',
+}
+
+const STANDARD_KEY_LABELS: Record<string, string> = {
+  arrowleft: 'Left',
+  arrowright: 'Right',
+  arrowup: 'Up',
+  arrowdown: 'Down',
+  pageup: 'PageUp',
+  pagedown: 'PageDown',
+}
+
+function formatKey(platform: AppPlatform, key: string): string {
+  const lower = key.toLowerCase()
+  const labels = platform === 'macos' ? MAC_KEY_LABELS : STANDARD_KEY_LABELS
+  const label = labels[lower] ?? STANDARD_KEY_LABELS[lower]
+  if (label) return label
+  return key.length === 1
+    ? key.toUpperCase()
+    : key.charAt(0).toUpperCase() + key.slice(1)
+}
+
 export function formatShortcut(
   platform: AppPlatform,
   key: string,
   modifiers: ShortcutModifier[],
 ): string {
-  const upperKey =
-    key.length === 1
-      ? key.toUpperCase()
-      : key.charAt(0).toUpperCase() + key.slice(1)
+  const upperKey = formatKey(platform, key)
 
   if (platform === 'macos') {
     const sorted = [...modifiers].sort(

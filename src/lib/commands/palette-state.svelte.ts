@@ -1,21 +1,30 @@
+import { setContextKey } from './context-keys.svelte'
+
 let _open = $state(false)
+
+// Every write goes through here so the `paletteOpen` context key can never
+// drift from the real state.
+function write(v: boolean): void {
+  _open = v
+  setContextKey('paletteOpen', v)
+}
 
 export function isPaletteOpen(): boolean {
   return _open
 }
 
 export function closePalette(): void {
-  _open = false
+  write(false)
 }
 
 export function togglePalette(): void {
-  _open = !_open
+  write(!_open)
 }
 
 export function setPaletteOpen(v: boolean): void {
-  _open = v
+  write(v)
 }
 
 export function __resetPaletteStateForTests(): void {
-  _open = false
+  write(false)
 }

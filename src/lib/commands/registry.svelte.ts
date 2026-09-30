@@ -1,12 +1,44 @@
+import type { Component } from 'svelte'
 import { warn } from '$lib/logger'
+import { getPlatform, type AppPlatform } from '$lib/hooks/use-platform.svelte'
+import { evaluateWhen, whenSpecificity } from './context-keys.svelte'
+
+/** Who contributed a command — breaks ties between bindings on one combo. */
+export type CommandSource = 'core' | 'plugin' | 'user'
 
 export interface AppCommand {
   id: string
   labelKey: string
   label?: () => string
   category: string
+  /** Default combo in normalised form, e.g. `'mod+shift+p'`. User-rebindable. */
   shortcut?: string
-  run: () => void | Promise<void>
+  /** Receives `args` (or the caller's override) when run via `executeCommand`. */
+  run: (args?: unknown) => void | Promise<void>
+  /**
+   * Context-key expression gating the keyboard shortcut, e.g.
+   * `'editorFocus && !recording'` (see `context-keys.svelte.ts`). Empty means
+   * "everywhere". A scoped command gets no native menu accelerator, because
+   * those fire regardless of focus.
+   */
+  when?: string
+  /** Let the shortcut fire while focus is in an input/textarea/contenteditable. */
+  allowInInput?: boolean
+  /** Default argument passed to `run`. */
+  args?: unknown
+  /** Documentation URL. */
+  docs?: string
+  /** i18n key for a one-line description. */
+  descriptionKey?: string
+  /** Extra palette search terms (not shown). */
+  keywords?: string[]
+  /** Defaults to `'core'` at registration. */
+  source?: CommandSource
+  icon?: Component
+  /** Evaluated on demand; a disabled command cannot run from any surface. */
+  isEnabled?: () => boolean
+  /** Restricts the command to these OSes; omitted means all of them. */
+  platforms?: AppPlatform[]
 }
 
 let _commands = $state<AppCommand[]>([])
@@ -39,7 +71,7 @@ export function registerCommand(command: AppCommand): void {
     warn(`Command "${command.id}" is already registered, skipping`)
     return
   }
-  _commands.push(command)
+  _commands.push({ ...command, source: command.source ?? 'core' })
 }
 
 export function registerCommands(commands: AppCommand[]): void {
@@ -64,17 +96,73 @@ export function listCommands(): AppCommand[] {
   return _commands
 }
 
-export function findCommandIdForShortcut(combo: string): string | undefined {
-  return _commands.find((c) => getEffectiveShortcut(c) === combo)?.id
+/** Whether the command exists on this OS. Hidden commands never surface. */
+export function isCommandVisible(command: AppCommand): boolean {
+  return !command.platforms || command.platforms.includes(getPlatform())
 }
 
-export async function executeCommand(id: string): Promise<void> {
+export function isCommandEnabled(command: AppCommand): boolean {
+  return command.isEnabled?.() ?? true
+}
+
+const SOURCE_RANK: Record<CommandSource, number> = {
+  user: 2,
+  plugin: 1,
+  core: 0,
+}
+
+/**
+ * The command a keypress should run: among visible, enabled commands whose
+ * effective shortcut is `combo` and whose `when` currently holds, the one
+ * that wins on (in order) being a user override, having the more specific
+ * `when`, and its source (user > plugin > core). Registration order breaks
+ * any remaining tie.
+ */
+export function resolveShortcut(combo: string): AppCommand | undefined {
+  let best: AppCommand | undefined
+  let bestRank: number[] = []
+
+  for (const command of _commands) {
+    if (getEffectiveShortcut(command) !== combo) continue
+    if (!isCommandVisible(command) || !isCommandEnabled(command)) continue
+    if (!evaluateWhen(command.when)) continue
+
+    const rank = [
+      typeof _resolveShortcutOverride(command.id) === 'string' ? 1 : 0,
+      whenSpecificity(command.when),
+      SOURCE_RANK[command.source ?? 'core'],
+    ]
+    if (!best || isHigherRank(rank, bestRank)) {
+      best = command
+      bestRank = rank
+    }
+  }
+  return best
+}
+
+function isHigherRank(a: number[], b: number[]): boolean {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return a[i]! > b[i]!
+  }
+  return false
+}
+
+/**
+ * Runs a command by id. `args` overrides the command's own default `args`.
+ * Disabled and platform-hidden commands are skipped silently — the menu or a
+ * stale caller reaching one is not an error worth surfacing.
+ */
+export async function executeCommand(
+  id: string,
+  args?: unknown,
+): Promise<void> {
   const command = getCommand(id)
   if (!command) {
     warn(`Unknown command: "${id}"`)
     return
   }
-  await command.run()
+  if (!isCommandVisible(command) || !isCommandEnabled(command)) return
+  await command.run(args ?? command.args)
 }
 
 export function __resetCommandsForTests(): void {

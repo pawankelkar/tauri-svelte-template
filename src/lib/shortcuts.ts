@@ -70,16 +70,55 @@ export function parseShortcut(normalized: string): ParsedShortcut {
   return { key, modifiers }
 }
 
+const CODE_KEYS: Record<string, string> = {
+  Backslash: '\\',
+  BracketLeft: '[',
+  BracketRight: ']',
+  Semicolon: ';',
+  Quote: "'",
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+  Minus: '-',
+  Equal: '=',
+  Backquote: '`',
+  Space: 'space',
+}
+
+/** The unshifted US-layout key for a physical `KeyboardEvent.code`. */
+function keyFromCode(code: string | undefined): string | undefined {
+  if (!code) return undefined
+  const letter = /^Key([A-Z])$/.exec(code)
+  if (letter) return letter[1]!.toLowerCase()
+  const digit = /^Digit(\d)$/.exec(code)
+  if (digit) return digit[1]
+  return CODE_KEYS[code]
+}
+
+const PRINTABLE_ASCII = /^[\x21-\x7e]$/
+
 export function buildCombo(e: KeyboardEvent): string {
   const modifiers: ShortcutModifier[] = []
   if (e.metaKey || e.ctrlKey) modifiers.push('mod')
   if (e.shiftKey) modifiers.push('shift')
   if (e.altKey) modifiers.push('alt')
 
-  const key = e.key.toLowerCase()
+  let key = e.key.toLowerCase()
   if (['control', 'meta', 'shift', 'alt'].includes(key)) {
     return modifiers.join('+')
   }
+
+  // macOS Option rewrites `key` to the composed character (⌥\ is «, ⌥P is
+  // π, ⌥E is a dead key), so an Alt combo would never match its binding.
+  // Fall back to the physical key then — but only when `key` is not plain
+  // ASCII, so AltGr layouts that type `\` or `@` through Ctrl+Alt keep the
+  // character the user actually sees on the keycap.
+  if (e.altKey && !PRINTABLE_ASCII.test(e.key)) {
+    key = keyFromCode(e.code) ?? key
+  }
+  // `key` for the space bar is a literal space, which reads as nothing once
+  // joined; bindings spell it out.
+  if (key === ' ') key = 'space'
 
   return [...modifiers, key].join('+')
 }
@@ -148,29 +187,29 @@ export function isValidGlobalShortcutCombo(combo: string): boolean {
   return key.length > 0 && modifiers.length > 0
 }
 
+/** What the keydown handler needs to know about a resolved command. */
+export interface KeydownTarget {
+  id: string
+  /** Fire even while focus is in an editable element. */
+  allowInInput?: boolean
+}
+
 export function createKeydownHandler(
-  // A function so the allowlist can follow runtime state (the user rebinding
-  // the palette shortcut must not strand the old combo in the allowlist).
-  inputAllowlist: string[] | (() => string[]),
-  resolveCommandId: (combo: string) => string | undefined,
+  resolveCommand: (combo: string) => KeydownTarget | undefined,
   dispatch: (commandId: string) => void,
 ): (event: KeyboardEvent) => void {
-  const allowed = (combo: string): boolean => {
-    const list =
-      typeof inputAllowlist === 'function' ? inputAllowlist() : inputAllowlist
-    return list.includes(combo)
-  }
-
   return (event: KeyboardEvent) => {
     const combo = buildCombo(event)
     if (!combo || !combo.includes('+')) return
 
-    const commandId = resolveCommandId(combo)
-    if (!commandId) return
+    const command = resolveCommand(combo)
+    if (!command) return
 
-    if (isEditableTarget(event.target) && !allowed(combo)) return
+    // Typing wins over shortcuts unless the command opts in — otherwise a
+    // binding would swallow the character (or editing chord) the user meant.
+    if (isEditableTarget(event.target) && !command.allowInInput) return
 
     event.preventDefault()
-    dispatch(commandId)
+    dispatch(command.id)
   }
 }

@@ -10,6 +10,7 @@
   import { formatShortcut } from '$lib/platform-strings'
   import { getPlatform } from '$lib/hooks/use-platform.svelte'
   import { toast } from '$lib/stores/toast'
+  import { isReservedShortcut } from '$lib/commands'
   import { t } from '$lib/i18n/t.svelte'
   import { commitShortcut, preferenceKeyFor } from './commit-shortcut'
   import type { ShortcutPurposeId } from './commit-shortcut'
@@ -70,6 +71,12 @@
     const combo = buildCombo(event)
     // Ignore modifier-only presses while the user is still assembling a combo.
     if (!isValidGlobalShortcutCombo(combo)) return
+    // The OS keeps these for itself; registering one would either fail or,
+    // worse, take quit/close away from every app. Keep listening.
+    if (isReservedShortcut(combo)) {
+      error = t('shortcutPicker.reservedError')
+      return
+    }
 
     listening = false
     void apply(toTauriAccelerator(combo))

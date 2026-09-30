@@ -4,11 +4,20 @@ export {
   unregisterCommand,
   getCommand,
   listCommands,
-  findCommandIdForShortcut,
+  resolveShortcut,
   getEffectiveShortcut,
+  isCommandVisible,
+  isCommandEnabled,
   executeCommand,
   type AppCommand,
+  type CommandSource,
 } from './registry.svelte'
+
+export {
+  setContextKey,
+  getContextKey,
+  evaluateWhen,
+} from './context-keys.svelte'
 
 export {
   isPaletteOpen,
@@ -42,58 +51,44 @@ export {
   initCommandShortcutOverrides,
   isShortcutCustomized,
   findShortcutConflict,
+  isBlockingConflict,
+  isReservedShortcut,
   setCommandShortcut,
   resetCommandShortcut,
   type ShortcutConflict,
 } from './command-shortcuts'
 
-export { DEMO_SEND_NOTIFICATION } from './notification-commands'
-export {
-  DEMO_COPY_TO_CLIPBOARD,
-  DEMO_PASTE_FROM_CLIPBOARD,
-} from './clipboard-commands'
-export { DEMO_OPEN_FILE_DIALOG } from './dialog-commands'
-export { DEMO_RUN_SHELL_COMMAND } from './shell-commands'
-export { demoRelaunchApp } from './process-commands'
+export { formatCombo, formatCommandShortcut } from './shortcut-display'
 
-import { OPEN_COMMAND_PALETTE, registerAppCommands } from './app-commands'
+import { registerAppCommands } from './app-commands'
+import { registerTabCommands } from './tab-commands'
 import { initCommandShortcutOverrides } from './command-shortcuts'
-import { registerNotificationCommands } from './notification-commands'
-import { registerClipboardCommands } from './clipboard-commands'
-import { registerDialogCommands } from './dialog-commands'
-import { registerShellCommands } from './shell-commands'
+import { setContextKey } from './context-keys.svelte'
+import { runKeymapMigration } from './keymap-migration'
 import {
-  findCommandIdForShortcut,
-  getCommand,
-  getEffectiveShortcut,
+  resolveShortcut,
   executeCommand,
   unregisterAllCommands,
 } from './registry.svelte'
 import { createKeydownHandler } from '$lib/shortcuts'
+import { getPlatform } from '$lib/hooks/use-platform.svelte'
 import { initMenu } from '$lib/menu'
 
 export function initCommands(): () => void {
+  setContextKey('isMac', getPlatform() === 'macos')
+
   registerAppCommands()
-  // Demo commands — delete these registrations (and their files) when you
-  // start building your own app.
-  registerNotificationCommands()
-  registerClipboardCommands()
-  registerDialogCommands()
-  registerShellCommands()
+  registerTabCommands()
 
   initCommandShortcutOverrides()
 
-  const handleKeydown = createKeydownHandler(
-    // The palette must stay reachable while an input is focused, whatever
-    // the user has rebound it to.
-    () => {
-      const palette = getCommand(OPEN_COMMAND_PALETTE)
-      const shortcut = palette ? getEffectiveShortcut(palette) : undefined
-      return shortcut ? [shortcut] : []
-    },
-    findCommandIdForShortcut,
-    (id) => void executeCommand(id),
-  )
+  // Needs both the loaded preferences (App.svelte awaits them before calling
+  // this) and the palette command registered above.
+  runKeymapMigration()
+
+  const handleKeydown = createKeydownHandler(resolveShortcut, (id) => {
+    void executeCommand(id)
+  })
   window.addEventListener('keydown', handleKeydown)
 
   let cleanupMenu: (() => void) | undefined

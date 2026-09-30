@@ -63,4 +63,27 @@ describe('formatShortcut', () => {
     expect(formatShortcut('macos', 'enter', ['mod'])).toBe('⌘Enter')
     expect(formatShortcut('windows', 'enter', ['mod'])).toBe('Ctrl+Enter')
   })
+
+  it('renders arrow keys as glyphs on macOS', () => {
+    expect(formatShortcut('macos', 'arrowright', ['mod', 'alt'])).toBe('⌥⌘→')
+    expect(formatShortcut('macos', 'arrowleft', ['mod', 'alt'])).toBe('⌥⌘←')
+    expect(formatShortcut('macos', 'arrowup', ['mod'])).toBe('⌘↑')
+    expect(formatShortcut('macos', 'arrowdown', ['mod'])).toBe('⌘↓')
+  })
+
+  it('renders arrow keys as readable names elsewhere', () => {
+    expect(formatShortcut('windows', 'arrowright', ['mod', 'alt'])).toBe(
+      'Ctrl+Alt+Right',
+    )
+    expect(formatShortcut('linux', 'arrowleft', ['mod', 'alt'])).toBe(
+      'Ctrl+Alt+Left',
+    )
+    expect(formatShortcut('windows', 'arrowup', ['mod'])).toBe('Ctrl+Up')
+    expect(formatShortcut('linux', 'arrowdown', ['mod'])).toBe('Ctrl+Down')
+  })
+
+  it('accepts accelerator-cased key names', () => {
+    expect(formatShortcut('macos', 'ArrowRight', ['mod'])).toBe('⌘→')
+    expect(formatShortcut('windows', 'PageDown', ['mod'])).toBe('Ctrl+PageDown')
+  })
 })

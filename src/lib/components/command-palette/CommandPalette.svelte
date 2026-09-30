@@ -6,17 +6,20 @@
     closePalette,
     listCommands,
     getEffectiveShortcut,
+    isCommandVisible,
+    isCommandEnabled,
     executeCommand,
+    formatCombo,
   } from '$lib/commands'
-  import { parseShortcut, type ParsedShortcut } from '$lib/shortcuts'
-  import { formatShortcut } from '$lib/platform-strings'
-  import { getPlatform } from '$lib/hooks/use-platform.svelte'
   import { showTextInputContextMenu } from '$lib/context-menu'
   import { t } from '$lib/i18n/t.svelte'
 
   type GroupedCommands = Map<string, typeof commands>
 
-  let commands = $derived(listCommands())
+  // `when` is deliberately not applied here: it scopes the keyboard binding,
+  // and opening the palette moves focus, so every focus-scoped command would
+  // vanish the moment the user went looking for it.
+  let commands = $derived(listCommands().filter(isCommandVisible))
 
   let grouped = $derived.by((): GroupedCommands => {
     // A plain Map is correct here, not SvelteMap: this one is rebuilt from
@@ -34,11 +37,6 @@
 
   function getLabel(cmd: (typeof commands)[number]): string {
     return cmd.label ? cmd.label() : t(cmd.labelKey)
-  }
-
-  function getShortcutDisplay(shortcut: string): string {
-    const parsed: ParsedShortcut = parseShortcut(shortcut)
-    return formatShortcut(getPlatform(), parsed.key, parsed.modifiers)
   }
 
   function handleSelect(commandId: string): void {
@@ -68,13 +66,18 @@
         {#each cmds as cmd (cmd.id)}
           <Command.Item
             value={getLabel(cmd)}
+            keywords={cmd.keywords}
+            disabled={!isCommandEnabled(cmd)}
             onSelect={() => handleSelect(cmd.id)}
           >
+            {#if cmd.icon}
+              <cmd.icon />
+            {/if}
             {getLabel(cmd)}
             {@const shortcut = getEffectiveShortcut(cmd)}
             {#if shortcut}
               <Command.Shortcut>
-                {getShortcutDisplay(shortcut)}
+                {formatCombo(shortcut)}
               </Command.Shortcut>
             {/if}
           </Command.Item>
