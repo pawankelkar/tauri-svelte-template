@@ -5,6 +5,8 @@
   import { commands, unwrapResult } from '$lib/tauri-bindings'
   import { initSquareCorners } from '$lib/stores/square-corners.svelte'
   import { initPreferences } from '$lib/stores/preferences.svelte'
+  import { initNetwork } from '$lib/stores/network.svelte'
+  import { initEntitlements } from '$lib/stores/entitlements.svelte'
   import { getAppState, initAppState } from '$lib/stores/app-state.svelte'
   import { openOnboardingDialog } from '$lib/commands/onboarding-dialog-state.svelte'
   import {
@@ -42,7 +44,9 @@
   import ToastContainer from '$lib/components/ToastContainer.svelte'
   import ErrorBoundary from '$lib/components/ErrorBoundary.svelte'
   import MainLayout from '$lib/components/layout/MainLayout.svelte'
-  import WelcomePane from '$lib/components/demo/WelcomePane.svelte'
+  import EditorArea from '$lib/components/workspace/EditorArea.svelte'
+  import { initTabs } from '$lib/workspace/tabs.svelte'
+  import { routeDeepLink } from '$lib/workspace/deep-link-router'
   import { t } from '$lib/i18n/t.svelte'
   import './app.css'
 
@@ -95,6 +99,10 @@
     const cleanupCorners = initSquareCorners()
     const cleanupTheme = initTheme()
     const cleanupQuickPane = initQuickPaneBridge()
+    // Both mirror Rust state and publish the `offline` / `pro` context keys;
+    // they start pessimistic (offline, no Pro) until the first load lands.
+    const cleanupNetwork = initNetwork()
+    const cleanupEntitlements = initEntitlements()
     const cleanupBrowserKeys = initBrowserKeySuppression(getPlatform(), {
       reload: true,
     })
@@ -150,15 +158,13 @@
       }
       unlistenTrayQuit = unlistenTray
 
-      // Demo deep-link handling: surface the URL and come forward. Replace
-      // the toast with real routing (parse the URL, dispatch a command or
-      // navigate) when your app has destinations to route to.
+      // Route each `ostralith://` URL (notes and views open tabs) and come
+      // forward. A link that arrives before `initTabs` below is kept: the
+      // tabs store merges it into the restored strip.
       const unlistenDeep = await listen<string[]>(
         'app:deep-link-received',
         (event) => {
-          for (const url of event.payload) {
-            toast.info(t('deepLink.receivedToast', { url }))
-          }
+          for (const url of event.payload) routeDeepLink(url)
           void appWindow.unminimize()
           void appWindow.setFocus()
         },
@@ -170,13 +176,21 @@
       unlistenDeepLink = unlistenDeep
 
       try {
-        const [prefs] = await Promise.all([initPreferences(), initAppState()])
+        const [prefs, appState] = await Promise.all([
+          initPreferences(),
+          initAppState(),
+        ])
         reconcileTheme()
         // Before show() so a vibrancy user never sees an opaque→translucent
         // pop. The CSS side is already painted via the paint hint.
         await applyWindowEffects(prefs.windowEffects)
         await initializeLanguage(prefs.language)
+        // Runs the one-time keymap migration, whose toast needs both the
+        // loaded preferences and the language set up above.
         if (!destroyed) cleanupCommands = initCommands()
+        // After the commands so a restore problem can never leave the app
+        // without its keyboard shortcuts.
+        initTabs(appState)
         // Before show() so the first frame the user ever sees already has
         // the greeting up — no post-boot pop-in.
         if (!destroyed && !getAppState().onboardingCompleted) {
@@ -200,6 +214,8 @@
       cleanupCorners()
       cleanupTheme()
       cleanupQuickPane()
+      cleanupNetwork()
+      cleanupEntitlements()
       cleanupCommands?.()
       unlistenClose?.()
       unlistenTrayQuit?.()
@@ -269,7 +285,7 @@
             {t('sidebar.rightPlaceholder')}
           </div>
         {/snippet}
-        <WelcomePane />
+        <EditorArea />
       </MainLayout>
     </ErrorBoundary>
   </main>
