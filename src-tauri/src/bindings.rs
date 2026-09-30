@@ -2,8 +2,8 @@ use tauri_specta::{collect_commands, Builder};
 
 pub fn generate_bindings() -> Builder<tauri::Wry> {
     use crate::commands::{
-        app_state, crash_reporter, demo, diagnostics, global_shortcut, lifecycle, preferences,
-        quick_pane, recovery, system_fonts, theme_import,
+        app_state, crash_reporter, diagnostics, entitlements, global_shortcut, lifecycle, network,
+        preferences, quick_pane, recovery, system_fonts, theme_import, updater,
     };
 
     Builder::<tauri::Wry>::new().commands(collect_commands![
@@ -17,11 +17,17 @@ pub fn generate_bindings() -> Builder<tauri::Wry> {
         crash_reporter::get_crash_report,
         crash_reporter::clear_crash_reports,
         diagnostics::collect_diagnostics,
-        demo::greet,
+        entitlements::get_entitlements,
+        entitlements::set_entitlement,
         global_shortcut::register_global_shortcut,
         global_shortcut::unregister_global_shortcut,
         global_shortcut::is_global_shortcut_registered,
         lifecycle::quit_app,
+        network::get_network_status,
+        network::set_offline_mode,
+        network::set_allow_localhost,
+        network::list_network_activity,
+        network::clear_network_activity,
         preferences::load_preferences,
         preferences::save_preferences,
         preferences::open_preferences_file,
@@ -32,6 +38,8 @@ pub fn generate_bindings() -> Builder<tauri::Wry> {
         recovery::cleanup_old_recovery_files,
         system_fonts::list_system_fonts,
         theme_import::read_theme_file,
+        updater::check_for_update,
+        updater::install_update,
     ])
 }
 

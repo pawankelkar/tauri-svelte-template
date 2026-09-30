@@ -1,0 +1,16 @@
+[package]
+name = "ostralith-core"
+version = "0.1.0"
+description = "Shared types for Ostralith: the error enum, Pro feature flags, and entitlements"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+serde.workspace = true
+specta.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

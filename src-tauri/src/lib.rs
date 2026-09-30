@@ -123,12 +123,9 @@ pub fn run() {
         .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_process::init())
         .manage(AppState::default())
+        .manage(commands::updater::PendingUpdate::default())
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 // Only the main window runs the handshake. The Quick Pane is
@@ -149,6 +146,13 @@ pub fn run() {
         .setup(|app| {
             commands::crash_reporter::set_app_crash_dir(app.handle());
             commands::diagnostics::mark_startup();
+
+            // Network policy and entitlements are managed state that commands
+            // take as `State<_>`, so they must exist before anything else in
+            // setup can trigger one. A NetClient that can't be built means
+            // outbound requests can't be policed, so that one is fatal.
+            commands::network::init_network(app.handle())?;
+            commands::entitlements::init_entitlements(app.handle());
 
             log::info!("Application starting up");
             log::debug!(

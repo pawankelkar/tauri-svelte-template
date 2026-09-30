@@ -7,6 +7,21 @@ use specta::Type;
 /// so `preferences.json` only ever contains one form of the same combination.
 pub const DEFAULT_QUICK_PANE_SHORTCUT: &str = "CmdOrCtrl+Shift+.";
 
+/// Schema version written into every new `preferences.json`.
+///
+/// Bump it when a change needs a migration. A file written before the field
+/// existed loads as version 0, so migrations can tell "pre-versioning" apart
+/// from "current".
+pub const CURRENT_PREFS_VERSION: u32 = 1;
+
+/// Caps on the persisted tab list, mirrored by `app-state-schema.ts`. They
+/// only guard against a runaway or hand-edited `state.json`.
+pub const MAX_OPEN_TABS: usize = 100;
+pub const MAX_TAB_ID_LEN: usize = 256;
+pub const MAX_TAB_KIND_LEN: usize = 64;
+pub const MAX_TAB_URI_LEN: usize = 4096;
+pub const MAX_TAB_TITLE_LEN: usize = 512;
+
 /// What a registered global shortcut is *for*.
 ///
 /// The app registers more than one accelerator with the OS, but the plugin
@@ -80,6 +95,11 @@ pub struct ImportedTheme {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AppPreferences {
+    /// See [`CURRENT_PREFS_VERSION`]. The field-level `default` is
+    /// deliberate: it overrides the container default (which would say
+    /// "current") so a file without the field reads as 0.
+    #[serde(default)]
+    pub prefs_version: u32,
     pub theme: String,
     pub light_profile: ThemeProfile,
     pub dark_profile: ThemeProfile,
@@ -110,6 +130,7 @@ pub struct AppPreferences {
 impl Default for AppPreferences {
     fn default() -> Self {
         Self {
+            prefs_version: CURRENT_PREFS_VERSION,
             theme: "system".to_string(),
             light_profile: ThemeProfile::default_light(),
             dark_profile: ThemeProfile::default_dark(),
@@ -140,6 +161,26 @@ pub struct PersistedAppState {
     pub last_quick_pane_entry: Option<String>,
     pub recent_items: Vec<String>,
     pub onboarding_completed: bool,
+    /// Workspace tabs, in strip order. Restored on the next launch. A
+    /// pre-tabs `state.json` loads with none via the container-level
+    /// `default` (no field-level one, so the TS type stays non-optional).
+    pub open_tabs: Vec<PersistedTab>,
+    /// `id` of the focused tab in `open_tabs`, if any.
+    pub active_tab_id: Option<String>,
+}
+
+/// One workspace tab as saved in `state.json`. Mirrors `sanitizeTab` in
+/// `src/lib/stores/app-state-schema.ts`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PersistedTab {
+    pub id: String,
+    /// What the tab shows (`"note"`, `"pdf"`, `"settings"`, ...). Free-form
+    /// here; the frontend owns the vocabulary.
+    pub kind: String,
+    pub uri: String,
+    pub title: String,
+    pub pinned: bool,
 }
 
 impl Default for PersistedAppState {
@@ -151,8 +192,39 @@ impl Default for PersistedAppState {
             last_quick_pane_entry: None,
             recent_items: Vec::new(),
             onboarding_completed: false,
+            open_tabs: Vec::new(),
+            active_tab_id: None,
         }
     }
+}
+
+fn check_len(value: &str, max: usize, label: &str) -> Result<(), String> {
+    if value.len() > max {
+        Err(format!("{label} exceeds {max} bytes"))
+    } else {
+        Ok(())
+    }
+}
+
+/// Rejects a tab list the frontend sanitizer would never produce, so a bad
+/// caller can't grow `state.json` without bound.
+pub fn validate_app_state(state: &PersistedAppState) -> Result<(), String> {
+    if state.open_tabs.len() > MAX_OPEN_TABS {
+        return Err(format!("openTabs exceeds {MAX_OPEN_TABS} entries"));
+    }
+    for tab in &state.open_tabs {
+        if tab.id.is_empty() {
+            return Err("openTabs[].id must not be empty".to_string());
+        }
+        check_len(&tab.id, MAX_TAB_ID_LEN, "openTabs[].id")?;
+        check_len(&tab.kind, MAX_TAB_KIND_LEN, "openTabs[].kind")?;
+        check_len(&tab.uri, MAX_TAB_URI_LEN, "openTabs[].uri")?;
+        check_len(&tab.title, MAX_TAB_TITLE_LEN, "openTabs[].title")?;
+    }
+    if let Some(id) = &state.active_tab_id {
+        check_len(id, MAX_TAB_ID_LEN, "activeTabId")?;
+    }
+    Ok(())
 }
 
 pub fn validate_theme(theme: &str) -> Result<(), String> {
@@ -481,6 +553,77 @@ mod tests {
     }
 
     #[test]
+    fn prefs_version_is_current_by_default_but_zero_when_missing() {
+        assert_eq!(
+            AppPreferences::default().prefs_version,
+            CURRENT_PREFS_VERSION
+        );
+        assert_eq!(CURRENT_PREFS_VERSION, 1);
+        let prefs: AppPreferences = serde_json::from_str("{}").unwrap();
+        assert_eq!(prefs.prefs_version, 0);
+        let prefs: AppPreferences = serde_json::from_str(r#"{"prefsVersion":1}"#).unwrap();
+        assert_eq!(prefs.prefs_version, 1);
+    }
+
+    fn sample_tab(id: &str) -> PersistedTab {
+        PersistedTab {
+            id: id.to_string(),
+            kind: "note".to_string(),
+            uri: "vault://notes/a.md".to_string(),
+            title: "A".to_string(),
+            pinned: false,
+        }
+    }
+
+    #[test]
+    fn missing_tab_fields_take_defaults() {
+        let state: PersistedAppState =
+            serde_json::from_str(r#"{"leftSidebarVisible":false}"#).unwrap();
+        assert!(state.open_tabs.is_empty());
+        assert_eq!(state.active_tab_id, None);
+    }
+
+    #[test]
+    fn tabs_serialise_as_camel_case() {
+        let state = PersistedAppState {
+            open_tabs: vec![sample_tab("t1")],
+            active_tab_id: Some("t1".to_string()),
+            ..PersistedAppState::default()
+        };
+        let json = serde_json::to_value(&state).unwrap();
+        assert_eq!(json["activeTabId"], "t1");
+        assert_eq!(json["openTabs"][0]["pinned"], false);
+        assert_eq!(json["openTabs"][0]["uri"], "vault://notes/a.md");
+    }
+
+    #[test]
+    fn validate_app_state_caps_tabs() {
+        let mut state = PersistedAppState::default();
+        assert!(validate_app_state(&state).is_ok());
+
+        state.open_tabs = (0..MAX_OPEN_TABS)
+            .map(|i| sample_tab(&i.to_string()))
+            .collect();
+        assert!(validate_app_state(&state).is_ok());
+        state.open_tabs.push(sample_tab("one-too-many"));
+        assert!(validate_app_state(&state).is_err());
+
+        let state = PersistedAppState {
+            open_tabs: vec![sample_tab("")],
+            ..PersistedAppState::default()
+        };
+        assert!(validate_app_state(&state).is_err());
+
+        let mut tab = sample_tab("t");
+        tab.uri = "x".repeat(MAX_TAB_URI_LEN + 1);
+        let state = PersistedAppState {
+            open_tabs: vec![tab],
+            ..PersistedAppState::default()
+        };
+        assert!(validate_app_state(&state).is_err());
+    }
+
+    #[test]
     fn default_persisted_app_state_shape() {
         let state = PersistedAppState::default();
         assert!(state.left_sidebar_visible);
@@ -489,5 +632,7 @@ mod tests {
         assert_eq!(state.last_quick_pane_entry, None);
         assert!(state.recent_items.is_empty());
         assert!(!state.onboarding_completed);
+        assert!(state.open_tabs.is_empty());
+        assert_eq!(state.active_tab_id, None);
     }
 }

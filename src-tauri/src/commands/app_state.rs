@@ -4,7 +4,7 @@ use tauri::{AppHandle, State};
 
 use crate::commands::json_store::{data_file_path, load_json, save_json};
 use crate::state::AppState;
-use crate::types::PersistedAppState;
+use crate::types::{validate_app_state, PersistedAppState};
 
 const APP_STATE_FILE: &str = "state.json";
 
@@ -18,6 +18,7 @@ pub async fn load_app_state(app: AppHandle) -> Result<PersistedAppState, String>
 #[tauri::command]
 #[specta::specta]
 pub async fn save_app_state(app: AppHandle, app_state: PersistedAppState) -> Result<(), String> {
+    validate_app_state(&app_state)?;
     let path = data_file_path(&app, APP_STATE_FILE)?;
     save_json(&path, &app_state)
 }
@@ -37,14 +38,11 @@ pub fn has_unsaved_changes(state: State<AppState>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::json_store::{load_json as load, save_json as save};
-    use crate::commands::test_support::scratch_dir;
+    use crate::commands::test_support::{json_round_trip, scratch_dir};
     use std::fs;
 
     #[test]
-    fn round_trips_through_json_store() {
-        let dir = scratch_dir("app-state", "roundtrip");
-        let path = dir.join("state.json");
+    fn app_state_round_trips() {
         let value = PersistedAppState {
             left_sidebar_visible: false,
             right_sidebar_visible: true,
@@ -52,10 +50,17 @@ mod tests {
             last_quick_pane_entry: Some("hello".to_string()),
             recent_items: vec!["a".to_string(), "b".to_string()],
             onboarding_completed: true,
+            open_tabs: vec![crate::types::PersistedTab {
+                id: "t1".to_string(),
+                kind: "note".to_string(),
+                uri: "vault://notes/a.md".to_string(),
+                title: "A".to_string(),
+                pinned: true,
+            }],
+            active_tab_id: Some("t1".to_string()),
         };
 
-        save(&path, &value).unwrap();
-        let loaded: PersistedAppState = load(&path);
+        let loaded = json_round_trip("app-state", "roundtrip", APP_STATE_FILE, &value);
         assert_eq!(loaded, value);
     }
 
@@ -84,12 +89,14 @@ mod tests {
         )
         .unwrap();
 
-        let loaded: PersistedAppState = load(&path);
+        let loaded: PersistedAppState = load_json(&path);
         assert!(!loaded.left_sidebar_visible);
         assert!(loaded.right_sidebar_visible);
         assert!(!loaded.square_corners);
         assert_eq!(loaded.last_quick_pane_entry, None);
         assert!(loaded.recent_items.is_empty());
         assert!(loaded.onboarding_completed);
+        assert!(loaded.open_tabs.is_empty());
+        assert_eq!(loaded.active_tab_id, None);
     }
 }

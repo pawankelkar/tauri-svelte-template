@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-app",
+  "productName": "Ostralith",
   "version": "0.1.0",
-  "identifier": "com.tauri-app.app",
+  "identifier": "com.ostralith.app",
   "build": {
     "removeUnusedCommands": true,
     "beforeDevCommand": "pnpm dev",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "tauri-app",
+        "title": "Ostralith",
         "width": 1200,
         "height": 800,
         "minWidth": 1000,
@@ -32,19 +32,21 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' tauri: ipc: http://ipc.localhost"
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset: http://asset.localhost; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'"
     },
     "macOSPrivateApi": true
   },
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["tauri-app"]
+        "schemes": ["ostralith"]
       }
     },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc1QkY5RkM3MDlGQTMyNzAKUldSd012b0p4NSsvZFNsVmJoUVRtdDFmWm51VFFTQ3Q1UWhuY2Yvekw2djhVMVpNWSsxVm11VUcK",
-      "endpoints": ["https://YOUR_GITHUB_USER.github.io/YOUR_REPO/latest.json"]
+      "endpoints": [
+        "https://updates.ostralith.invalid/{{target}}/{{arch}}/{{current_version}}"
+      ]
     }
   },
   "bundle": {
@@ -57,8 +59,8 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "category": "DeveloperTool",
-    "shortDescription": "A Tauri Svelte template application",
+    "category": "Productivity",
+    "shortDescription": "Local-first AI notes and knowledge base",
     "createUpdaterArtifacts": true
   }
 }

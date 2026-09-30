@@ -46,8 +46,10 @@ jobs:
         # Windows is here deliberately. The comctl32 delay-load in build.rs
         # exists only because cargo test binaries get no application manifest
         # and die with STATUS_ENTRYPOINT_NOT_FOUND without it — a regression
-        # that is completely invisible on Linux.
-        os: [ubuntu-latest, windows-latest]
+        # that is completely invisible on Linux. macOS is here because it is
+        # the primary target: everything behind `cfg(target_os = "macos")`
+        # (MLX, CoreML, ScreenCaptureKit, AppleScript) only compiles there.
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v7
 
@@ -76,8 +78,8 @@ jobs:
 
       - name: cargo clippy
         working-directory: src-tauri
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
       - name: cargo test
         working-directory: src-tauri
-        run: cargo test
+        run: cargo test --workspace

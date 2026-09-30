@@ -1,0 +1,12 @@
+# Every outbound request must go through `ostralith-net`, which enforces
+# offline mode and the host allowlist and records each request in the
+# network activity log. Only that crate may build an HTTP client or open a
+# socket; it opts back in with a scoped `#[allow(clippy::disallowed_methods)]`.
+disallowed-methods = [
+  { path = "reqwest::Client::new", reason = "use ostralith_net::NetClient" },
+  { path = "reqwest::Client::builder", reason = "use ostralith_net::NetClient" },
+  { path = "reqwest::ClientBuilder::new", reason = "use ostralith_net::NetClient" },
+  { path = "reqwest::get", reason = "use ostralith_net::NetClient" },
+  { path = "std::net::TcpStream::connect", reason = "use ostralith_net::NetClient" },
+  { path = "std::net::TcpStream::connect_timeout", reason = "use ostralith_net::NetClient" },
+]

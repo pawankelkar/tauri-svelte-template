@@ -4,7 +4,6 @@
   "windows": ["main"],
   "permissions": [
     "window-state:default",
-    "updater:default",
     "autostart:default",
     "deep-link:default"
   ]

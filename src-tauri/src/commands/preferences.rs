@@ -61,14 +61,11 @@ pub fn load_quick_pane_shortcut(app: &AppHandle) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::json_store::{load_json as load, save_json as save};
-    use crate::commands::test_support::scratch_dir;
+    use crate::commands::test_support::{json_round_trip, scratch_dir};
     use std::fs;
 
     #[test]
-    fn round_trips_through_json_store() {
-        let dir = scratch_dir("preferences", "roundtrip");
-        let path = dir.join("preferences.json");
+    fn preferences_round_trip() {
         let value = AppPreferences {
             theme: "dark".to_string(),
             language: Some("en".to_string()),
@@ -77,15 +74,12 @@ mod tests {
             ..AppPreferences::default()
         };
 
-        save(&path, &value).unwrap();
-        let loaded: AppPreferences = load(&path);
+        let loaded = json_round_trip("preferences", "roundtrip", PREFERENCES_FILE, &value);
         assert_eq!(loaded, value);
     }
 
     #[test]
     fn round_trips_a_populated_global_shortcut() {
-        let dir = scratch_dir("preferences", "global-shortcut");
-        let path = dir.join("preferences.json");
         let value = AppPreferences {
             theme: "system".to_string(),
             language: None,
@@ -94,8 +88,7 @@ mod tests {
             ..AppPreferences::default()
         };
 
-        save(&path, &value).unwrap();
-        let loaded: AppPreferences = load(&path);
+        let loaded = json_round_trip("preferences", "global-shortcut", PREFERENCES_FILE, &value);
         assert_eq!(loaded.global_shortcut, Some("CmdOrCtrl+K".to_string()));
     }
 
@@ -109,7 +102,7 @@ mod tests {
         )
         .unwrap();
 
-        let loaded: AppPreferences = load(&path);
+        let loaded: AppPreferences = load_json(&path);
         assert_eq!(loaded.theme, "light");
         assert_eq!(loaded.language, Some("fr".to_string()));
         assert_eq!(
@@ -120,15 +113,17 @@ mod tests {
 
     #[test]
     fn a_cleared_quick_pane_shortcut_survives_a_round_trip() {
-        let dir = scratch_dir("preferences", "cleared-quick-pane");
-        let path = dir.join("preferences.json");
         let value = AppPreferences {
             quick_pane_shortcut: None,
             ..AppPreferences::default()
         };
 
-        save(&path, &value).unwrap();
-        let loaded: AppPreferences = load(&path);
+        let loaded = json_round_trip(
+            "preferences",
+            "cleared-quick-pane",
+            PREFERENCES_FILE,
+            &value,
+        );
         assert_eq!(loaded.quick_pane_shortcut, None);
     }
 }
