@@ -66,7 +66,7 @@ src/                          Frontend (TypeScript, Svelte 5)
 
 src-tauri/                    Backend (Rust) — Cargo workspace: "." + crates/*
   Cargo.toml                  App crate `ostralith` (lib `ostralith_lib`),
-                              [workspace.dependencies], MSRV 1.85
+                              [workspace.dependencies], MSRV 1.86
   clippy.toml                 disallowed-methods: only crates/net may do HTTP
   build.rs                    Sidecar placeholders, Windows comctl32 fix
   crates/

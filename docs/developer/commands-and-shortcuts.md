@@ -95,6 +95,8 @@ Commands are organised into modules under `src/lib/commands/`:
 | --- | --- |
 | `app-commands.ts` | `open-command-palette`, `toggle-theme`, `open-preferences`, `toggle-left-sidebar`, `toggle-right-sidebar`, `toggle-quick-pane`, `app-quit` |
 | `tab-commands.ts` | `tab.close`, `tab.closeOthers`, `tab.next`, `tab.prev`, `tab.reopenClosed`, `tab.togglePin` (see [Workspace](workspace.md#tab-commands)) |
+| `note-commands.ts` | `note.new`, `note.quickOpen`, `note.save`, `note.rename`, `note.trash`, `search.find`, `search.vault`, `nav.back`, `nav.forward`, `editor.bold`, `editor.italic` |
+| `vault-commands.ts` | `vault.open`, `vault.create`, `vault.switch`, `vault.close`, `vault.reindex`, `backup.now`, `backup.init` |
 
 ### Default keymap
 
@@ -107,9 +109,31 @@ Commands are organised into modules under `src/lib/commands/`:
 | `tab.close` | `mod+w` | not OS-reserved, so this default is always accepted |
 | `tab.next` / `tab.prev` | `mod+alt+arrowright` / `mod+alt+arrowleft` | |
 | `tab.reopenClosed` | `mod+shift+t` | |
+| `note.new` | `mod+n` | scoped by `isEnabled: hasVault`, not `when`, so the File menu shows the accelerator |
+| `note.quickOpen` | `mod+o` | same as `note.new` |
+| `note.save` | `mod+s` | saves the active note now (autosave runs anyway) |
+| `note.rename` | `f2` | `when: vaultOpen`; renames the tree selection while the tree has focus (`fileTreeFocus`), else the active note's title |
+| `search.find` | `mod+f` | `when: vaultOpen`; CodeMirror's find panel in a note, the vault search elsewhere |
+| `search.vault` | `mod+shift+f` | `when: vaultOpen`; seeds the query with a single-line selection |
+| `nav.back` / `nav.forward` | `mod+[` / `mod+]` | enabled by the history store |
+| `editor.bold` / `editor.italic` | `mod+b` / `mod+i` | `when: editorTextFocus`, so the chords stay free everywhere else |
+| `backup.now` | `mod+alt+b` | `when: vaultOpen`; saves open notes, then snapshots |
 
-`mod+k` and `mod+b` are deliberately left free: they are the link and bold
-chords in every rich-text surface.
+`mod+k` is deliberately left free: it is the link chord in every rich-text
+surface. `mod+b` / `mod+i` are only bound inside the note editor.
+
+`note-commands.test.ts` asserts that no two built-in defaults are a blocking
+conflict (`findShortcutConflict`), so a new default that collides fails CI.
+
+### Inside the note editor
+
+CodeMirror ships its own bindings on chords the app owns (`Mod-f`, `Mod-i`,
+`Mod-[`…). `src/lib/editor/keymap.ts` keeps the app keymap authoritative: a
+highest-precedence keydown handler resolves every chord through the registry
+and runs commands marked `allowInInput` (then `preventDefault`s, so the
+window-level dispatcher does not run them again), and `BLOCKED_EDITOR_KEYS`
+removes the CodeMirror bindings that would shadow a default app chord.
+Rebinding a command therefore works inside the editor too.
 
 ### Keymap migration
 
@@ -216,8 +240,13 @@ none) > `source` (`user` > `plugin` > `core`) > registration order.
 When focus is in an editable target (`<input>`, `<textarea>`,
 `contentEditable`) the resolved command only fires if it sets
 `allowInInput: true`; otherwise the keystroke is left for the field.
-Browser-accelerator and reload suppression is separate (`browser-keys.ts`)
-and unaffected.
+A keydown something closer to the target already consumed
+(`defaultPrevented` — a dialog, a list, the editor) is skipped. The one
+exception is the browser-accelerator and reload suppressor
+(`browser-keys.ts`): it cancels Cmd/Ctrl+F, G and P in the capture phase to
+keep the webview's find bar and print dialog away, and records the events it
+cancelled (`wasSuppressedBrowserKey`) so that `mod+f`, `mod+shift+f` and
+`mod+shift+p` still reach their commands.
 
 ### Rebindable in-app shortcuts
 

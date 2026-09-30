@@ -104,8 +104,54 @@ const unregister = registerView({
   definition, and a failed import is evicted from the cache and falls back,
   so a broken view never takes the workspace down.
 
-No views are registered in Phase 0. The note editor (P1) and plugin views
-(P3) are the first callers.
+The note view (`kind: 'note'`) is registered by `registerNoteView()` in
+`src/lib/workspace/note-view.ts`, called from `App.svelte`. Its component,
+`NoteView.svelte`, is imported lazily, so CodeMirror and its language
+packages land in a separate chunk that only loads when the first note opens.
+Everything else talks to a mounted editor through the handle registry in
+`src/lib/editor/editor-registry.svelte.ts` (focus, reveal a line or heading,
+bold/italic, find, selected text), which imports no editor code.
+Plugin views (P3) will use the same API.
+
+### Note documents
+
+`src/lib/stores/notes.svelte.ts` owns one document per open note path:
+
+- **Load**: `ensureDoc(path)` reads the note through `readNote` once the
+  vault is ready. The document keeps the live buffer, the text and `hash`
+  last known to be on disk, and flags (`dirty`, `saving`, `conflict`,
+  `saveError`, `loadError`).
+- **Save**: an edit arms an 800 ms autosave (`AUTOSAVE_DELAY_MS`). Saves send
+  `expectedHash`; one save runs per path at a time, and edits made while it
+  runs are written straight after. `note.save` (`mod+s`) saves now. The
+  tab's dirty dot and the quit gate (`setUnsavedSource('notes', …)`) follow
+  the documents.
+- **External edits**: `vault:fs-changed` re-reads open notes. A clean
+  document reloads silently (its `version` bumps so the editor takes the new
+  text); a dirty or saving one goes into `conflict: 'modified'`, and a
+  deleted one into `conflict: 'removed'`. A write rejected with `conflict`
+  does the same. Autosave stops while in conflict. The note view's bar offers
+  **Reload** (`reloadFromDisk`: take the disk copy, or close the tab if the
+  file is gone) and **Keep mine** (`keepMine`: write without `expectedHash`,
+  recreating a removed file).
+- **Rename / trash**: `renameEntry` saves affected buffers first, calls
+  `renamePath`, then re-keys documents and retargets tabs under the old path
+  and reloads clean notes whose links Rust rewrote. `trashEntry` asks, trashes
+  and closes the tabs without saving.
+- **Vault switch**: `confirmLeaveVault()` in `vault-actions.ts` flushes every
+  document *before* the backend switches (a save after the switch would land
+  in the other vault) and asks only if something still could not be saved.
+  After the switch all note tabs close without prompting.
+
+Back / forward (`nav.back`, `nav.forward`) come from
+`src/lib/workspace/history.svelte.ts`, which records each newly active tab,
+skips notes that no longer exist and is cleared when the vault changes.
+
+### File menu
+
+`menu.ts` puts `note.new`, `note.quickOpen` and `vault.open` ("Open Vault…")
+at the top of a File menu on every platform (on Windows and Linux above
+Preferences and Quit).
 
 ## Deep links
 
@@ -119,7 +165,7 @@ URL from the `app:deep-link-received` event (see
 | `view/settings` | Opens Preferences on its current pane |
 | `view/settings.<pane>` | Opens Preferences on `general`, `appearance`, `shortcuts`, `privacy`, `advanced` or `about` |
 | `view/<id>` | Opens a tab of kind `view:<id>` |
-| `search?q=` | Info toast: search arrives with vaults (P1) |
+| `search?q=` | Shows the vault search in the left sidebar with the query |
 | anything invalid | Warning toast, nothing opened |
 
 The settings pane list is typed as `Record<PreferencesPaneId, true>`, so

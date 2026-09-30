@@ -9,7 +9,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Tauri-v2-24C8DB" alt="Tauri v2">
   <img src="https://img.shields.io/badge/Svelte-5-FF3E00" alt="Svelte 5">
-  <img src="https://img.shields.io/badge/Rust-1.85+-000000" alt="Rust 1.85+">
+  <img src="https://img.shields.io/badge/Rust-1.86+-000000" alt="Rust 1.86+">
 </p>
 
 <p align="center">
@@ -77,7 +77,7 @@ streams back over IPC channels. See the
 | --- | --- |
 | Frontend | Svelte 5 (runes), TypeScript, Vite |
 | UI | shadcn-svelte, Tailwind CSS v4, Lucide, paneforge |
-| Backend | Tauri v2, Rust 1.85+, reqwest (rustls) behind `ostralith-net` |
+| Backend | Tauri v2, Rust 1.86+, reqwest (rustls) behind `ostralith-net` |
 | Bridge | tauri-specta (generated `src/lib/bindings.ts`) |
 | i18n | i18next (English, French; RTL-ready) |
 | Quality | Vitest, cargo test, Prettier, ESLint, ast-grep, knip, jscpd, clippy |
@@ -130,7 +130,7 @@ a badge. No Pro features exist yet: the gating is in place for P4 and P5.
 ### Prerequisites
 
 - Node.js 20+ and pnpm (see `packageManager` in `package.json`)
-- Rust stable, 1.85 or newer
+- Rust stable, 1.86 or newer
 - Platform dependencies for Tauri: <https://tauri.app/start/prerequisites/>
 
 ```bash

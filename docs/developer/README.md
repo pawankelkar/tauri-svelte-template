@@ -14,6 +14,7 @@
 | Doc | Description |
 | --- | --- |
 | [Workspace](workspace.md) | Tabs, editor groups, `ostralith://` URIs, view registry, deep-link routing |
+| [Vault, Index & Backup](vault-and-index.md) | Vault registry, SQLite/SQLCipher cache, tantivy search, link resolution, watcher, git backup, rebuilding |
 | [Commands & Shortcuts](commands-and-shortcuts.md) | Command registry, context keys and `when`, palette, keymap, conflicts, global shortcuts, menus |
 | [Theme System](theme-system.md) | Light/dark/system modes, flash-free boot, cross-window sync |
 | [Internationalisation](i18n.md) | i18next setup, locale management, RTL support, adding languages |
