@@ -62,6 +62,8 @@ export { formatCombo, formatCommandShortcut } from './shortcut-display'
 
 import { registerAppCommands } from './app-commands'
 import { registerTabCommands } from './tab-commands'
+import { registerNoteCommands } from './note-commands'
+import { registerVaultCommands } from './vault-commands'
 import { initCommandShortcutOverrides } from './command-shortcuts'
 import { setContextKey } from './context-keys.svelte'
 import { runKeymapMigration } from './keymap-migration'
@@ -79,6 +81,8 @@ export function initCommands(): () => void {
 
   registerAppCommands()
   registerTabCommands()
+  registerNoteCommands()
+  registerVaultCommands()
 
   initCommandShortcutOverrides()
 

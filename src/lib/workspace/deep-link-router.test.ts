@@ -19,10 +19,21 @@ import {
   isPreferencesDialogOpen,
   __resetPreferencesDialogStateForTests,
 } from '$lib/commands/preferences-dialog-state.svelte'
+import {
+  getLeftActivity,
+  getSearchQuery,
+  __resetSidebarForTests,
+} from '$lib/stores/sidebar.svelte'
+import {
+  registerEditor,
+  __resetEditorRegistryForTests,
+} from '$lib/editor/editor-registry.svelte'
 
 beforeEach(() => {
   vi.clearAllMocks()
   __resetTabsForTests()
+  __resetSidebarForTests()
+  __resetEditorRegistryForTests()
   __resetPreferencesDialogStateForTests()
   initTabs(defaultAppState())
 })
@@ -82,12 +93,25 @@ describe('routeDeepLink', () => {
     expect(getActiveTab()?.kind).toBe('view:settings.nope')
   })
 
-  it('explains that search is not available yet', () => {
-    routeDeepLink('ostralith://search?q=x')
-    expect(toast.info).toHaveBeenCalledWith(
-      i18n.t('workspace.deepLink.searchUnavailable'),
-    )
+  it('opens the sidebar search with the query', () => {
+    routeDeepLink('ostralith://search?q=hello%20world')
+    expect(getLeftActivity()).toBe('search')
+    expect(getSearchQuery()).toBe('hello world')
     expect(getTabCount()).toBe(0)
+  })
+
+  it('asks the editor to scroll to a linked heading', () => {
+    routeDeepLink('ostralith://note/a.md#Goals')
+    const handle = {
+      focus: vi.fn(),
+      reveal: vi.fn(),
+      toggleBold: vi.fn(),
+      toggleItalic: vi.fn(),
+      openFind: vi.fn(),
+      selectedText: () => '',
+    }
+    registerEditor(getActiveTab()!.id, handle)
+    expect(handle.reveal).toHaveBeenCalledWith({ heading: 'Goals' })
   })
 
   it('warns about an invalid link', () => {

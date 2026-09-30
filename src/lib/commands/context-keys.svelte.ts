@@ -1,3 +1,4 @@
+import { untrack } from 'svelte'
 import { warn } from '$lib/logger'
 
 /**
@@ -28,7 +29,13 @@ import { warn } from '$lib/logger'
 let _keys = $state<Record<string, unknown>>({})
 
 export function setContextKey(key: string, value: unknown): void {
-  _keys[key] = value
+  // Untracked, because keys are set from DOM events the browser can fire
+  // in the middle of a Svelte update: removing a focused editor while its
+  // block is torn down fires `focusout` synchronously, and a plain write
+  // there is a `state_unsafe_mutation` that aborts the rest of the update.
+  untrack(() => {
+    if (_keys[key] !== value) _keys[key] = value
+  })
 }
 
 export function getContextKey(key: string): unknown {

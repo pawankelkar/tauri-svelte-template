@@ -8,6 +8,8 @@ export const MAX_TAB_ID_LEN = 256
 export const MAX_TAB_KIND_LEN = 64
 export const MAX_TAB_URI_LEN = 4096
 export const MAX_TAB_TITLE_LEN = 512
+/** Mirrors `MAX_VAULT_ID_LEN` in `src-tauri/src/types.rs`. */
+export const MAX_VAULT_ID_LEN = 64
 
 const utf8 = new TextEncoder()
 
@@ -61,6 +63,7 @@ export function defaultAppState(): PersistedAppState {
     onboardingCompleted: false,
     openTabs: [],
     activeTabId: null,
+    lastVaultId: null,
   }
 }
 
@@ -102,6 +105,12 @@ export function sanitizeAppState(raw: unknown): PersistedAppState {
       typeof r.activeTabId === 'string' &&
       openTabs.some((t) => t.id === r.activeTabId)
         ? r.activeTabId
+        : null,
+    // An oversized id would fail the Rust-side validation and block every
+    // later save, so it is dropped rather than persisted.
+    lastVaultId:
+      fits(r.lastVaultId, MAX_VAULT_ID_LEN) && r.lastVaultId.length > 0
+        ? r.lastVaultId
         : null,
   }
 }

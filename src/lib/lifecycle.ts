@@ -2,6 +2,7 @@ import { commands } from '$lib/tauri-bindings'
 import { persistPreferencesNow } from '$lib/stores/preferences.svelte'
 import { persistAppStateNow } from '$lib/stores/app-state.svelte'
 import { confirm } from '$lib/stores/confirm.svelte'
+import { flushAllNotes } from '$lib/stores/notes.svelte'
 import {
   getHasUnsavedChanges,
   setHasUnsavedChanges,
@@ -23,9 +24,12 @@ export function flushAllStores(): Promise<void> {
 /**
  * Returns true if the user confirms (or there are no unsaved changes).
  *
- * Shows the in-app confirmation dialog when dirty; clears the flag on accept.
+ * Saves open notes first, so only work that could not be saved (a
+ * conflict, a failing disk) asks. Shows the in-app confirmation dialog when
+ * still dirty; clears the manual flag on accept.
  */
 export async function confirmQuitIfDirty(): Promise<boolean> {
+  await flushAllNotes()
   if (!getHasUnsavedChanges()) return true
   const proceed = await confirm({
     titleKey: 'quit.unsavedTitle',

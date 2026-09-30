@@ -1,3 +1,5 @@
+import { wasSuppressedBrowserKey } from '$lib/browser-keys'
+
 export type ShortcutModifier = 'mod' | 'shift' | 'alt'
 
 export interface ParsedShortcut {
@@ -194,13 +196,30 @@ export interface KeydownTarget {
   allowInInput?: boolean
 }
 
+const FUNCTION_KEY = /^f\d{1,2}$/
+
+/**
+ * Whether a combo may be a keyboard shortcut at all: it needs a modifier —
+ * a bare letter is typing — except for the function keys, which type
+ * nothing (F2 renames, as in every file manager).
+ */
+export function isShortcutCombo(combo: string): boolean {
+  if (!combo) return false
+  if (combo.includes('+')) return true
+  return FUNCTION_KEY.test(combo)
+}
+
 export function createKeydownHandler(
   resolveCommand: (combo: string) => KeydownTarget | undefined,
   dispatch: (commandId: string) => void,
 ): (event: KeyboardEvent) => void {
   return (event: KeyboardEvent) => {
+    // Something closer to the target (a dialog, a list, the editor) already
+    // handled it. The browser-key suppressor cancels Cmd+F and friends before
+    // anyone sees them; that is not handling them.
+    if (event.defaultPrevented && !wasSuppressedBrowserKey(event)) return
     const combo = buildCombo(event)
-    if (!combo || !combo.includes('+')) return
+    if (!isShortcutCombo(combo)) return
 
     const command = resolveCommand(combo)
     if (!command) return

@@ -8,6 +8,11 @@ const CORE_ERROR_KINDS: ReadonlySet<CoreError['kind']> = new Set([
   'hostNotAllowed',
   'network',
   'invalidInput',
+  'notFound',
+  'conflict',
+  'noVault',
+  'pathOutsideVault',
+  'alreadyExists',
   'internal',
 ])
 
@@ -19,6 +24,23 @@ export function isCoreError(value: unknown): value is CoreError {
     'kind' in value &&
     CORE_ERROR_KINDS.has((value as { kind: CoreError['kind'] }).kind)
   )
+}
+
+/** A `CoreError` narrowed to one `kind`. */
+export type CoreErrorOf<K extends CoreError['kind']> = Extract<
+  CoreError,
+  { kind: K }
+>
+
+/**
+ * Whether a rejected value is a `CoreError` of the given kind, e.g.
+ * `isCoreErrorKind(err, 'conflict')` to offer a reload after a stale write.
+ */
+export function isCoreErrorKind<K extends CoreError['kind']>(
+  value: unknown,
+  kind: K,
+): value is CoreErrorOf<K> {
+  return isCoreError(value) && value.kind === kind
 }
 
 /** The display name of a Pro feature. */
@@ -46,6 +68,16 @@ export function describeCoreError(e: CoreError): string {
       return t('errors.core.network', { message: e.message })
     case 'invalidInput':
       return t('errors.core.invalidInput', { message: e.message })
+    case 'notFound':
+      return t('errors.core.notFound', { what: e.what })
+    case 'conflict':
+      return t('errors.core.conflict', { path: e.path })
+    case 'noVault':
+      return t('errors.core.noVault')
+    case 'pathOutsideVault':
+      return t('errors.core.pathOutsideVault', { path: e.path })
+    case 'alreadyExists':
+      return t('errors.core.alreadyExists', { path: e.path })
     case 'internal':
       return t('errors.core.internal', { message: e.message })
   }

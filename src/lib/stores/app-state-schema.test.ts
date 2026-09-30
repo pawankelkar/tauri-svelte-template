@@ -5,6 +5,7 @@ import {
   MAX_OPEN_TABS,
   MAX_RECENT_ITEMS,
   MAX_TAB_URI_LEN,
+  MAX_VAULT_ID_LEN,
 } from './app-state-schema'
 
 describe('defaultAppState', () => {
@@ -18,6 +19,7 @@ describe('defaultAppState', () => {
     expect(defaults.onboardingCompleted).toBe(false)
     expect(defaults.openTabs).toEqual([])
     expect(defaults.activeTabId).toBeNull()
+    expect(defaults.lastVaultId).toBeNull()
   })
 })
 
@@ -47,6 +49,7 @@ describe('sanitizeAppState', () => {
         },
       ],
       activeTabId: 't2',
+      lastVaultId: 'vault-1',
     }
     expect(sanitizeAppState(valid)).toEqual(valid)
   })
@@ -114,6 +117,17 @@ describe('sanitizeAppState', () => {
     expect(result.onboardingCompleted).toBe(false)
     expect(result.openTabs).toEqual([])
     expect(result.activeTabId).toBeNull()
+    expect(result.lastVaultId).toBeNull()
+  })
+
+  it('keeps a well-formed lastVaultId and drops anything else', () => {
+    expect(sanitizeAppState({ lastVaultId: 'abc' }).lastVaultId).toBe('abc')
+    expect(sanitizeAppState({ lastVaultId: '' }).lastVaultId).toBeNull()
+    expect(sanitizeAppState({ lastVaultId: 7 }).lastVaultId).toBeNull()
+    expect(
+      sanitizeAppState({ lastVaultId: 'x'.repeat(MAX_VAULT_ID_LEN + 1) })
+        .lastVaultId,
+    ).toBeNull()
   })
 
   const tab = (id: string) => ({

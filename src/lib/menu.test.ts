@@ -19,6 +19,13 @@ vi.mock('$lib/commands/app-commands', () => ({
   TOGGLE_QUICK_PANE: 'toggle-quick-pane',
   APP_QUIT: 'app-quit',
 }))
+vi.mock('$lib/commands/note-commands', () => ({
+  NOTE_NEW: 'note.new',
+  NOTE_QUICK_OPEN: 'note.quickOpen',
+}))
+vi.mock('$lib/commands/vault-commands', () => ({
+  VAULT_OPEN: 'vault.open',
+}))
 
 import { buildMenuSpec, type MenuItemSpec } from './menu'
 import {
@@ -74,4 +81,38 @@ describe('buildMenuSpec accelerators', () => {
     registerCommands([makeCommand({ id: 'toggle-theme' })])
     expect(findItem('toggle-theme')?.accelerator).toBeUndefined()
   })
+})
+
+describe('buildMenuSpec File menu', () => {
+  beforeEach(() => __resetCommandsForTests())
+
+  it.each(['macos', 'windows', 'linux'] as const)(
+    'starts with New Note, Quick Open and Open Vault on %s',
+    (platform) => {
+      registerCommands([
+        makeCommand({
+          id: 'note.new',
+          labelKey: 'commands.note.new',
+          shortcut: 'mod+n',
+        }),
+        makeCommand({
+          id: 'note.quickOpen',
+          labelKey: 'commands.note.quickOpen',
+          shortcut: 'mod+o',
+        }),
+        makeCommand({ id: 'vault.open', labelKey: 'commands.vault.open' }),
+      ])
+      const file = buildMenuSpec(platform).find(
+        (s) => s.labelKey === 'menu.file',
+      )
+      const items = (file?.items ?? []).slice(0, 3) as MenuItemSpec[]
+      expect(
+        items.map((i) => [i.commandId, i.labelKey, i.accelerator]),
+      ).toEqual([
+        ['note.new', 'commands.note.new', 'CmdOrCtrl+N'],
+        ['note.quickOpen', 'commands.note.quickOpen', 'CmdOrCtrl+O'],
+        ['vault.open', 'menu.openVault', undefined],
+      ])
+    },
+  )
 })

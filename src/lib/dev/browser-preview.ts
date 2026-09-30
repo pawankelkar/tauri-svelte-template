@@ -7,7 +7,8 @@
  * installs `@tauri-apps/api/mocks` with an in-memory stand-in for every Rust
  * command and plugin call the app makes, so the UI renders and the main flows
  * (palette, Preferences, offline toggle, Pro flags) work for layout and
- * styling work.
+ * styling work. The P1 vault, search and backup commands are served by the
+ * in-memory vault in `./fake-vault`.
  *
  * Only ever reached through the `import.meta.env.DEV` dynamic import in
  * `src/main.ts` / `src/quick-pane-main.ts`, so production builds never
@@ -30,6 +31,7 @@ import type {
 import { defaultPreferences } from '$lib/stores/preferences-schema'
 import { defaultAppState } from '$lib/stores/app-state-schema'
 import { logger } from '$lib/logger'
+import { createFakeVault, type FakeVault } from './fake-vault'
 import { version as APP_VERSION } from '../../../package.json'
 
 export type PreviewPlatform = 'macos' | 'windows' | 'linux'
@@ -55,6 +57,12 @@ const PREVIEW_FONTS = [
 ]
 
 const NOT_IN_BROWSER = 'not available in browser preview'
+
+/**
+ * What a folder picker "chooses", so onboarding's Open/Create flows reach
+ * the fake vault. File pickers still behave as cancelled.
+ */
+export const PREVIEW_FOLDER = '/Users/preview/Documents/Ostralith Sample'
 
 export function detectPlatform(userAgent: string): PreviewPlatform {
   const ua = userAgent.toLowerCase()
@@ -88,6 +96,8 @@ export interface PreviewHandlerOptions {
   platform: PreviewPlatform
   /** Stands in for Rust's `app.emit(...)`. */
   emitEvent: (event: string, payload: unknown) => unknown
+  /** Serves the P1 commands; a fresh one by default. */
+  fakeVault?: FakeVault
   /** Stands in for `tauri-plugin-opener`. */
   openUrl?: (url: string) => void
 }
@@ -129,6 +139,9 @@ export function createPreviewHandler(
   }
 
   const handlers: Record<string, CommandHandler> = {
+    // --- P1: vault, search, db, backup (see ./fake-vault.ts) ---------------
+    ...(options.fakeVault ?? createFakeVault({ emitEvent })).handlers,
+
     // --- Ostralith commands (src/lib/bindings.ts) ---------------------------
     load_preferences: () => structuredClone(preferences),
     save_preferences: ({ preferences: next }) => {
@@ -278,8 +291,11 @@ export function createPreviewHandler(
     'plugin:deep-link|unregister': () => null,
     'plugin:deep-link|is_registered': () => false,
     'plugin:deep-link|get_current': () => null,
-    // A file picker the user cancelled.
-    'plugin:dialog|open': () => null,
+    // A folder picker returns PREVIEW_FOLDER; a file picker is cancelled.
+    'plugin:dialog|open': ({ options: opts }) =>
+      (opts as { directory?: boolean } | undefined)?.directory
+        ? PREVIEW_FOLDER
+        : null,
     'plugin:dialog|save': () => null,
     'plugin:opener|open_url': ({ url }) => {
       openUrl(String(url))
@@ -337,9 +353,19 @@ export function installBrowserPreview(windowLabel = 'main'): void {
     window as unknown as Record<string, unknown>
   ).__TAURI_OS_PLUGIN_INTERNALS__ = osInternals(platform)
   mockWindows(windowLabel)
-  mockIPC(createPreviewHandler({ platform, emitEvent: emit }), {
+  const fakeVault = createFakeVault({ emitEvent: emit })
+  mockIPC(createPreviewHandler({ platform, emitEvent: emit, fakeVault }), {
     shouldMockEvents: true,
   })
+  // Console hook for exercising external-change handling (reload prompts,
+  // write conflicts), which nothing in the browser can trigger otherwise.
+  ;(window as unknown as Record<string, unknown>).__OSTRALITH_PREVIEW__ = {
+    externalEdit: fakeVault.externalEdit,
+  }
   showBanner()
-  logger.info(`[browser preview] Tauri IPC mocked (platform: ${platform})`)
+  logger.info(
+    `[browser preview] Tauri IPC mocked (platform: ${platform}). ` +
+      'window.__OSTRALITH_PREVIEW__.externalEdit(path, content | null) ' +
+      'simulates an edit made outside the app.',
+  )
 }

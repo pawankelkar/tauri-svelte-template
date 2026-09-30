@@ -45,6 +45,8 @@ const appCommands: AppCommand[] = [
     labelKey: 'commands.openPreferences',
     category: 'commands.category.general',
     shortcut: 'mod+,',
+    // The note editor is a text field; settings stay one chord away.
+    allowInInput: true,
     // Wrapped: `run` receives the command's args, which are not a pane id.
     run: () => openPreferencesDialog(),
   },
@@ -55,6 +57,7 @@ const appCommands: AppCommand[] = [
     // mod+b is bold in any rich-text surface, so the sidebars sit on the
     // backslash key instead.
     shortcut: 'mod+\\',
+    allowInInput: true,
     label: () =>
       i18n.t(
         isLeftSidebarVisible()
@@ -68,6 +71,7 @@ const appCommands: AppCommand[] = [
     labelKey: 'commands.toggleRightSidebar',
     category: 'commands.category.view',
     shortcut: 'mod+alt+\\',
+    allowInInput: true,
     label: () =>
       i18n.t(
         isRightSidebarVisible()

@@ -3,8 +3,10 @@ import type { PreferencesPaneId } from '$lib/commands/preferences-dialog-state.s
 import { toast } from '$lib/stores/toast'
 import { t } from '$lib/i18n/t.svelte'
 import { logger } from '$lib/logger'
-import { formatUri, noteTitleFromPath, parseUri } from './uri'
+import { showSearch } from '$lib/stores/sidebar.svelte'
+import { formatUri, parseUri } from './uri'
 import { openTab } from './tabs.svelte'
+import { openNote } from './open-note'
 
 /**
  * Preferences panes reachable as `ostralith://view/settings.<pane>`. Listed
@@ -32,8 +34,9 @@ function settingsPane(id: string): PreferencesPaneId | null | undefined {
 
 /**
  * Routes one incoming `ostralith://` URL: notes and views open (or focus) a
- * tab, settings views open the preferences dialog, and everything else is
- * explained with a toast rather than dropped silently.
+ * tab, settings views open the preferences dialog, a search opens the
+ * sidebar's search with the query, and anything malformed is explained with
+ * a toast rather than dropped silently.
  */
 export function routeDeepLink(url: string): void {
   const target = parseUri(url)
@@ -45,12 +48,10 @@ export function routeDeepLink(url: string): void {
 
   switch (target.kind) {
     case 'note':
-      openTab({
-        kind: 'note',
-        // Canonical form, so two spellings of one link share a tab. The
-        // heading is a position within the note, not a different tab.
-        uri: formatUri({ kind: 'note', path: target.path }),
-        title: noteTitleFromPath(target.path),
+      // One tab per note whatever the spelling; the heading is a position
+      // within it, scrolled to once the editor is up.
+      openNote(target.path, {
+        reveal: target.heading ? { heading: target.heading } : undefined,
       })
       return
     case 'view': {
@@ -67,7 +68,7 @@ export function routeDeepLink(url: string): void {
       return
     }
     case 'search':
-      toast.info(t('workspace.deepLink.searchUnavailable'))
+      showSearch(target.query)
       return
   }
 }

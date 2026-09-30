@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { listen } from '@tauri-apps/api/event'
 import { platform } from '@tauri-apps/plugin-os'
-import { commands } from '$lib/tauri-bindings'
+import { commands, EVENTS } from '$lib/tauri-bindings'
 import { defaultPreferences } from '$lib/stores/preferences-schema'
 import { defaultAppState } from '$lib/stores/app-state-schema'
 import { logger } from '$lib/logger'
@@ -10,6 +10,7 @@ import {
   createPreviewHandler,
   detectPlatform,
   installBrowserPreview,
+  PREVIEW_FOLDER,
 } from './browser-preview'
 
 function setup() {
@@ -93,6 +94,19 @@ describe('createPreviewHandler', () => {
     expect(openUrl).toHaveBeenCalledWith('https://example.com')
   })
 
+  it('serves the fake vault and a folder picker that picks PREVIEW_FOLDER', () => {
+    const { handle, emitEvent } = setup()
+    expect(handle('vault_current')).toBeNull()
+    expect(handle('plugin:dialog|open', { options: { directory: true } })).toBe(
+      PREVIEW_FOLDER,
+    )
+    expect(handle('plugin:dialog|open', { options: {} })).toBeNull()
+
+    const info = handle('vault_open', { path: PREVIEW_FOLDER })
+    expect(info).toMatchObject({ name: 'Ostralith Sample' })
+    expect(emitEvent).toHaveBeenCalledWith(EVENTS.vaultCurrentChanged, info)
+  })
+
   it('returns null for unknown commands and warns once per name', () => {
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
     const { handle } = setup()
@@ -127,6 +141,21 @@ describe('installBrowserPreview', () => {
         expect.objectContaining({ offline: false }),
       ),
     )
+
+    expect(await commands.vaultCurrent()).toEqual({ status: 'ok', data: null })
+    const onVault = vi.fn()
+    await listen(EVENTS.vaultCurrentChanged, (e) => onVault(e.payload))
+    const opened = await commands.vaultOpen(PREVIEW_FOLDER)
+    expect(opened.status).toBe('ok')
+    await vi.waitFor(() =>
+      expect(onVault).toHaveBeenCalledWith(
+        expect.objectContaining({ path: PREVIEW_FOLDER }),
+      ),
+    )
+    expect(await commands.readNote('Nope.md')).toMatchObject({
+      status: 'error',
+      error: { kind: 'notFound' },
+    })
 
     document.querySelector('[data-browser-preview]')?.remove()
   })

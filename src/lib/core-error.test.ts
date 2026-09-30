@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { describeCoreError, describeError, isCoreError } from './core-error'
+import {
+  describeCoreError,
+  describeError,
+  isCoreError,
+  isCoreErrorKind,
+} from './core-error'
 
 describe('isCoreError', () => {
   it('recognises CoreError shapes only', () => {
@@ -7,6 +12,17 @@ describe('isCoreError', () => {
     expect(isCoreError({ kind: 'bogus' })).toBe(false)
     expect(isCoreError(new Error('x'))).toBe(false)
     expect(isCoreError(null)).toBe(false)
+  })
+})
+
+describe('isCoreErrorKind', () => {
+  it('matches one kind of CoreError only', () => {
+    const err: unknown = { kind: 'conflict', path: 'a.md' }
+    expect(isCoreErrorKind(err, 'conflict')).toBe(true)
+    expect(isCoreErrorKind(err, 'notFound')).toBe(false)
+    expect(isCoreErrorKind({ kind: 'noVault' }, 'noVault')).toBe(true)
+    expect(isCoreErrorKind('conflict', 'conflict')).toBe(false)
+    if (isCoreErrorKind(err, 'conflict')) expect(err.path).toBe('a.md')
   })
 })
 
@@ -30,6 +46,24 @@ describe('describeCoreError', () => {
     for (const kind of ['network', 'invalidInput', 'internal'] as const) {
       expect(describeCoreError({ kind, message: 'detail' })).toContain('detail')
     }
+  })
+})
+
+describe('describeCoreError for vault errors', () => {
+  it('names the path or thing involved', () => {
+    expect(describeCoreError({ kind: 'notFound', what: 'Inbox.md' })).toContain(
+      'Inbox.md',
+    )
+    for (const kind of [
+      'conflict',
+      'pathOutsideVault',
+      'alreadyExists',
+    ] as const) {
+      expect(describeCoreError({ kind, path: 'Notes/a.md' })).toContain(
+        'Notes/a.md',
+      )
+    }
+    expect(describeCoreError({ kind: 'noVault' })).toBe('No vault is open.')
   })
 })
 

@@ -42,6 +42,11 @@ if (typeof globalThis.localStorage?.removeItem !== 'function') {
   })
 }
 
+// jsdom does no layout; components that scroll a row into view call this.
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {}
+}
+
 if (!window.matchMedia) {
   window.matchMedia = (query: string) =>
     ({

@@ -18,6 +18,8 @@ import {
   TOGGLE_QUICK_PANE,
   APP_QUIT,
 } from '$lib/commands/app-commands'
+import { NOTE_NEW, NOTE_QUICK_OPEN } from '$lib/commands/note-commands'
+import { VAULT_OPEN } from '$lib/commands/vault-commands'
 
 export interface MenuItemSpec {
   id: string
@@ -105,6 +107,15 @@ function editSubmenu(): SubmenuSpec {
   }
 }
 
+/** The note and vault entries every platform's File menu starts with. */
+function fileItems(): MenuItemSpec[] {
+  return [
+    commandItem(NOTE_NEW),
+    commandItem(NOTE_QUICK_OPEN),
+    commandItem(VAULT_OPEN, 'menu.openVault'),
+  ]
+}
+
 function viewSubmenu(): SubmenuSpec {
   return {
     labelKey: 'menu.view',
@@ -137,6 +148,7 @@ export function buildMenuSpec(platform: AppPlatform): SubmenuSpec[] {
           commandItem(APP_QUIT, 'commands.quit'),
         ],
       },
+      { labelKey: 'menu.file', items: fileItems() },
       editSubmenu(),
       viewSubmenu(),
       {
@@ -153,6 +165,8 @@ export function buildMenuSpec(platform: AppPlatform): SubmenuSpec[] {
     {
       labelKey: 'menu.file',
       items: [
+        ...fileItems(),
+        sep(),
         commandItem(OPEN_PREFERENCES, 'titlebar.settings'),
         sep(),
         commandItem(APP_QUIT, 'commands.quit'),

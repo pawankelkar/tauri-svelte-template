@@ -7,8 +7,10 @@ import {
   fromTauriAccelerator,
   isValidGlobalShortcutCombo,
   createKeydownHandler,
+  isShortcutCombo,
 } from './shortcuts'
 import { formatShortcut } from './platform-strings'
+import { initBrowserKeySuppression } from './browser-keys'
 
 describe('normalizeShortcut', () => {
   it('lowercases and sorts modifiers', () => {
@@ -317,5 +319,80 @@ describe('isValidGlobalShortcutCombo', () => {
 
   it('rejects an empty combo', () => {
     expect(isValidGlobalShortcutCombo('')).toBe(false)
+  })
+})
+
+describe('createKeydownHandler with function keys', () => {
+  function keydown(key: string, extra: Partial<KeyboardEvent> = {}) {
+    return {
+      key,
+      ctrlKey: false,
+      metaKey: false,
+      shiftKey: false,
+      altKey: false,
+      target: document.createElement('div'),
+      preventDefault: vi.fn(),
+      ...extra,
+    } as unknown as KeyboardEvent
+  }
+
+  it('lets bare function keys through', () => {
+    const dispatch = vi.fn()
+    const handler = createKeydownHandler(
+      (combo) => (combo === 'f2' ? { id: 'rename' } : undefined),
+      dispatch,
+    )
+    handler(keydown('F2'))
+    expect(dispatch).toHaveBeenCalledWith('rename')
+  })
+
+  it('skips keys another handler already consumed', () => {
+    const dispatch = vi.fn()
+    const handler = createKeydownHandler(() => ({ id: 'x' }), dispatch)
+    handler(keydown('k', { ctrlKey: true, defaultPrevented: true }))
+    expect(dispatch).not.toHaveBeenCalled()
+  })
+})
+
+describe('isShortcutCombo', () => {
+  it('needs a modifier unless the key is a function key', () => {
+    expect(isShortcutCombo('mod+k')).toBe(true)
+    expect(isShortcutCombo('f2')).toBe(true)
+    expect(isShortcutCombo('f12')).toBe(true)
+    expect(isShortcutCombo('k')).toBe(false)
+    expect(isShortcutCombo('enter')).toBe(false)
+    expect(isShortcutCombo('')).toBe(false)
+  })
+})
+
+describe('createKeydownHandler with the browser-key suppressor', () => {
+  it('still runs Cmd+F / Cmd+Shift+F commands the suppressor cancelled', () => {
+    const dispatch = vi.fn()
+    const handler = createKeydownHandler(
+      (combo) =>
+        combo === 'mod+shift+f' || combo === 'mod+f'
+          ? { id: combo }
+          : undefined,
+      dispatch,
+    )
+    const stop = initBrowserKeySuppression('macos')
+    window.addEventListener('keydown', handler)
+    try {
+      for (const shiftKey of [true, false]) {
+        const event = new KeyboardEvent('keydown', {
+          key: 'f',
+          metaKey: true,
+          shiftKey,
+          bubbles: true,
+          cancelable: true,
+        })
+        window.dispatchEvent(event)
+        expect(event.defaultPrevented).toBe(true)
+      }
+      expect(dispatch.mock.calls).toEqual([['mod+shift+f'], ['mod+f']])
+    } finally {
+      window.removeEventListener('keydown', handler)
+      stop()
+    }
   })
 })

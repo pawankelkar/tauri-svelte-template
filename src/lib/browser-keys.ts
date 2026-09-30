@@ -60,6 +60,18 @@ export function isSuppressedBrowserKey(
   return SUPPRESSED_KEYS.has(key)
 }
 
+/** Events the suppressor cancelled, so the command dispatcher can tell. */
+const suppressedEvents = new WeakSet<Event>()
+
+/**
+ * Whether the suppressor (not a component) cancelled this event. The command
+ * dispatcher skips events something already consumed, but a cancelled find
+ * bar is not a consumed key: Cmd+F and Cmd+Shift+F are app commands.
+ */
+export function wasSuppressedBrowserKey(event: Event): boolean {
+  return suppressedEvents.has(event)
+}
+
 /**
  * Installs the suppressor on `window` and returns its teardown.
  *
@@ -71,7 +83,9 @@ export function initBrowserKeySuppression(
   options: BrowserKeyOptions = {},
 ): () => void {
   const handler = (event: KeyboardEvent): void => {
-    if (isSuppressedBrowserKey(event, platform, options)) event.preventDefault()
+    if (!isSuppressedBrowserKey(event, platform, options)) return
+    suppressedEvents.add(event)
+    event.preventDefault()
   }
   window.addEventListener('keydown', handler, { capture: true })
   return () => {

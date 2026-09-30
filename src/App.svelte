@@ -47,6 +47,16 @@
   import EditorArea from '$lib/components/workspace/EditorArea.svelte'
   import { initTabs } from '$lib/workspace/tabs.svelte'
   import { routeDeepLink } from '$lib/workspace/deep-link-router'
+  import { registerNoteView } from '$lib/workspace/note-view'
+  import { initHistory } from '$lib/workspace/history.svelte'
+  import { initVault } from '$lib/stores/vault.svelte'
+  import { initNotes } from '$lib/stores/notes.svelte'
+  import { initTreeState } from '$lib/stores/tree-state.svelte'
+  import LeftSidebarPanel from '$lib/components/sidebar/LeftSidebarPanel.svelte'
+  import RightSidebarPanel from '$lib/components/sidebar/RightSidebarPanel.svelte'
+  import QuickOpen from '$lib/components/quick-open/QuickOpen.svelte'
+  import CreateVaultDialog from '$lib/components/vault/CreateVaultDialog.svelte'
+  import VaultSwitcher from '$lib/components/vault/VaultSwitcher.svelte'
   import { t } from '$lib/i18n/t.svelte'
   import './app.css'
 
@@ -106,6 +116,9 @@
     const cleanupBrowserKeys = initBrowserKeySuppression(getPlatform(), {
       reload: true,
     })
+    const unregisterNoteView = registerNoteView()
+    // Before the vault store, which announces the reopened vault to it.
+    const cleanupTreeState = initTreeState()
 
     if (import.meta.env.PROD) {
       window.addEventListener('contextmenu', suppressContextMenu)
@@ -114,9 +127,24 @@
     let unlistenClose: (() => void) | undefined
     let unlistenTrayQuit: (() => void) | undefined
     let unlistenDeepLink: (() => void) | undefined
+    let cleanupVault: (() => void) | undefined
+    let cleanupNotes: (() => void) | undefined
+    let cleanupHistory: (() => void) | undefined
     let destroyed = false
 
     const appWindow = getCurrentWindow()
+
+    // Reopens the last vault; the notes store then closes any note tab
+    // restored for a vault that could not be reopened.
+    async function startVault(lastVaultId: string | null): Promise<void> {
+      const vaultCleanup = await initVault(lastVaultId)
+      if (destroyed) {
+        vaultCleanup()
+        return
+      }
+      cleanupVault = vaultCleanup
+      cleanupNotes = initNotes()
+    }
 
     void (async () => {
       // Register the close listener before showing the window so the user
@@ -191,6 +219,10 @@
         // After the commands so a restore problem can never leave the app
         // without its keyboard shortcuts.
         initTabs(appState)
+        if (!destroyed) cleanupHistory = initHistory()
+        // Not awaited: reopening the vault can wait on the OS keychain, and
+        // the window must not stay hidden behind that prompt.
+        void startVault(appState.lastVaultId)
         // Before show() so the first frame the user ever sees already has
         // the greeting up — no post-boot pop-in.
         if (!destroyed && !getAppState().onboardingCompleted) {
@@ -217,6 +249,11 @@
       cleanupNetwork()
       cleanupEntitlements()
       cleanupCommands?.()
+      cleanupHistory?.()
+      cleanupNotes?.()
+      cleanupVault?.()
+      cleanupTreeState()
+      unregisterNoteView()
       unlistenClose?.()
       unlistenTrayQuit?.()
       unlistenDeepLink?.()
@@ -270,20 +307,19 @@
   <CommandPalette />
   <PreferencesDialog />
   <OnboardingDialog />
+  <QuickOpen />
+  <CreateVaultDialog />
+  <VaultSwitcher />
   <ConfirmDialog />
   <ToastContainer />
   <main class="bg-background flex-1 overflow-hidden">
     <ErrorBoundary>
       <MainLayout>
         {#snippet left()}
-          <div class="text-muted-foreground p-4 text-sm">
-            {t('sidebar.leftPlaceholder')}
-          </div>
+          <LeftSidebarPanel />
         {/snippet}
         {#snippet right()}
-          <div class="text-muted-foreground p-4 text-sm">
-            {t('sidebar.rightPlaceholder')}
-          </div>
+          <RightSidebarPanel />
         {/snippet}
         <EditorArea />
       </MainLayout>

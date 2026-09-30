@@ -61,6 +61,31 @@ export interface OpenTabOptions {
   pinned?: boolean
 }
 
+/**
+ * Per-kind lifecycle hooks, so a view's model (a note's buffer) can act on
+ * a tab closing even while its view is not mounted.
+ *
+ * - `beforeClose` runs first and may finish pending work (a note flushes
+ *   its save), so a tab that only *looked* dirty closes without a prompt.
+ * - `closed` runs after the tab is gone, however it went (closed, or a
+ *   clean preview replaced by the next preview).
+ */
+export interface TabKindHooks {
+  beforeClose?: (tab: Tab) => Promise<void> | void
+  closed?: (tab: Tab) => void
+}
+
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping, never rendered
+const _hooks = new Map<string, TabKindHooks>()
+
+/** Installs the hooks for one tab kind; returns the uninstall function. */
+export function setTabKindHooks(kind: string, hooks: TabKindHooks): () => void {
+  _hooks.set(kind, hooks)
+  return () => {
+    if (_hooks.get(kind) === hooks) _hooks.delete(kind)
+  }
+}
+
 const MAIN_GROUP_ID = 'main'
 const UNSAVED_SOURCE = 'tabs'
 const MAX_CLOSED_HISTORY = 20
@@ -307,6 +332,7 @@ export function openTab(
     group.tabIds[index] = tab.id
     if (group.activeTabId === replaced.id) group.activeTabId = tab.id
     delete _tabs[replaced.id]
+    notifyClosed(replaced)
   } else {
     group.tabIds.splice(insertionIndex(group, pinned), 0, tab.id)
   }
@@ -358,6 +384,12 @@ export async function closeTab(
 ): Promise<boolean> {
   const tab = _tabs[id]
   if (!tab) return false
+  try {
+    await _hooks.get(tab.kind)?.beforeClose?.(tab)
+  } catch (e) {
+    logger.warn('A tab close hook failed', e)
+  }
+  if (!_tabs[id]) return false
   if (tab.dirty && !options.force) {
     const proceed = await confirm({
       titleKey: 'workspace.closeDirty.title',
@@ -392,6 +424,15 @@ function removeTab(id: string): void {
 
   if (tab.dirty) syncUnsaved()
   persist()
+  notifyClosed(tab)
+}
+
+function notifyClosed(tab: Tab): void {
+  try {
+    _hooks.get(tab.kind)?.closed?.(tab)
+  } catch (e) {
+    logger.warn('A tab close hook failed', e)
+  }
 }
 
 /**
@@ -512,6 +553,25 @@ export function setTabTitle(id: string, title: string): void {
   persist()
 }
 
+/**
+ * Points a tab at a new URI and title — a note that was renamed or moved
+ * keeps its tab (and its place in the strip) instead of closing. Ignored
+ * when another tab already shows `uri`.
+ */
+export function retargetTab(id: string, uri: string, title: string): void {
+  const tab = _tabs[id]
+  if (!tab || tab.uri === uri) return
+  if (findTabByUri(uri) || byteLength(uri) > MAX_TAB_URI_LEN) return
+  tab.uri = uri
+  tab.title = truncateBytes(title, MAX_TAB_TITLE_LEN)
+  persist()
+}
+
+/** Every open tab of one kind, across groups. */
+export function getTabsOfKind(kind: string): Tab[] {
+  return Object.values(_tabs).filter((t) => t.kind === kind)
+}
+
 export function __resetTabsForTests(): void {
   _tabs = {}
   _groups = [emptyGroup()]
@@ -519,5 +579,6 @@ export function __resetTabsForTests(): void {
   _closed = []
   _ready = false
   _seq = 0
+  _hooks.clear()
   syncUnsaved()
 }

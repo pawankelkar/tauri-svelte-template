@@ -23,6 +23,19 @@ describe('context key store', () => {
     expect(getContextKey('mode')).toBe('dark')
   })
 
+  it('can be set while Svelte is mid-update', () => {
+    // As when `focusout` fires while a block removes a focused editor.
+    const cleanup = $effect.root(() => {
+      const value = $derived.by(() => {
+        setContextKey('editorFocus', false)
+        return 1
+      })
+      expect(value).toBe(1)
+    })
+    cleanup()
+    expect(getContextKey('editorFocus')).toBe(false)
+  })
+
   it('resetContextKeys forgets everything', () => {
     setContextKey('offline', true)
     resetContextKeys()
