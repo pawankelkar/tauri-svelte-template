@@ -230,7 +230,7 @@ fn list_crash_reports_inner(app: &AppHandle) -> Result<Vec<CrashReportSummary>, 
         })
         .collect();
 
-    reports.sort_by(|a, b| b.timestamp_secs.cmp(&a.timestamp_secs));
+    reports.sort_by_key(|r| std::cmp::Reverse(r.timestamp_secs));
     Ok(reports)
 }
 

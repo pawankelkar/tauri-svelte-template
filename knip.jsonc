@@ -21,7 +21,7 @@
     "csstype",
   ],
 
-  // Exports tagged @public are deliberate API surface for template consumers
+  // Exports tagged @public are deliberate API surface for upcoming features
   // rather than dead code — see src/lib/context-menu.ts.
   "tags": ["-@public"],
 

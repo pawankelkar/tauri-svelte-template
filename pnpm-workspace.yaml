@@ -1,4 +1,5 @@
 allowBuilds:
   '@ast-grep/cli': false
   esbuild: false
-onlyBuiltDependencies: '@ast-grep/cli'
+onlyBuiltDependencies:
+  - '@ast-grep/cli'

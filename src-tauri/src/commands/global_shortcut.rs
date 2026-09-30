@@ -88,8 +88,8 @@ mod imp {
 
     /// The action bound to the user's "focus main window" shortcut.
     ///
-    /// This is the template's demo behaviour — bring the app forward from
-    /// anywhere. Replace the body with whatever your app should do.
+    /// Brings the app forward from anywhere: un-minimises, shows, and
+    /// focuses the main window.
     fn focus_main_window(app: &AppHandle) {
         if let Some(window) = app.get_webview_window("main") {
             let _ = window.unminimize();

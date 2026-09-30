@@ -6,12 +6,12 @@ import { logger } from '$lib/logger'
  * The custom URL scheme, mirroring `plugins.deep-link.desktop.schemes` in
  * `src-tauri/tauri.conf.json` (the `/setup` skill renames both together).
  */
-export const DEEP_LINK_SCHEME = 'tauri-app'
+export const DEEP_LINK_SCHEME = 'ostralith'
 
 /**
  * Dev-only scheme registration. Bundled installers register the scheme at
  * install time from the config; `pnpm tauri dev` never runs an installer, so
- * without this a dev build ignores `tauri-app://` URLs. Runtime registration
+ * without this a dev build ignores `ostralith://` URLs. Runtime registration
  * is only supported on Windows/Linux — macOS resolves schemes from the app
  * bundle's Info.plist, so dev-testing deep links there needs a built app.
  */

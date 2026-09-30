@@ -24,15 +24,15 @@ async function settledValue<T>(
 describe('confirm', () => {
   it('exposes the pending request and stays unresolved until settled', async () => {
     const pending = confirm({
-      titleKey: 'welcome.confirm.title',
-      descriptionKey: 'welcome.confirm.description',
+      titleKey: 'test.confirm.title',
+      descriptionKey: 'test.confirm.description',
       destructive: true,
     })
 
     const request = getConfirmRequest()
     expect(request).not.toBeNull()
-    expect(request?.titleKey).toBe('welcome.confirm.title')
-    expect(request?.descriptionKey).toBe('welcome.confirm.description')
+    expect(request?.titleKey).toBe('test.confirm.title')
+    expect(request?.descriptionKey).toBe('test.confirm.description')
     expect(request?.destructive).toBe(true)
 
     expect(await settledValue(pending)).toBe('still-pending')

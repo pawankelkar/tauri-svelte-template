@@ -16,7 +16,9 @@ src/lib/bindings.ts
 # Markdown prose is free-form; don't enforce formatter style.
 *.md
 
-# Not part of the template.
+# Personal notes, not part of the app.
 my-docs/
+# Local Claude Code worktrees are full checkouts, including build output.
+.claude/worktrees/
 .playwright-mcp/
 jscpd-report/

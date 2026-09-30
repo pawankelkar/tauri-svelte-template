@@ -7,7 +7,7 @@ const MAX_THEME_FILE_BYTES: u64 = 2 * 1024 * 1024;
 
 /// Reads a user-picked VS Code theme file for the import flow.
 ///
-/// The template ships without `tauri-plugin-fs`, so this one narrow command
+/// The frontend does not use `tauri-plugin-fs`, so this one narrow command
 /// stands in for it: extension-pinned to theme JSON, size-capped, contents
 /// returned as text for the frontend's JSONC parser to make sense of.
 #[tauri::command]

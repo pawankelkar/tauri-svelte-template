@@ -100,9 +100,9 @@ async function popupPredefinedMenu(
 /**
  * Builds an arbitrary native menu from a declarative list.
  *
- * @public Part of the template's API surface — kept even though nothing in
- * the starter calls it, because a custom right-click menu is the first thing
- * most consumers reach for.
+ * @public Kept even though nothing calls it yet: custom right-click menus
+ * (notes, tabs, the file tree) are among the first things upcoming features
+ * need.
  */
 export async function showContextMenu(
   entries: ContextMenuEntry[],
