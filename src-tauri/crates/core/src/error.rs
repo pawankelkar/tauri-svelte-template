@@ -30,6 +30,23 @@ pub enum CoreError {
     /// Input the command refuses to act on.
     #[error("invalid input: {message}")]
     InvalidInput { message: String },
+    /// A vault entry, vault, snapshot or other named thing that does not
+    /// exist. `what` is a human-readable name, usually a vault-relative path.
+    #[error("{what} not found")]
+    NotFound { what: String },
+    /// A write whose `expected_hash` no longer matches the file on disk:
+    /// something else changed it since the editor loaded it.
+    #[error("{path} changed on disk")]
+    Conflict { path: String },
+    /// A vault command ran while no vault is open.
+    #[error("no vault is open")]
+    NoVault,
+    /// A path that escapes the vault root (`..`, absolute, or via a symlink).
+    #[error("{path} is outside the vault")]
+    PathOutsideVault { path: String },
+    /// A create or rename whose destination is already taken.
+    #[error("{path} already exists")]
+    AlreadyExists { path: String },
     /// Anything else, carried as a message. Existing `Result<_, String>`
     /// helpers convert into this so they can be reused unchanged.
     #[error("{message}")]
@@ -50,6 +67,22 @@ impl CoreError {
             feature: feature.into(),
             reason: reason.into(),
         }
+    }
+
+    pub fn not_found(what: impl Into<String>) -> Self {
+        Self::NotFound { what: what.into() }
+    }
+
+    pub fn conflict(path: impl Into<String>) -> Self {
+        Self::Conflict { path: path.into() }
+    }
+
+    pub fn path_outside_vault(path: impl Into<String>) -> Self {
+        Self::PathOutsideVault { path: path.into() }
+    }
+
+    pub fn already_exists(path: impl Into<String>) -> Self {
+        Self::AlreadyExists { path: path.into() }
     }
 }
 
@@ -93,6 +126,42 @@ mod tests {
             json,
             serde_json::json!({ "kind": "notEntitled", "feature": "pdfAiQa" })
         );
+    }
+
+    #[test]
+    fn vault_errors_serialise_with_camel_case_kinds() {
+        let cases = [
+            (
+                CoreError::not_found("Notes/a.md"),
+                serde_json::json!({ "kind": "notFound", "what": "Notes/a.md" }),
+            ),
+            (
+                CoreError::conflict("a.md"),
+                serde_json::json!({ "kind": "conflict", "path": "a.md" }),
+            ),
+            (CoreError::NoVault, serde_json::json!({ "kind": "noVault" })),
+            (
+                CoreError::path_outside_vault("../x"),
+                serde_json::json!({ "kind": "pathOutsideVault", "path": "../x" }),
+            ),
+            (
+                CoreError::already_exists("b.md"),
+                serde_json::json!({ "kind": "alreadyExists", "path": "b.md" }),
+            ),
+        ];
+        for (err, expected) in cases {
+            assert_eq!(serde_json::to_value(&err).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn vault_errors_have_readable_messages() {
+        assert_eq!(CoreError::NoVault.to_string(), "no vault is open");
+        assert_eq!(
+            CoreError::conflict("a.md").to_string(),
+            "a.md changed on disk"
+        );
+        assert_eq!(CoreError::not_found("Vault").to_string(), "Vault not found");
     }
 
     #[test]
