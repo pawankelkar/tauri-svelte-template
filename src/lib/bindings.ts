@@ -278,6 +278,296 @@ async installUpdate() : Promise<Result<null, CoreError>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Registered vaults, most recently opened first.
+ */
+async vaultList() : Promise<Result<VaultInfo[], CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("vault_list") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async vaultCurrent() : Promise<Result<VaultInfo | null, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("vault_current") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Creates `parent_dir/name` (`AlreadyExists` if it is non-empty),
+ * initialises it as a vault and opens it.
+ */
+async vaultCreate(parentDir: string, name: string, encryption: DbEncryption) : Promise<Result<VaultInfo, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("vault_create", { parentDir, name, encryption }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Opens an existing folder as a vault, creating `.ostralith/` if missing,
+ * registering it and closing the previous vault.
+ */
+async vaultOpen(path: string) : Promise<Result<VaultInfo, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("vault_open", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * `NotFound` if the id is unknown or its folder is gone.
+ */
+async vaultOpenById(id: string) : Promise<Result<VaultInfo, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("vault_open_by_id", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async vaultClose() : Promise<Result<null, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("vault_close") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Removes a vault from the registry. Never deletes files.
+ */
+async vaultForget(id: string) : Promise<Result<null, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("vault_forget", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * The root's children. Hides `.ostralith`, `.git`, `.trash` and dotfiles.
+ */
+async listTree() : Promise<Result<TreeNode[], CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_tree") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async readNote(path: string) : Promise<Result<Note, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_note", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Atomic write. `Conflict` if the file's current hash differs from
+ * `expected_hash` (skip the check with `None`).
+ */
+async writeNote(path: string, content: string, expectedHash: string | null) : Promise<Result<WriteResult, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("write_note", { path, content, expectedHash }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Creates `Untitled.md` (then `Untitled 1.md`, ...) in `folder` (the root
+ * when `None`), or `<title>.md` with `# <title>\n\n` when a title is given.
+ */
+async createNote(folder: string | null, title: string | null) : Promise<Result<NoteRef, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_note", { folder, title }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async createFolder(path: string) : Promise<Result<null, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_folder", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Renames a note or folder and rewrites inbound `[[links]]` in other notes.
+ */
+async renamePath(from: string, to: string) : Promise<Result<RenameResult, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rename_path", { from, to }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Moves into `<vault>/.trash/` under a unique name. Never hard-deletes.
+ */
+async trashPath(path: string) : Promise<Result<null, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("trash_path", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getBacklinks(path: string) : Promise<Result<Backlink[], CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_backlinks", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Parses the passed (possibly unsaved) text, not the file on disk.
+ */
+async getOutline(content: string) : Promise<Result<Heading[], CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_outline", { content }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Obsidian rules: exact path, then basename (case-insensitive), shortest
+ * path wins. `target` may carry `#heading` and `|alias`.
+ */
+async resolveLink(fromPath: string, target: string) : Promise<Result<LinkTarget, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("resolve_link", { fromPath, target }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Fuzzy match over title and path. An empty query lists the most recently
+ * modified notes.
+ */
+async quickOpen(query: string, limit: number) : Promise<Result<QuickOpenItem[], CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("quick_open", { query, limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Full-text search. Supports quoted phrases, `tag:x` and `path:x`.
+ */
+async searchFulltext(query: string, limit: number) : Promise<Result<SearchHit[], CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_fulltext", { query, limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async indexStatus() : Promise<Result<IndexStatus, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("index_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Starts a full rebuild in the background; progress arrives as
+ * [`INDEX_STATUS_EVENT`].
+ */
+async reindex() : Promise<Result<null, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reindex") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async dbStatus() : Promise<Result<DbStatus, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("db_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async backupStatus() : Promise<Result<BackupStatus, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("backup_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * `git init` in the vault plus a `.gitignore` for caches, `.trash` and
+ * recorded audio.
+ */
+async backupInit() : Promise<Result<BackupStatus, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("backup_init") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Commits every change. `None` when there was nothing to commit.
+ */
+async backupNow(message: string | null) : Promise<Result<SnapshotInfo | null, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("backup_now", { message }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async backupSetRemote(url: string | null) : Promise<Result<BackupStatus, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("backup_set_remote", { url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Snapshots touching `path`, newest first.
+ */
+async noteHistory(path: string, limit: number) : Promise<Result<SnapshotInfo[], CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("note_history", { path, limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Writes the note's content at `snapshot_id` as a new change (taking a
+ * snapshot of the current state first).
+ */
+async noteRestore(path: string, snapshotId: string) : Promise<Result<WriteResult, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("note_restore", { path, snapshotId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -287,7 +577,7 @@ async installUpdate() : Promise<Result<null, CoreError>> {
 
 /** user-defined constants **/
 
-
+export const EVENTS = {"indexStatus":"index:status","vaultCurrentChanged":"vault:current-changed","vaultFsChanged":"vault:fs-changed"} as const;
 
 /** user-defined types **/
 
@@ -328,6 +618,28 @@ windowEffects: boolean; language: string | null; globalShortcut: string | null; 
  * frontend combos (e.g. `"mod+shift+k"`), not Tauri accelerators.
  */
 commandShortcuts: Partial<{ [key in string]: string | null }> }
+export type Backlink = { sourcePath: string; sourceTitle: string; 
+/**
+ * 0-based line of the link in the source note.
+ */
+line: number; 
+/**
+ * That line, trimmed, at most 300 chars.
+ */
+context: string }
+export type BackupStatus = { 
+/**
+ * Whether the vault is a git repository yet.
+ */
+initialized: boolean; 
+/**
+ * Files with changes since the last snapshot.
+ */
+changedFiles: number; lastSnapshot: SnapshotInfo | null; remote: string | null; 
+/**
+ * Snapshots not yet pushed to `remote`.
+ */
+ahead: number }
 /**
  * The error every Ostralith command can return.
  * 
@@ -362,16 +674,70 @@ export type CoreError =
  */
 { kind: "invalidInput"; message: string } | 
 /**
+ * A vault entry, vault, snapshot or other named thing that does not
+ * exist. `what` is a human-readable name, usually a vault-relative path.
+ */
+{ kind: "notFound"; what: string } | 
+/**
+ * A write whose `expected_hash` no longer matches the file on disk:
+ * something else changed it since the editor loaded it.
+ */
+{ kind: "conflict"; path: string } | 
+/**
+ * A vault command ran while no vault is open.
+ */
+{ kind: "noVault" } | 
+/**
+ * A path that escapes the vault root (`..`, absolute, or via a symlink).
+ */
+{ kind: "pathOutsideVault"; path: string } | 
+/**
+ * A create or rename whose destination is already taken.
+ */
+{ kind: "alreadyExists"; path: string } | 
+/**
  * Anything else, carried as a message. Existing `Result<_, String>`
  * helpers convert into this so they can be reused unchanged.
  */
 { kind: "internal"; message: string }
 export type CrashReportSummary = { filename: string; timestampSecs: number; secondsAgo: number }
+/**
+ * How the per-vault SQLite cache is encrypted at rest.
+ */
+export type DbEncryption = 
+/**
+ * Plain SQLite.
+ */
+"none" | 
+/**
+ * SQLCipher with a key held in the OS keychain.
+ */
+"keychain"
+export type DbStatus = { encryption: DbEncryption; sizeBytes: number; schemaVersion: number; noteCount: number; integrityOk: boolean }
 export type DiagnosticsReport = { appName: string; appVersion: string; osName: string; osArch: string; osVersion: string; tauriVersion: string; settings: JsonValue; recentCrashReports: string[]; memoryUsageBytes: number | null; uptimeSecs: number | null }
 /**
  * One row of the Pro features list the settings UI renders.
  */
 export type FeatureEntitlement = { feature: ProFeature; enabled: boolean }
+export type FsChange = { path: string; kind: FsChangeKind; 
+/**
+ * Set for `Renamed`.
+ */
+oldPath: string | null }
+export type FsChangeKind = "created" | "modified" | "removed" | "renamed"
+/**
+ * Payload of [`VAULT_FS_CHANGED_EVENT`].
+ */
+export type FsChangedPayload = { changes: FsChange[] }
+export type Heading = { 
+/**
+ * 1–6.
+ */
+level: number; text: string; 
+/**
+ * 0-based line.
+ */
+line: number; slug: string }
 /**
  * A VS Code theme the user imported, stored as the already-converted anchor
  * profile plus workbench overrides — never the raw VS Code JSON. Mirrors
@@ -382,7 +748,21 @@ export type ImportedTheme = { id: string; name: string;
  * `"light"` or `"dark"` — the mode the theme was authored for.
  */
 mode: string; accent: string; background: string; foreground: string; contrast: number; overrides: Partial<{ [key in string]: string }> | null }
+export type IndexStatus = { indexing: boolean; done: number; total: number; noteCount: number }
 export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
+/**
+ * What a `[[wikilink]]` target resolves to.
+ */
+export type LinkTarget = { 
+/**
+ * The target as written (may include `#heading` and `|alias`).
+ */
+raw: string; 
+/**
+ * The resolved vault-relative path; for an unresolved link, the path a
+ * new note would be created at.
+ */
+path: string | null; heading: string | null; exists: boolean }
 /**
  * What the app may reach, persisted as `network.json`.
  */
@@ -405,6 +785,28 @@ allowLocalhost: boolean;
  * match `hf.co` itself), or `*` for any host.
  */
 allowedHosts: string[] }
+/**
+ * A note as read from disk.
+ */
+export type Note = { path: string; 
+/**
+ * Display title as derived by the parser; the file stem when the note
+ * has nothing better.
+ */
+title: string; 
+/**
+ * The full file content, frontmatter included.
+ */
+content: string; 
+/**
+ * Parsed YAML frontmatter, if any.
+ */
+frontmatter: JsonValue | null; mtime: number; 
+/**
+ * blake3 hex of `content`; pass it back as `expected_hash` on write.
+ */
+hash: string }
+export type NoteRef = { path: string; title: string }
 export type PersistedAppState = { leftSidebarVisible: boolean; rightSidebarVisible: boolean; squareCorners: boolean; lastQuickPaneEntry: string | null; recentItems: string[]; onboardingCompleted: boolean; 
 /**
  * Workspace tabs, in strip order. Restored on the next launch. A
@@ -415,7 +817,11 @@ openTabs: PersistedTab[];
 /**
  * `id` of the focused tab in `open_tabs`, if any.
  */
-activeTabId: string | null }
+activeTabId: string | null; 
+/**
+ * Registry id of the vault open at quit; reopened on the next launch.
+ */
+lastVaultId: string | null }
 /**
  * One workspace tab as saved in `state.json`. Mirrors `sanitizeTab` in
  * `src/lib/stores/app-state-schema.ts`.
@@ -446,6 +852,20 @@ export type ProFeature =
  * Cloud summaries and research on premium hosted models.
  */
 "premiumCloudModels"
+export type QuickOpenItem = { path: string; title: string; score: number; titleParts: TextPart[]; pathParts: TextPart[] }
+export type RenameResult = { 
+/**
+ * The new vault-relative path.
+ */
+path: string; 
+/**
+ * Number of `[[links]]` rewritten across the vault.
+ */
+updatedLinks: number; 
+/**
+ * Number of other notes those links lived in.
+ */
+updatedFiles: number }
 export type RequestOutcome = 
 /**
  * Passed the policy and was sent (it may still have failed on the wire;
@@ -478,6 +898,7 @@ purpose: string; outcome: RequestOutcome; status: number | null;
  * The response's declared `Content-Length`, when it has one.
  */
 bytes: number | null; error: string | null }
+export type SearchHit = { path: string; title: string; score: number; snippet: TextPart[] }
 /**
  * What a registered global shortcut is *for*.
  * 
@@ -495,13 +916,74 @@ export type ShortcutPurpose =
  * Show or dismiss the Quick Pane.
  */
 "quickPane"
+export type SnapshotInfo = { 
+/**
+ * The commit sha.
+ */
+id: string; message: string; 
+/**
+ * Milliseconds since the Unix epoch.
+ */
+time: number; filesChanged: number }
+/**
+ * A run of display text, highlighted or not. Pre-split in Rust so the UI
+ * never has to map byte or UTF-16 offsets.
+ */
+export type TextPart = { text: string; highlight: boolean }
 /**
  * One mode slot's stored theme state. Mirrors `ThemeProfile` in
  * `src/lib/theme/schema.ts`; the default anchors mirror
  * `DEFAULT_LIGHT`/`DEFAULT_DARK` in `src/lib/theme/presets.ts`.
  */
 export type ThemeProfile = { presetId: string; customized: boolean; accent: string; background: string; foreground: string; contrast: number }
+/**
+ * One entry of the file tree.
+ */
+export type TreeNode = { 
+/**
+ * Vault-relative path.
+ */
+path: string; 
+/**
+ * File or folder name, extension included.
+ */
+name: string; kind: TreeNodeKind; 
+/**
+ * Milliseconds since the Unix epoch.
+ */
+mtime: number; 
+/**
+ * Empty unless `kind` is `Folder`. Folders first, then case-insensitive
+ * natural name order.
+ */
+children: TreeNode[] }
+export type TreeNodeKind = "folder" | 
+/**
+ * A `*.md` file.
+ */
+"note" | 
+/**
+ * Any other file shown in the tree.
+ */
+"file"
 export type UpdateInfo = { version: string; currentVersion: string; notes: string | null }
+/**
+ * A vault in the registry (`$APPDATA/vaults.json`).
+ */
+export type VaultInfo = { 
+/**
+ * The uuid from `<vault>/.ostralith/vault.json`.
+ */
+id: string; name: string; 
+/**
+ * Absolute path of the vault folder.
+ */
+path: string; encryption: DbEncryption; 
+/**
+ * Milliseconds since the Unix epoch.
+ */
+lastOpenedAt: number }
+export type WriteResult = { path: string; mtime: number; hash: string }
 
 /** tauri-specta globals **/
 

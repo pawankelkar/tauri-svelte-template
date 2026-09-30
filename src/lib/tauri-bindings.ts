@@ -1,5 +1,6 @@
 export {
   commands,
+  EVENTS,
   type Result,
   type AppPreferences,
   type CrashReportSummary,
@@ -17,6 +18,28 @@ export {
   type FeatureEntitlement,
   type UpdateInfo,
   type PersistedTab,
+  // P1: vault, search, db, backup
+  type DbEncryption,
+  type VaultInfo,
+  type TreeNodeKind,
+  type TreeNode,
+  type Note,
+  type WriteResult,
+  type NoteRef,
+  type RenameResult,
+  type Backlink,
+  type Heading,
+  type LinkTarget,
+  type TextPart,
+  type QuickOpenItem,
+  type SearchHit,
+  type IndexStatus,
+  type DbStatus,
+  type SnapshotInfo,
+  type BackupStatus,
+  type FsChangeKind,
+  type FsChange,
+  type FsChangedPayload,
 } from './bindings'
 
 export function unwrapResult<T, E>(

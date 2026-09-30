@@ -16,11 +16,15 @@ resolver = "2"
 [workspace.package]
 authors = ["Ostralith contributors"]
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.86"
 
 [workspace.dependencies]
 ostralith-core = { path = "crates/core" }
 ostralith-net = { path = "crates/net" }
+ostralith-vault = { path = "crates/vault" }
+ostralith-store = { path = "crates/store" }
+ostralith-index = { path = "crates/index" }
+ostralith-sync = { path = "crates/sync" }
 log = "0.4"
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "http2", "charset"] }
 serde = { version = "1", features = ["derive"] }
@@ -44,6 +48,10 @@ serde.workspace = true
 serde_json.workspace = true
 ostralith-core.workspace = true
 ostralith-net.workspace = true
+ostralith-vault.workspace = true
+ostralith-store.workspace = true
+ostralith-index.workspace = true
+ostralith-sync.workspace = true
 fontdb = "0.24"
 tauri-plugin-fs = "2"
 tauri-plugin-log = "2"

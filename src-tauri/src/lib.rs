@@ -4,6 +4,7 @@ mod state;
 #[cfg(desktop)]
 mod tray;
 mod types;
+mod vault_runtime;
 
 use std::sync::atomic::Ordering;
 
@@ -106,6 +107,9 @@ pub fn run() {
             } else {
                 log::LevelFilter::Info
             })
+            // tantivy logs every segment file it opens and commits at
+            // debug/info, which would flood stdout and the webview console.
+            .level_for("tantivy", log::LevelFilter::Warn)
             .targets(targets)
             .build()
     });
@@ -153,6 +157,10 @@ pub fn run() {
             // outbound requests can't be policed, so that one is fatal.
             commands::network::init_network(app.handle())?;
             commands::entitlements::init_entitlements(app.handle());
+            // The vault runtime (registry + open vault) must also exist
+            // before any command. It never opens a vault by itself: the
+            // frontend reopens its last vault with `vault_open_by_id`.
+            vault_runtime::VaultRuntime::init(app.handle())?;
 
             log::info!("Application starting up");
             log::debug!(
@@ -209,6 +217,10 @@ pub fn run() {
                 }
             }
             tauri::RunEvent::Exit => {
+                // Stop the watcher and indexer and commit the search index.
+                if let Some(runtime) = _app_handle.try_state::<vault_runtime::VaultRuntime>() {
+                    runtime.shutdown();
+                }
                 #[cfg(desktop)]
                 commands::global_shortcut::unregister_all(_app_handle);
             }

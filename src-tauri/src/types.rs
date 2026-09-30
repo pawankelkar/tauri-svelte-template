@@ -21,6 +21,8 @@ pub const MAX_TAB_ID_LEN: usize = 256;
 pub const MAX_TAB_KIND_LEN: usize = 64;
 pub const MAX_TAB_URI_LEN: usize = 4096;
 pub const MAX_TAB_TITLE_LEN: usize = 512;
+/// Cap on `last_vault_id`; a vault id is a 36-char uuid.
+pub const MAX_VAULT_ID_LEN: usize = 64;
 
 /// What a registered global shortcut is *for*.
 ///
@@ -167,6 +169,8 @@ pub struct PersistedAppState {
     pub open_tabs: Vec<PersistedTab>,
     /// `id` of the focused tab in `open_tabs`, if any.
     pub active_tab_id: Option<String>,
+    /// Registry id of the vault open at quit; reopened on the next launch.
+    pub last_vault_id: Option<String>,
 }
 
 /// One workspace tab as saved in `state.json`. Mirrors `sanitizeTab` in
@@ -194,6 +198,7 @@ impl Default for PersistedAppState {
             onboarding_completed: false,
             open_tabs: Vec::new(),
             active_tab_id: None,
+            last_vault_id: None,
         }
     }
 }
@@ -223,6 +228,9 @@ pub fn validate_app_state(state: &PersistedAppState) -> Result<(), String> {
     }
     if let Some(id) = &state.active_tab_id {
         check_len(id, MAX_TAB_ID_LEN, "activeTabId")?;
+    }
+    if let Some(id) = &state.last_vault_id {
+        check_len(id, MAX_VAULT_ID_LEN, "lastVaultId")?;
     }
     Ok(())
 }
@@ -581,6 +589,23 @@ mod tests {
             serde_json::from_str(r#"{"leftSidebarVisible":false}"#).unwrap();
         assert!(state.open_tabs.is_empty());
         assert_eq!(state.active_tab_id, None);
+        assert_eq!(state.last_vault_id, None);
+    }
+
+    #[test]
+    fn last_vault_id_round_trips_and_is_capped() {
+        let state = PersistedAppState {
+            last_vault_id: Some("v1".to_string()),
+            ..PersistedAppState::default()
+        };
+        assert_eq!(serde_json::to_value(&state).unwrap()["lastVaultId"], "v1");
+        assert!(validate_app_state(&state).is_ok());
+
+        let state = PersistedAppState {
+            last_vault_id: Some("x".repeat(MAX_VAULT_ID_LEN + 1)),
+            ..PersistedAppState::default()
+        };
+        assert!(validate_app_state(&state).is_err());
     }
 
     #[test]
@@ -634,5 +659,6 @@ mod tests {
         assert!(!state.onboarding_completed);
         assert!(state.open_tabs.is_empty());
         assert_eq!(state.active_tab_id, None);
+        assert_eq!(state.last_vault_id, None);
     }
 }

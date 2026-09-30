@@ -1,46 +1,93 @@
+use std::collections::BTreeMap;
+
 use tauri_specta::{collect_commands, Builder};
 
 pub fn generate_bindings() -> Builder<tauri::Wry> {
     use crate::commands::{
-        app_state, crash_reporter, diagnostics, entitlements, global_shortcut, lifecycle, network,
-        preferences, quick_pane, recovery, system_fonts, theme_import, updater,
+        app_state, backup, crash_reporter, db, diagnostics, entitlements, global_shortcut,
+        lifecycle, network, preferences, quick_pane, recovery, search, system_fonts, theme_import,
+        updater, vault,
     };
 
-    Builder::<tauri::Wry>::new().commands(collect_commands![
-        app_state::load_app_state,
-        app_state::save_app_state,
-        app_state::set_has_unsaved_changes,
-        app_state::has_unsaved_changes,
-        crash_reporter::log_frontend_error,
-        crash_reporter::has_recent_crash,
-        crash_reporter::list_crash_reports,
-        crash_reporter::get_crash_report,
-        crash_reporter::clear_crash_reports,
-        diagnostics::collect_diagnostics,
-        entitlements::get_entitlements,
-        entitlements::set_entitlement,
-        global_shortcut::register_global_shortcut,
-        global_shortcut::unregister_global_shortcut,
-        global_shortcut::is_global_shortcut_registered,
-        lifecycle::quit_app,
-        network::get_network_status,
-        network::set_offline_mode,
-        network::set_allow_localhost,
-        network::list_network_activity,
-        network::clear_network_activity,
-        preferences::load_preferences,
-        preferences::save_preferences,
-        preferences::open_preferences_file,
-        quick_pane::show_quick_pane,
-        quick_pane::dismiss_quick_pane,
-        quick_pane::toggle_quick_pane,
-        recovery::save_emergency_data,
-        recovery::cleanup_old_recovery_files,
-        system_fonts::list_system_fonts,
-        theme_import::read_theme_file,
-        updater::check_for_update,
-        updater::install_update,
-    ])
+    Builder::<tauri::Wry>::new()
+        .commands(collect_commands![
+            app_state::load_app_state,
+            app_state::save_app_state,
+            app_state::set_has_unsaved_changes,
+            app_state::has_unsaved_changes,
+            crash_reporter::log_frontend_error,
+            crash_reporter::has_recent_crash,
+            crash_reporter::list_crash_reports,
+            crash_reporter::get_crash_report,
+            crash_reporter::clear_crash_reports,
+            diagnostics::collect_diagnostics,
+            entitlements::get_entitlements,
+            entitlements::set_entitlement,
+            global_shortcut::register_global_shortcut,
+            global_shortcut::unregister_global_shortcut,
+            global_shortcut::is_global_shortcut_registered,
+            lifecycle::quit_app,
+            network::get_network_status,
+            network::set_offline_mode,
+            network::set_allow_localhost,
+            network::list_network_activity,
+            network::clear_network_activity,
+            preferences::load_preferences,
+            preferences::save_preferences,
+            preferences::open_preferences_file,
+            quick_pane::show_quick_pane,
+            quick_pane::dismiss_quick_pane,
+            quick_pane::toggle_quick_pane,
+            recovery::save_emergency_data,
+            recovery::cleanup_old_recovery_files,
+            system_fonts::list_system_fonts,
+            theme_import::read_theme_file,
+            updater::check_for_update,
+            updater::install_update,
+            vault::vault_list,
+            vault::vault_current,
+            vault::vault_create,
+            vault::vault_open,
+            vault::vault_open_by_id,
+            vault::vault_close,
+            vault::vault_forget,
+            vault::list_tree,
+            vault::read_note,
+            vault::write_note,
+            vault::create_note,
+            vault::create_folder,
+            vault::rename_path,
+            vault::trash_path,
+            vault::get_backlinks,
+            vault::get_outline,
+            vault::resolve_link,
+            search::quick_open,
+            search::search_fulltext,
+            search::index_status,
+            search::reindex,
+            db::db_status,
+            backup::backup_status,
+            backup::backup_init,
+            backup::backup_now,
+            backup::backup_set_remote,
+            backup::note_history,
+            backup::note_restore,
+        ])
+        // Event payloads no command returns, so the frontend can type its
+        // `subscribeEvent` calls.
+        .typ::<vault::FsChangedPayload>()
+        // Event names, exported so the frontend never re-spells them. One
+        // map rather than one `constant` each: tauri-specta keeps constants
+        // in a HashMap, so several would come out in a different order on
+        // every export, while a map's keys serialise sorted.
+        .constant(
+            "EVENTS",
+            BTreeMap::from([
+                ("vaultCurrentChanged", vault::VAULT_CURRENT_CHANGED_EVENT),
+                ("vaultFsChanged", vault::VAULT_FS_CHANGED_EVENT),
+                ("indexStatus", search::INDEX_STATUS_EVENT),
+            ]),
+        )
 }
 
 pub fn export_ts_bindings() {

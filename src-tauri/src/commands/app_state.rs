@@ -58,6 +58,7 @@ mod tests {
                 pinned: true,
             }],
             active_tab_id: Some("t1".to_string()),
+            last_vault_id: Some("v1".to_string()),
         };
 
         let loaded = json_round_trip("app-state", "roundtrip", APP_STATE_FILE, &value);
