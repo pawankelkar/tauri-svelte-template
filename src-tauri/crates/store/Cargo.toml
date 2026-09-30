@@ -1,0 +1,37 @@
+[package]
+name = "ostralith-store"
+version = "0.1.0"
+description = "Per-vault SQLite/SQLCipher cache database for the Ostralith notes index"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+ostralith-core.workspace = true
+thiserror.workspace = true
+log.workspace = true
+# SQLCipher is a superset of SQLite: the same build opens plain databases
+# (no `PRAGMA key`) and encrypted ones. OpenSSL is vendored so there is no
+# system dependency on any OS.
+rusqlite = { version = "0.39", features = ["bundled-sqlcipher-vendored-openssl"] }
+# 2.5 is the newest release whose MSRV (1.84) fits the workspace's 1.86.
+rusqlite_migration = "2.5"
+zeroize = { version = "1", features = ["std"] }
+getrandom = "0.3"
+hex = "0.4"
+# The keychain backend is chosen per OS below; with no backend feature the
+# crate falls back to its in-memory mock, which keeps other targets building.
+keyring = "3.6"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6", features = ["apple-native"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3.6", features = ["windows-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6", features = ["linux-native-sync-persistent", "crypto-rust"] }
+
+[dev-dependencies]
+tempfile = "3"
