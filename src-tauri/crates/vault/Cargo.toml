@@ -1,0 +1,25 @@
+[package]
+name = "ostralith-vault"
+version = "0.1.0"
+description = "The Ostralith vault: path-safe file IO, Markdown parsing, link resolution and a file watcher"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+ostralith-core.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+blake3 = "1"
+notify-debouncer-full = "0.7"
+percent-encoding = "2"
+pulldown-cmark = { version = "0.13", default-features = false }
+serde_norway = "0.9"
+uuid = { version = "1", features = ["v4"] }
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"
