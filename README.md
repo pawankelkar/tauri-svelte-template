@@ -1,166 +1,198 @@
-<h1 align="center">Tauri Svelte Template</h1>
+<h1 align="center">Ostralith</h1>
 
 <p align="center">
-  <a href="https://github.com/frostybee/tauri-svelte-template/actions/workflows/ci.yml"><img src="https://github.com/frostybee/tauri-svelte-template/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <strong>A local-first AI notes app.</strong> Your notes, models and transcripts stay on your machine.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/status-Phase%200%20(foundation)-orange" alt="Status: Phase 0">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Tauri-v2-24C8DB" alt="Tauri v2">
   <img src="https://img.shields.io/badge/Svelte-5-FF3E00" alt="Svelte 5">
-  <img src="https://img.shields.io/badge/TypeScript-5-3178C6" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Rust-1.85+-000000" alt="Rust 1.85+">
 </p>
 
 <p align="center">
-  <a href="USING_THIS_TEMPLATE.md"><strong>Using this template</strong></a> ·
-  <a href="docs/developer/README.md">Developer docs</a> ·
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#whats-already-built">Features</a> ·
-  <a href="https://github.com/frostybee/tauri-svelte-template/releases">Releases</a>
+  <a href="#status-and-roadmap">Roadmap</a> ·
+  <a href="#development">Development</a> ·
+  <a href="#keyboard-shortcuts">Shortcuts</a> ·
+  <a href="docs/developer/README.md">Developer docs</a>
 </p>
 
-A "batteries-included" template for building production-ready desktop applications with **Tauri v2**, **Svelte 5**, and **TypeScript**. Clone it, rename a few strings, and start building on a foundation that already handles the parts every desktop app needs.
+Ostralith is a desktop notes app built around a plain-markdown vault and
+on-device AI. It is planned to cover wikilinks and backlinks, semantic search,
+local LLM chat and writing help, on-device transcription and meeting notes,
+documents and PDFs, and git-first backup, all of it working **with the network
+switched off**. It is macOS-first (Apple Silicon: MLX, Metal, CoreML), with
+Windows and Linux following through platform backends.
 
-<p align="center">
-  <img src="docs/demo.gif" alt="Demo of the template's features: command palette, theme switching, Quick Pane, preferences, and more" width="860">
-</p>
+> **Ostralith is in Phase 0.** The foundation is in place: app shell, network
+> policy, command and shortcut system, tabbed workspace, reliability tooling.
+> There is no vault, editor or AI yet. See [the roadmap](#status-and-roadmap).
 
-## Why This Template?
+## Privacy stance
 
-Most Tauri starters give you a blank canvas. This template gives you a **working application** with patterns already established:
+- **Offline by default.** A fresh install makes no network requests. Offline
+  mode is a real switch in Preferences → **Privacy & Network**, not a hint.
+- **One door to the network.** Every request goes through a single Rust client
+  (`ostralith-net`) that enforces offline mode and a host allowlist, re-checks
+  every redirect, and records each attempt, with its purpose, in an activity
+  log you can inspect. The webview cannot make requests at all (CSP plus lint
+  rules). Loopback (for local model servers) is allowed separately and can be
+  turned off.
+- **No telemetry.** Crash reports and diagnostics are written to disk and only
+  leave your machine if you send them.
+- **Updates only on request.** Update checks run when you click **Check for
+  updates**, are disabled while offline, and appear in the activity log.
+- **Your files stay yours.** The vault will be plain markdown in a folder you
+  choose, readable by git, Obsidian and any editor. Indexes are rebuildable
+  caches, encrypted by default.
 
-- **Type-safe Rust-TypeScript bridge** via tauri-specta with generated bindings
-- **Performance patterns enforced by tooling** including ast-grep rules for Svelte 5 IPC footguns
-- **Multi-window architecture** already working (Quick Pane with global shortcut as a demo)
-- **Cross-platform ready** with platform-specific titlebars, window controls, and native menu integration
-- **i18n built-in** with RTL support, reactive translations, and menus that rebuild on language change
-- **VS Code theme support** with an OKLCH derivation engine that turns any VS Code theme JSON into a full app theme
+Details: [Privacy & Network](docs/developer/privacy.md).
 
-## Stack
+## Status and roadmap
+
+| Phase | Scope | Status |
+| --- | --- | --- |
+| **P0 Foundation** | Rename from the template and remove demo code; Cargo workspace (`ostralith-core`, `ostralith-net`); offline-first network policy and activity log; local Pro flags; CSP hardening; updater behind the policy; context keys and `when`-aware shortcuts; new default keymap with migration; tabbed workspace shell with `ostralith://` URIs; sidecar build placeholders; macOS in CI | **Done** |
+| P1 Knowledge core | Markdown vault with path-safe IO, frontmatter, wikilinks and backlinks, file watching; encrypted SQLite index; full-text search; CodeMirror editor; git snapshots; new note, quick open and find | Next |
+| P2 AI | Local model runtime (MLX, llama.cpp, LM Studio, Ollama, optional cloud APIs), model downloads with consent and checksums, chat with vault RAG and citations, agent with diff review, autocomplete and inline generation, embeddings and semantic search, memory-pressure handling | Planned |
+| P3 Extensibility and UX | VSCode-style plugin system (first-party and sandboxed third-party), settings registry and search, full Shortcuts pane (multiple bindings, custom command chains, keymap profiles), MCP server for Claude Code, writing-style profiles | Planned |
+| P4 Voice and meetings | On-device ASR and dictation, voice notes, speaker diarization, bot-free meeting capture and summaries, multilingual transcription, real-time translation (Pro) | Planned |
+| P5 Documents and research | PDF and article store, PDF annotation with AI Q&A (Pro), infinite canvas, linked external folders, cited research, approval-gated inbox, code notebooks | Planned |
+| P6 Sync and parity | Cloud-folder sync with optional end-to-end encryption, Windows/Linux fallbacks, performance hardening, split CI | Planned (can start after P1) |
+
+## How it is built
+
+**Rust does the work; Svelte draws it.** Everything heavy, privileged or
+security-relevant lives in Rust: file IO, parsing and indexing, SQLite,
+model runtimes and sidecars, audio, git and sync, encryption and the keychain,
+all network access, OS-wide shortcuts and permissions. The Svelte frontend
+does layout, tabs, views, the palette, forms and rendering, and reaches Rust
+only through typed commands generated by tauri-specta. Long-running work
+streams back over IPC channels. See the
+[Architecture Guide](docs/developer/architecture-guide.md).
 
 | Layer | Technologies |
 | --- | --- |
-| Frontend | Svelte 5, TypeScript, Vite |
-| UI | shadcn-svelte, Tailwind CSS v4, Lucide Svelte |
-| State | Svelte 5 runes, JSON store persistence, paneforge |
-| Backend | Tauri v2, Rust |
-| Testing | Vitest |
-| i18n | i18next |
-| Quality | Prettier, ESLint, ast-grep, knip, jscpd, clippy |
+| Frontend | Svelte 5 (runes), TypeScript, Vite |
+| UI | shadcn-svelte, Tailwind CSS v4, Lucide, paneforge |
+| Backend | Tauri v2, Rust 1.85+, reqwest (rustls) behind `ostralith-net` |
+| Bridge | tauri-specta (generated `src/lib/bindings.ts`) |
+| i18n | i18next (English, French; RTL-ready) |
+| Quality | Vitest, cargo test, Prettier, ESLint, ast-grep, knip, jscpd, clippy |
 
-## What's Already Built
+### Repository layout
 
-The template includes a working application with these features implemented:
+```
+src/                     Svelte frontend
+  lib/commands/          Command registry, context keys, shortcuts, command modules
+  lib/workspace/         Tabs store, ostralith:// URIs, view registry, deep-link router
+  lib/components/        Layout, workspace, preferences, palette, onboarding, ui/
+  lib/stores/            Preferences, app state, theme, network, entitlements, …
+src-tauri/               Rust backend (Cargo workspace)
+  src/commands/          One module per domain (network, entitlements, updater, …)
+  crates/core/           ostralith-core: CoreError, ProFeature, Entitlements
+  crates/net/            ostralith-net: the only HTTP client, NetPolicy, activity log
+  clippy.toml            Forbids HTTP clients and sockets outside crates/net
+locales/                 Translation files
+scripts/                 Release and sidecar build scripts
+docs/developer/          Developer documentation
+.ast-grep/rules/         Architecture rules (no raw invoke, no fetch, …)
+```
 
-### Core Features
+### What already works (from the foundation)
 
-- **Command Palette** (`Ctrl/Cmd+K`) with fuzzy search and keyboard navigation
-- **Quick Pane** with a global shortcut that opens a floating always-on-top window, even while another app has focus
-- **Dual Resizable Sidebars** with persistent width and visibility
-- **Preferences Dialog** with sidebar navigation (General, Appearance, Shortcuts, Advanced, About)
-- **Keyboard Shortcuts** with rebindable in-app shortcuts and a ShortcutPicker component
-- **Native Menus** built from JavaScript with full i18n support, plus right-click context menus
-- **Theme System** with light, dark, and system modes, flash-free startup, and VS Code theme importing
-- **Window Effects** preference for native vibrancy (Mica/Acrylic on Windows, translucency on macOS), off by default
-- **Tray Icon** with left-click to show/focus the window and a menu with Show/Quit (quit flushes stores first)
-- **Toast Notifications** and a promise-based confirm dialog
-- **Auto-updates** via the Tauri updater plugin with GitHub Releases integration
-- **Single-instance Enforcement** so only one copy of the app can run at a time
-- **Window State Persistence** that saves/restores position, size, and maximized state across restarts
-- **Launch-at-login Toggle** in Preferences, reading the OS registration live so it never drifts
-- **Deep Linking** with a custom URL scheme routed through single-instance on Windows/Linux and native events on macOS
-- **Font Picker** with system font enumeration from Rust for selecting the app's UI font
-- **Browser Key Suppression** that blocks browser accelerator keys (Ctrl+F, Ctrl+P, etc.) so they don't leak through to the webview
-- **First-run Onboarding** dialog highlighting the command palette, preferences, and Quick Pane
+- Command palette with fuzzy search, native menus and context menus, all
+  dispatching through one command registry
+- Rebindable shortcuts with `when` contexts and conflict detection (conflict,
+  overlap warning, OS-reserved, global-shortcut clash)
+- Tabbed workspace with pinned and preview tabs, reopen-closed, persistence
+  across restarts, and `ostralith://` deep links
+- Preferences: General, Appearance (themes, VS Code theme import, fonts,
+  window effects), Shortcuts, Privacy & Network, Advanced, About
+- Quick Pane: a floating capture window on a global shortcut
+- Reliability: error boundary, crash reporter, diagnostics bundle, quit
+  confirmation for unsaved changes, atomic JSON persistence with corrupt-file
+  recovery
+- Single instance, window-state persistence, tray icon, launch at login
 
-### Reliability
+### Pro features are local flags
 
-- **Error Boundary** with crash recovery that saves diagnostics to disk and shows a reload fallback
-- **Crash Reporter** with automatic Rust panic capture and frontend error logging to disk, plus a startup notification if the app crashed recently
-- **Diagnostics Bundle** for one-click export of app/OS/memory/settings info for bug reports
-- **Quit Confirmation** with an unsaved-changes gate across all exit paths (window close, tray quit, command palette)
-- **JSON Persistence** with atomic writes, corrupt-file recovery, and debounced saves
+Pro features (real-time translation, PDF AI Q&A, premium cloud models) are
+**local entitlement flags** stored in `entitlements.json`. There is no licence
+server and no network check. Each Pro command is guarded in Rust
+(`CoreError::NotEntitled` when the flag is off); the UI marks Pro features with
+a badge. No Pro features exist yet: the gating is in place for P4 and P5.
 
-### Cross-Platform
+## Development
 
-| Platform | Title Bar | Window Controls | Bundle Format |
-| --- | --- | --- | --- |
-| macOS | Custom with vibrancy | Traffic lights | `.dmg` |
-| Windows | Custom (Mica/Acrylic optional) | Right side | `.msi` |
-| Linux | Custom | Native | `.AppImage` |
+### Prerequisites
 
-Platform detection utilities, platform-specific UI strings ("Reveal in Finder" vs "Show in Explorer"), separate Tauri configs per platform, square corners on fullscreen (Windows/Linux), and native-feel CSS defaults (`overscroll-behavior: none`, `user-select: none` with selective re-enable on text inputs) are all set up.
-
-### Developer Experience
-
-- **Type-safe Tauri commands** with tauri-specta generating TypeScript bindings from Rust
-- **Static analysis** with Prettier, ESLint, ast-grep (architecture enforcement), knip (unused code), jscpd (duplication)
-- **Single quality gate** with `pnpm check:all` running 10 gates from formatting to Rust tests, cheapest first
-- **CI workflow** on Ubuntu and Windows, plus a multi-platform release workflow
-- **`prepare-release.js`** for version sync, quality gate, commit, and tag
-- **CodeRabbit config** for AI-powered PR reviews
-
-## Tauri Plugins Included
-
-| Plugin | Purpose |
-| --- | --- |
-| single-instance | Prevent multiple app instances |
-| window-state | Remember window position/size |
-| fs | File system access |
-| dialog | Native open/save dialogs |
-| notification | System notifications |
-| clipboard-manager | Clipboard access |
-| global-shortcut | System-wide keyboard shortcuts |
-| updater | In-app auto-updates |
-| opener | Open URLs/files with default app |
-| autostart | Launch at login |
-| deep-link | Custom URL scheme routing |
-| log | Structured backend logging |
-| os | Platform detection |
-| shell | Shell command execution |
-| process | Process management |
-| persisted-scope | Persist FS permissions across restarts |
-
-## AI-Ready Development
-
-This template is designed to work well with AI coding agents like Claude Code:
-
-- **Comprehensive documentation** in `docs/developer/` covering all patterns. Human readable but designed to explain the "why" of certain patterns to AI agents.
-- **Claude Code integration** with custom skills (`/setup`, `/check`, `/cleanup`, `/change-package-manager`, `/run-app`) and specialized subagents
-- **Sensible file organization** with Svelte code in `src/` (clear separation of components, stores, utils, commands) and Rust in `src-tauri/src/` with modular command organization. Predictable structure for both humans and AI.
-
-## Quick Start
+- Node.js 20+ and pnpm (see `packageManager` in `package.json`)
+- Rust stable, 1.85 or newer
+- Platform dependencies for Tauri: <https://tauri.app/start/prerequisites/>
 
 ```bash
-# Prerequisites: Node.js 18+, Rust (latest stable), pnpm
-# See https://tauri.app/start/prerequisites/ for platform-specific deps
-
-git clone <your-repo>
-cd your-app
 pnpm install
 pnpm tauri dev
 ```
 
-See [USING_THIS_TEMPLATE.md](USING_THIS_TEMPLATE.md) for the full onboarding guide: renaming placeholders, removing demo content, adding your own commands and preferences.
+On macOS, `ostralith://` deep links only work in a built app (`pnpm tauri
+build`); on Windows and Linux dev builds register the scheme at startup.
 
-## Scripts
+### Quality gates
+
+`pnpm check:all` runs every gate, cheapest first, and must be green before
+merging:
+
+```
+format:check → lint → check (svelte-check + tsc) → ast-grep → knip → jscpd → test:run
+→ rust:fmt → rust:clippy (-D warnings) → rust:test (--workspace)
+```
+
+CI runs the frontend gates on Ubuntu and the Rust gates on Ubuntu, Windows and
+macOS.
 
 | Script | What it does |
 | --- | --- |
 | `pnpm tauri dev` | Run the app with hot reload |
-| `pnpm check:all` | Run every quality gate (formatting, lint, types, tests, Rust checks) |
+| `pnpm check:all` | Run every quality gate |
 | `pnpm test` | Vitest in watch mode |
-| `pnpm rust:bindings` | Regenerate TypeScript bindings after changing a Rust command |
+| `pnpm rust:test` | `cargo test --workspace` |
+| `pnpm rust:bindings` | Regenerate `src/lib/bindings.ts` after changing a Rust command or type |
+| `pnpm build:sidecars` | Build and place sidecar binaries (none yet) |
 | `pnpm release v1.0.0` | Bump versions, run checks, commit, and tag |
+
+## Keyboard shortcuts
+
+`mod` is <kbd>Cmd</kbd> on macOS and <kbd>Ctrl</kbd> on Windows and Linux. Every
+in-app shortcut can be rebound in Preferences → Shortcuts.
+
+| Action | Shortcut |
+| --- | --- |
+| Command palette | `mod+Shift+P` |
+| Preferences | `mod+,` |
+| Toggle left sidebar | `mod+\` |
+| Toggle right sidebar | `mod+Alt+\` |
+| Close tab | `mod+W` |
+| Next / previous tab | `mod+Alt+→` / `mod+Alt+←` |
+| Reopen closed tab | `mod+Shift+T` |
+| Quick Pane (global, works from any app) | `CmdOrCtrl+Shift+.` |
+
+The palette moved from `mod+K` to `mod+Shift+P`; existing users see a one-time
+notice. `mod+K` and `mod+B` are kept free for inline AI and bold in the
+editor. See [Commands & Shortcuts](docs/developer/commands-and-shortcuts.md).
 
 ## Documentation
 
-- **[Using This Template](USING_THIS_TEMPLATE.md)** for setup, renaming, and customization
-- **[Developer Docs](docs/developer/README.md)** for architecture, patterns, and detailed subsystem guides
+- [Developer docs](docs/developer/README.md): architecture, privacy and
+  network, workspace, commands and shortcuts, state, persistence, releases
 
 ## License
 
-Copyright (c) 2026 FrostyBee.
-
-Tauri Svelte Template is licensed under the [MIT License](LICENSE). The UI primitives in `src/lib/components/ui/` are vendored from [shadcn-svelte](https://shadcn-svelte.com/) (MIT). See [THIRD-PARTY-NOTICE](THIRD-PARTY-NOTICE) for full attribution, and for what you need to generate before distributing your own build.
-
----
-
-Built with [Tauri](https://tauri.app) · [Svelte](https://svelte.dev) · [shadcn-svelte](https://shadcn-svelte.com)
+Ostralith is licensed under the [MIT License](LICENSE). It is built on the MIT
+[Tauri Svelte Template](https://github.com/frostybee/tauri-svelte-template) by
+FrostyBee. The UI primitives in `src/lib/components/ui/` are vendored from
+[shadcn-svelte](https://shadcn-svelte.com/) (MIT). See
+[THIRD-PARTY-NOTICE](THIRD-PARTY-NOTICE) for full attribution.

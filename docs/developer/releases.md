@@ -27,12 +27,14 @@ Runs on every push to `main` and on every pull request.
 **Frontend job** (ubuntu-latest):
 `format:check` → `lint` → `svelte-check` → `ast-grep` → `knip` → `jscpd` → `vitest`
 
-**Rust job** (ubuntu-latest + windows-latest matrix):
+**Rust job** (ubuntu-latest + windows-latest + macos-latest matrix):
 `cargo fmt --check` → `cargo clippy` → `cargo test`
 
 The Windows matrix is deliberate — the `comctl32.dll` delay-load in `build.rs`
 only surfaces on Windows, and missing it crashes every test binary with
-`STATUS_ENTRYPOINT_NOT_FOUND`.
+`STATUS_ENTRYPOINT_NOT_FOUND`. macOS is in the matrix because Ostralith is
+macOS-first: without it, code behind `cfg(target_os = "macos")` would never be
+compiled in CI.
 
 ## Release workflow (`.github/workflows/release.yml`)
 
@@ -69,8 +71,17 @@ configured in `tauri.conf.json`:
 }
 ```
 
-Both the public key and the endpoint are placeholders. The `/setup` skill
-replaces them with real values.
+Both the public key and the endpoint are placeholders: the endpoint points at
+`https://updates.ostralith.invalid/…`, which never resolves. Generate a signing
+key with `pnpm tauri signer generate` and set a real endpoint before shipping.
+
+The frontend never calls the updater plugin directly. Preferences → About
+calls the app's `check_for_update` / `install_update` commands
+(`src-tauri/src/commands/updater.rs`), which run every endpoint and the
+download URL through `NetClient::authorize_external` first. Checks therefore
+respect offline mode and appear in the network activity log, only happen when
+the user clicks **Check for updates**, and return `FeatureDisabled` when no
+endpoint is configured. See [Privacy & Network](privacy.md).
 
 `createUpdaterArtifacts: true` in the bundle config tells the build to produce
 the `.sig` signature files and `latest.json` manifest that the updater client
@@ -97,5 +108,5 @@ profile.
 `tauri.conf.json` sets `"removeUnusedCommands": true` in the build config.
 Tauri's build step analyses which IPC commands the frontend actually imports
 and strips the rest from the binary. Plugins that are registered in Rust but
-never called from the frontend (like `tauri-plugin-fs` in this template)
+never called from the frontend (like `tauri-plugin-fs` in this app)
 have their IPC commands removed automatically.

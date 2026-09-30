@@ -8,16 +8,72 @@ central registry in `src/lib/commands/registry.svelte.ts`:
 ```ts
 interface AppCommand {
   id: string
-  labelKey: string        // i18n key for display in the palette and menus
-  label?: () => string    // optional dynamic label (e.g. "Hide Left Sidebar")
-  category: string        // i18n key for palette grouping
-  shortcut?: string       // default combo, e.g. 'mod+k' (user-rebindable)
-  run: () => void | Promise<void>
+  labelKey: string          // i18n key for display in the palette and menus
+  label?: () => string      // optional dynamic label (e.g. "Hide Left Sidebar")
+  category: string          // i18n key for palette grouping
+  shortcut?: string         // default combo, e.g. 'mod+shift+p' (user-rebindable)
+  run: (args?: unknown) => void | Promise<void>
+  when?: string             // context-key expression gating the shortcut
+  allowInInput?: boolean    // fire even while a text field has focus
+  args?: unknown            // default argument passed to run()
+  docs?: string             // documentation URL
+  descriptionKey?: string   // i18n key for a one-line description
+  keywords?: string[]       // extra palette search terms
+  source?: 'core' | 'plugin' | 'user'   // defaults to 'core' on registration
+  icon?: Component          // shown in the palette
+  isEnabled?: () => boolean // disabled commands run from no surface
+  platforms?: Array<'macos' | 'windows' | 'linux'>  // omitted = everywhere
 }
 ```
 
 Register with `registerCommand(cmd)` or `registerCommands(cmds)`. Look up with
-`getCommand(id)` or `listCommands()`. Execute with `executeCommand(id)`.
+`getCommand(id)` or `listCommands()`. Execute with `executeCommand(id, args?)`
+— `args` overrides the command's own `args`; disabled or platform-hidden
+commands are skipped.
+
+Commands whose `platforms` exclude the current OS (`isCommandVisible()`) are
+hidden from the palette, the Shortcuts pane, conflict checks, and keyboard
+resolution. `isEnabled()` returning `false` greys the command out in the
+palette and removes it from keyboard resolution.
+
+## Context keys and `when`
+
+`src/lib/commands/context-keys.svelte.ts` holds a reactive map of *context
+keys* — facts like "the editor has focus" or "a recording is running":
+
+| Function | Purpose |
+| --- | --- |
+| `setContextKey(key, value)` | Set a key (any value; truthiness is what bare keys test) |
+| `getContextKey(key)` | Read a key (`undefined` if never set) |
+| `evaluateWhen(expr)` | Evaluate an expression; empty/`undefined` → `true` |
+| `parseWhen(expr)` | Parse to an AST (throws on malformed input) |
+| `resetContextKeys()` | Clear everything (tests) |
+
+Well-known keys: `editorFocus`, `editorTextFocus`, `canvasFocus`,
+`notebookFocus`, `pdfFocus`, `chatFocus`, `paletteOpen` (kept in sync by
+`palette-state.svelte.ts`), `meetingActive`, `recording`, `isMac` (set by
+`initCommands()`), `offline`, `pro`. The module that owns a fact sets its key;
+unknown keys read as falsy.
+
+**Expression grammar**, highest precedence first:
+
+| Syntax | Meaning |
+| --- | --- |
+| `key` | truthiness of the key; `true` / `false` are constants |
+| `(expr)` | grouping |
+| `!expr` | negation |
+| `key == literal`, `key != literal` | strict comparison; literal is `'single-quoted'`, a number, or `true`/`false` |
+| `a && b` | and |
+| `a \|\| b` | or |
+
+The left side of `==`/`!=` must be a bare key (`!a == 'x'` is a parse error).
+A malformed expression evaluates to `false` and logs one warning per distinct
+expression; parsed ASTs are cached.
+
+`when` scopes the **keyboard binding** only. The palette ignores it — opening
+the palette moves focus, so focus-scoped commands would otherwise disappear
+exactly when the user looks for them. Use `isEnabled` to stop a command
+running at all.
 
 ## Unified dispatch
 
@@ -25,7 +81,7 @@ Three input sources, one code path:
 
 | Source | How it reaches `executeCommand()` |
 | --- | --- |
-| **Keyboard** | `createKeydownHandler()` resolves the combo to a command id |
+| **Keyboard** | `createKeydownHandler()` resolves the combo via `resolveShortcut()` |
 | **Command palette** | `CommandPalette.svelte` calls `executeCommand()` on select |
 | **Native menu** | `menu.ts` wires each `MenuItem`'s `action` to `executeCommand()` |
 
@@ -38,26 +94,46 @@ Commands are organised into modules under `src/lib/commands/`:
 | Module | Commands |
 | --- | --- |
 | `app-commands.ts` | `open-command-palette`, `toggle-theme`, `open-preferences`, `toggle-left-sidebar`, `toggle-right-sidebar`, `toggle-quick-pane`, `app-quit` |
-| `notification-commands.ts` | `demo-send-notification` |
-| `clipboard-commands.ts` | `demo-copy-to-clipboard`, `demo-paste-from-clipboard` |
-| `dialog-commands.ts` | `demo-open-file-dialog` |
-| `shell-commands.ts` | `demo-run-shell-command` |
-| `process-commands.ts` | `demo-relaunch-app` (via confirm dialog) |
+| `tab-commands.ts` | `tab.close`, `tab.closeOthers`, `tab.next`, `tab.prev`, `tab.reopenClosed`, `tab.togglePin` (see [Workspace](workspace.md#tab-commands)) |
 
-Demo modules exist so the plugins they exercise ship with a working example.
-Delete them when you start building your own app.
+### Default keymap
+
+| Command | Default | Notes |
+| --- | --- | --- |
+| `open-command-palette` | `mod+shift+p` | `allowInInput: true` — reachable from any text field |
+| `open-preferences` | `mod+,` | |
+| `toggle-left-sidebar` | `mod+\` | |
+| `toggle-right-sidebar` | `mod+alt+\` | |
+| `tab.close` | `mod+w` | not OS-reserved, so this default is always accepted |
+| `tab.next` / `tab.prev` | `mod+alt+arrowright` / `mod+alt+arrowleft` | |
+| `tab.reopenClosed` | `mod+shift+t` | |
+
+`mod+k` and `mod+b` are deliberately left free: they are the link and bold
+chords in every rich-text surface.
+
+### Keymap migration
+
+`keymap-migration.ts`'s `runKeymapMigration()` (called from `initCommands()`,
+after preferences are loaded) checks `prefsVersion`. Files written before
+versioning load as `0`; if the palette still uses its default binding the user
+gets a one-time toast (`keymap.migration.paletteMoved`) naming the new combo,
+then `prefsVersion` is stamped to `1`. Overrides in `commandShortcuts` are
+keyed by command id, so they survive untouched. Fresh installs start at `1`
+and never see the toast. Bump `CURRENT_PREFS_VERSION` and extend the function
+the next time a default binding moves.
 
 ## `initCommands()`
 
 `src/lib/commands/index.ts` exports `initCommands()`, called from
 `App.svelte`'s boot sequence. It:
 
-1. Registers all command modules
-2. Points the registry's shortcut-override resolver at the persisted
+1. Sets the `isMac` context key
+2. Registers all command modules
+3. Points the registry's shortcut-override resolver at the persisted
    `commandShortcuts` preference (`initCommandShortcutOverrides()`)
-3. Creates a `keydown` handler via `createKeydownHandler(...)` whose input
-   allowlist follows the palette's effective shortcut
-4. Initialises the native menu bar via `initMenu()`
+4. Runs the one-time keymap migration (`runKeymapMigration()`)
+5. Creates a `keydown` handler via `createKeydownHandler(resolveShortcut, …)`
+6. Initialises the native menu bar via `initMenu()`
 
 Returns a cleanup function that removes the keydown listener and the menu's
 `languageChanged` subscription.
@@ -65,8 +141,10 @@ Returns a cleanup function that removes the keydown listener and the menu's
 ## Command palette
 
 `CommandPalette.svelte` uses the shadcn-svelte `Command` component. State
-(open/closed) lives in `palette-state.svelte.ts`. The palette lists all
-registered commands and fuzzy-filters by label.
+(open/closed) lives in `palette-state.svelte.ts`, which mirrors it into the
+`paletteOpen` context key. The palette lists every platform-visible command,
+fuzzy-filters by label and `keywords`, shows `icon`, and disables commands
+whose `isEnabled()` is false.
 
 ## Preferences dialog
 
@@ -81,8 +159,12 @@ registered commands and fuzzy-filters by label.
    `labelKey`
 3. Export a `registerMyCommands()` function
 4. Call it from `initCommands()` in `index.ts`
-5. Optionally add a `shortcut` (normalised, e.g. `'mod+shift+n'`)
-6. Optionally add a menu entry in `menu.ts` via `commandItem(MY_COMMAND_ID)`
+5. Optionally add a `shortcut` (normalised, e.g. `'mod+shift+n'`), a `when`
+   to scope it, and `allowInInput: true` if it must fire from text fields
+6. Optionally add a menu entry in `menu.ts` via `commandItem(MY_COMMAND_ID)`.
+   Only commands **without** a `when` get a native accelerator — the OS fires
+   menu accelerators regardless of focus, which would bypass the scope. A
+   scoped command's menu item still works, it just shows no shortcut.
 
 ---
 
@@ -112,7 +194,7 @@ interface ParsedShortcut {
 | --- | --- |
 | `normalizeShortcut(raw)` | `'Ctrl+Shift+K'` → `'mod+shift+k'` |
 | `parseShortcut(normalized)` | `'mod+shift+k'` → `{ key: 'k', modifiers: ['mod', 'shift'] }` |
-| `buildCombo(event)` | `KeyboardEvent` → `'mod+shift+k'` |
+| `buildCombo(event)` | `KeyboardEvent` → `'mod+shift+k'`; reads the physical key when macOS Option composes a character (`⌥⌘\` → `'mod+alt+\'`), and spells the space bar `space` |
 | `toTauriAccelerator(normalized)` | `'mod+shift+k'` → `'CmdOrCtrl+Shift+K'` (for OS registration) |
 | `fromTauriAccelerator(accelerator)` | Inverse of the above (for display) |
 | `isValidGlobalShortcutCombo(combo)` | Requires at least one modifier + a key |
@@ -121,16 +203,21 @@ interface ParsedShortcut {
 
 ```ts
 createKeydownHandler(
-  // combos that fire even in text inputs; a function re-evaluates per event
-  inputAllowlist: string[] | (() => string[]),
-  resolveCommandId: (combo: string) => string | undefined,
+  resolveCommand: (combo: string) => { id: string; allowInInput?: boolean } | undefined,
   dispatch: (commandId: string) => void,
 ): (event: KeyboardEvent) => void
 ```
 
-The handler skips editable targets (`<input>`, `<textarea>`,
-`contentEditable`) unless the combo is in the allowlist. This prevents
-shortcuts from swallowing user typing.
+`initCommands()` passes the registry's `resolveShortcut(combo)`, which picks
+among visible, enabled commands bound to the combo whose `when` holds, ranked
+by: user override > more specific `when` (more terms beats fewer, any beats
+none) > `source` (`user` > `plugin` > `core`) > registration order.
+
+When focus is in an editable target (`<input>`, `<textarea>`,
+`contentEditable`) the resolved command only fires if it sets
+`allowInInput: true`; otherwise the keystroke is left for the field.
+Browser-accelerator and reload suppression is separate (`browser-keys.ts`)
+and unaffected.
 
 ### Rebindable in-app shortcuts
 
@@ -147,13 +234,38 @@ means explicitly unbound, a missing key means default).
 | `setCommandShortcut(id, combo \| null)` | Rebind/unbind; storing a command's default removes the override |
 | `resetCommandShortcut(id)` | Back to the default |
 | `isShortcutCustomized(id)` | Drives the reset affordance in the UI |
-| `findShortcutConflict(combo, excludeId)` | Checks other commands' *effective* combos and both OS-level global shortcuts |
+| `findShortcutConflict(combo, excludeId)` | Classifies a clash (below), or `null` |
+| `isBlockingConflict(conflict)` | `false` only for `warning` |
+| `isReservedShortcut(combo)` | Whether the combo is on the OS-reserved list |
+
+`findShortcutConflict` returns a `ShortcutConflict`:
+
+| Result | When | UI |
+| --- | --- | --- |
+| `{ kind: 'reserved', reason: 'os' }` | `mod+q`, `mod+h`, `mod+m`, `mod+tab`, `mod+space`, `alt+f4` (never applied to a command's own built-in default) | blocked |
+| `{ kind: 'reserved', reason: 'global', purpose }` | one of the app's own global shortcuts | blocked |
+| `{ kind: 'conflict', commandId }` | same combo, and either side has no `when` or both are identical | blocked |
+| `{ kind: 'warning', commandId }` | same combo under a different non-empty `when` | saved, with an inline note |
+
+The Shortcuts pane stays in recording mode on a blocking result and saves
+through a warning, leaving the note under the row. The global
+`ShortcutPicker` refuses OS-reserved combos the same way.
 
 Everything that displays or dispatches a shortcut goes through
 `getEffectiveShortcut(command)` on the registry (palette, native menu,
 keydown resolver, Shortcuts pane), so a rebind takes effect everywhere at
 once; `setCommandShortcut` also calls `rebuildMenu()` because native menu
 accelerator text is static once built.
+
+To **show** a binding, use the helpers in
+`src/lib/commands/shortcut-display.ts` (exported from `$lib/commands`) rather
+than hardcoding a combo:
+
+- `formatCommandShortcut(commandId)` — the command's effective binding
+  formatted for the current platform, or `null` when the user unbound it.
+  Onboarding, the empty workspace, the palette and the Shortcuts pane use it.
+- `formatCombo(combo)` — formats any normalised combo (`mod+alt+arrowright`
+  → `⌥⌘→` on macOS, `Ctrl+Alt+Right` elsewhere).
 
 ### Global shortcuts
 

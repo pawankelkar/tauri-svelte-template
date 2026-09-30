@@ -2,7 +2,7 @@
 
 ## Platform detection
 
-`@tauri-apps/plugin-os` provides runtime platform info. The template wraps it
+`@tauri-apps/plugin-os` provides runtime platform info. The app wraps it
 in `src/lib/hooks/use-platform.svelte.ts`:
 
 ```ts
@@ -40,6 +40,13 @@ Formats a shortcut for display:
 - Windows/Linux: labels with `+` — `Ctrl+Shift+K`
 
 Mac uses a specific modifier order (⌥ ⇧ ⌘) matching Apple's convention.
+
+Named keys are mapped by the internal `formatKey()` (case-insensitive, so
+`ArrowRight` and `arrowright` agree): arrows render as `← → ↑ ↓` on macOS and
+as `Left`, `Right`, `Up`, `Down` elsewhere, and `pageup` / `pagedown` become
+`PageUp` / `PageDown`. Components should not call `formatShortcut` for a
+command directly; use `formatCommandShortcut(id)` from `$lib/commands`, which
+follows the user's rebinds (see [Commands & Shortcuts](commands-and-shortcuts.md)).
 
 ## Titlebar
 
@@ -93,12 +100,11 @@ predefined items use OS-native labels — no i18n needed for them.
 Types: `ContextMenuItem`, `ContextMenuSeparator`, `ContextMenuEntry`, with an
 `isSeparator()` type guard.
 
-## Deep linking (`tauri-app://` scheme)
+## Deep linking (`ostralith://` scheme)
 
 The custom URL scheme is declared in `tauri.conf.json`
 (`plugins.deep-link.desktop.schemes`) and mirrored as `DEEP_LINK_SCHEME` in
-`src/lib/deep-link.ts`; the `/setup` skill renames both. Delivery differs by
-platform:
+`src/lib/deep-link.ts`; change both together. Delivery differs by platform:
 
 - **Windows/Linux**: opening a scheme URL launches a second instance with the
   URL in argv. The single-instance plugin (registered first, built with its
@@ -110,8 +116,11 @@ platform:
 
 Both paths converge on the `on_open_url` handler in `lib.rs`, which emits
 `app:deep-link-received` to the frontend — URL routing stays a frontend
-concern. The demo listener in `App.svelte` shows a toast and focuses the
-window; replace it with real routing when the app has destinations.
+concern. The listener in `App.svelte` passes each URL to `routeDeepLink()`
+(`src/lib/workspace/deep-link-router.ts`) and brings the window forward. Notes
+and views open tabs, `view/settings.<pane>` opens Preferences, and malformed
+links show a warning toast; see [Workspace](workspace.md#deep-links) for the
+full table.
 
 Dev builds on Windows/Linux self-register the scheme at startup
 (`registerDeepLinkSchemeInDev()` in `src/lib/deep-link.ts`), because only

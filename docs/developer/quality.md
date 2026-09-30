@@ -44,26 +44,42 @@ beforeEach(() => {
 | i18n config | `i18n/config.test.ts` |
 | Quick-pane bridge | `quick-pane/bridge.test.ts` |
 | Preferences dialog | `commands/preferences-dialog-state.svelte.test.ts` |
+| Context keys and `when` | `commands/context-keys.svelte.test.ts` |
+| Shortcut conflicts / display | `commands/command-shortcuts.test.ts`, `commands/shortcut-display.test.ts` |
+| Keymap migration | `commands/keymap-migration.test.ts` |
+| Tab commands | `commands/tab-commands.test.ts` |
+| Workspace (URIs, tabs, views, deep links) | `workspace/*.test.ts`, `components/workspace/EditorArea.test.ts` |
+| Network and entitlements stores | `stores/network.svelte.test.ts`, `stores/entitlements.svelte.test.ts` |
+| `CoreError` rendering | `core-error.test.ts` |
+| Native menu | `menu.test.ts` |
 
 ### Backend: cargo test
 
 Rust tests live alongside the source in `#[cfg(test)] mod tests` blocks.
 `src-tauri/src/commands/test_support.rs` provides `scratch_dir(module, test)`
-for creating isolated temp directories.
+for creating isolated temp directories, and
+`json_round_trip(module, test, file, &value)` for the save-then-load test
+every persisted JSON type needs.
 
-Run with `pnpm rust:test` or `cd src-tauri && cargo test`.
+`src-tauri` is a Cargo workspace (`.` plus `crates/*`), so always pass
+`--workspace`: `pnpm rust:test` runs `cargo test --workspace`, covering the
+app crate, `ostralith-core` and `ostralith-net`. The `net` tests exercise the
+policy and redirect checks against a loopback server, so they need no
+internet access.
 
-CI runs `cargo test` on both Ubuntu and Windows — the Windows matrix catches
-platform-specific issues like the `comctl32.dll` delay-load fix in `build.rs`.
+CI runs the Rust job on Ubuntu, Windows and macOS. Windows catches issues like
+the `comctl32.dll` delay-load fix in `build.rs`; macOS compiles the
+`cfg(target_os = "macos")` code that the macOS-first features depend on.
 
 ### Manual UI verification
 
 The frontend renders in a plain browser once the Tauri globals are stubbed.
-The `run-app` skill (`.claude/skills/run-app/SKILL.md`) documents the working
-recipe — dev server + Playwright with stubbed `__TAURI_INTERNALS__` /
-`__TAURI_OS_PLUGIN_INTERNALS__` — including its two footguns (the synchronous
-plugin-os global and the `/@fs/` import-URL rule). Anything crossing real IPC
-still needs `pnpm tauri dev`.
+The working recipe is the Vite dev server plus Playwright with stubbed
+`__TAURI_INTERNALS__` / `__TAURI_OS_PLUGIN_INTERNALS__`. Two footguns: the
+plugin-os global is read synchronously at import time, so it must be stubbed
+before the app loads, and modules outside the project root must be imported
+through Vite's `/@fs/` URL. Anything crossing real IPC still needs
+`pnpm tauri dev`.
 
 ---
 
@@ -81,7 +97,16 @@ A formatting slip fails in seconds rather than after the test suite.
 
 ### ast-grep rules
 
-Two custom rules in `.ast-grep/rules/`:
+Four custom rules in `.ast-grep/rules/`:
+
+**`no-raw-invoke.yml`** — Rust commands are called through the generated
+`commands.*` in `$lib/tauri-bindings`, never through raw `invoke()`.
+
+**`no-fetch.yml`** — no `fetch`, `XMLHttpRequest`, `WebSocket` or
+`EventSource` in `src/**/*.ts`. Network access goes through Rust
+`ostralith-net` so offline mode and the activity log apply; see
+[Privacy & Network](privacy.md). ast-grep does not parse `.svelte` files, so
+ESLint's `no-restricted-globals` covers the same names there.
 
 **`snapshot-before-ipc.yml`** — enforces `$state.snapshot()` around any value
 passed to a generated `commands.*` call in store files. A raw rune proxy does
@@ -102,7 +127,7 @@ Unused file/export/dependency detection. Config in `knip.jsonc`:
 - **Ignore deps:** `tw-animate-css` (CSS-only import), `csstype` (bits-ui
   transitive type dep)
 - **Tags:** `-@public` — exports tagged `@public` are intentional API surface
-  for template consumers, not dead code
+  for upcoming features (and, later, plugins), not dead code
 - **`ignoreExportsUsedInFile: true`** — an export consumed only within its own
   file is not flagged
 
@@ -124,6 +149,14 @@ Run: `pnpm jscpd`
 
 ESLint with `eslint-plugin-svelte` and `eslint-config-prettier`. Prettier with
 `prettier-plugin-svelte`. Run via `pnpm lint` / `pnpm format:check`.
+`scripts/**/*.{js,mjs}` get Node globals and may use `console`.
+
+### clippy
+
+`pnpm rust:clippy` runs `cargo clippy --workspace --all-targets
+--all-features -- -D warnings`. `src-tauri/clippy.toml` adds
+`disallowed-methods` for `reqwest` client construction, `reqwest::get` and
+`TcpStream::connect`, so only `crates/net` can open a connection.
 
 ### `.coderabbit.yaml`
 

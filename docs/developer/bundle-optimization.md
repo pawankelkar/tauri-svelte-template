@@ -66,8 +66,10 @@ If your app doesn't need a plugin, remove it from all four layers:
 4. **Frontend dependency** — remove `@tauri-apps/plugin-foo` from
    `package.json`
 
-For demo-only plugins (notification, clipboard, dialog, shell, process),
-also delete the corresponding command module in `src/lib/commands/`.
+The template's demo-only plugins (notification, clipboard-manager, shell,
+process) have already been removed this way. `dialog` stays for the theme
+import picker, and `updater` stays behind the network policy (see
+[Privacy & Network](privacy.md)).
 
 ## Code-splitting
 

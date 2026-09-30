@@ -38,6 +38,12 @@ UI layout state persisted to `state.json`.
 | `lastQuickPaneEntry` | `string \| null` | `null` |
 | `recentItems` | `string[]` | `[]` |
 | `onboardingCompleted` | `boolean` | `false` |
+| `openTabs` | `PersistedTab[]` (`{ id, kind, uri, title, pinned }`) | `[]` |
+| `activeTabId` | `string \| null` | `null` |
+
+`openTabs` / `activeTabId` are written by the tabs store through
+`setAppStateField` (see [Workspace](workspace.md)); nothing else should
+touch them.
 
 Key functions mirror the preferences store: `getAppState()`,
 `setAppStateField()`, `addRecentItem()`, `removeRecentItem()`,

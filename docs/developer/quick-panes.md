@@ -4,7 +4,7 @@ The Quick Pane is a small always-on-top window opened by a global shortcut —
 `Ctrl/Cmd+Shift+.` out of the box — that works even while another application
 has focus. It takes one line of text and hands it to the main window.
 
-It exists in this template as the worked example of **multi-window Tauri**:
+It is also the app's worked example of **multi-window Tauri**:
 a second Vite entry point, an independent Svelte context, cross-window events,
 per-window capabilities, and a second global accelerator. Everything below
 generalises to any auxiliary window you need.
@@ -148,7 +148,7 @@ and grants only `core:default`, a few `core:window:*` permissions, and
 It does **not** need permissions for showing and hiding — those go through
 app-defined Rust commands, and app-defined commands are not permission-gated.
 Only core and plugin commands are. The same reasoning is why the global-shortcut
-plugin needs no `global-shortcut:*` entry anywhere in this template.
+plugin needs no `global-shortcut:*` entry anywhere in this app.
 
 ---
 
@@ -234,10 +234,10 @@ it activates the application, which on macOS can drag the user to whichever
 Space the main window is on — the exact thing a quick-capture panel must not
 do. A native `NSPanel` fixes both.
 
-This template does **not** ship it, for two reasons: `tauri-nspanel` is only
-distributed as a git dependency (no crates.io release, no semver), and a
-template's macOS path should not be code its author cannot test. If you are
-building a macOS-first app, the upgrade is contained. Here is the whole of it.
+Ostralith does **not** ship it yet: `tauri-nspanel` is only distributed as a
+git dependency (no crates.io release, no semver). Because the app is
+macOS-first, it is the planned upgrade for the dictation HUD and Quick Pane.
+The change is contained. Here is the whole of it.
 
 **1. Dependency** — `src-tauri/Cargo.toml`:
 
