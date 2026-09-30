@@ -9,6 +9,14 @@ export {
   type PersistedAppState,
   type ShortcutPurpose,
   type JsonValue,
+  type NetPolicy,
+  type RequestRecord,
+  type RequestOutcome,
+  type CoreError,
+  type ProFeature,
+  type FeatureEntitlement,
+  type UpdateInfo,
+  type PersistedTab,
 } from './bindings'
 
 export function unwrapResult<T, E>(

@@ -7,17 +7,30 @@
   import { getName, getVersion, getTauriVersion } from '@tauri-apps/api/app'
   import { platform, arch, version } from '@tauri-apps/plugin-os'
   import { openUrl } from '@tauri-apps/plugin-opener'
-  import { check } from '@tauri-apps/plugin-updater'
-  import { relaunch } from '@tauri-apps/plugin-process'
-  import { toast } from '$lib/stores/toast'
+  import { commands, unwrapResult } from '$lib/tauri-bindings'
+  import type { UpdateInfo } from '$lib/tauri-bindings'
+  import { isOffline } from '$lib/stores/network.svelte'
+  import { setActivePreferencesPane } from '$lib/commands/preferences-dialog-state.svelte'
+  import { describeError, isCoreError } from '$lib/core-error'
   import { t } from '$lib/i18n/t.svelte'
 
   let appName = $state('…')
   let appVersion = $state('…')
   let tauriVersion = $state('…')
   let platformInfo = $state('…')
-  let updateStatus = $state<'idle' | 'checking' | 'downloading' | 'ready'>(
-    'idle',
+
+  type UpdateState =
+    | { status: 'idle' }
+    | { status: 'checking' }
+    | { status: 'upToDate' }
+    | { status: 'available'; info: UpdateInfo }
+    | { status: 'installing'; info: UpdateInfo }
+    | { status: 'error'; message: string }
+
+  let update = $state<UpdateState>({ status: 'idle' })
+
+  const busy = $derived(
+    update.status === 'checking' || update.status === 'installing',
   )
 
   onMount(async () => {
@@ -39,23 +52,42 @@
     void openUrl(t(urlKey))
   }
 
+  // A missing updater endpoint surfaces as `featureDisabled`; that is a
+  // property of the build, not something the user did wrong.
+  function updateErrorMessage(e: unknown, fallbackKey: string): string {
+    if (isCoreError(e) && e.kind === 'featureDisabled') {
+      return t('preferences.about.updatesNotConfigured')
+    }
+    if (isCoreError(e) || e instanceof Error) {
+      return `${t(fallbackKey)} ${describeError(e)}`
+    }
+    return t(fallbackKey)
+  }
+
   async function checkForUpdates(): Promise<void> {
-    updateStatus = 'checking'
+    update = { status: 'checking' }
     try {
-      const update = await check()
-      if (!update) {
-        toast.success(t('preferences.about.upToDate'))
-        updateStatus = 'idle'
-        return
+      const info = unwrapResult(await commands.checkForUpdate())
+      update = info ? { status: 'available', info } : { status: 'upToDate' }
+    } catch (e) {
+      update = {
+        status: 'error',
+        message: updateErrorMessage(e, 'preferences.about.updateError'),
       }
-      updateStatus = 'downloading'
-      await update.downloadAndInstall()
-      updateStatus = 'ready'
-      toast.success(t('preferences.about.updateReady'))
-      await relaunch()
-    } catch {
-      toast.error(t('preferences.about.updateError'))
-      updateStatus = 'idle'
+    }
+  }
+
+  // On success Rust restarts the app, so this only ever returns on failure.
+  async function installUpdate(): Promise<void> {
+    if (update.status !== 'available') return
+    update = { status: 'installing', info: update.info }
+    try {
+      unwrapResult(await commands.installUpdate())
+    } catch (e) {
+      update = {
+        status: 'error',
+        message: updateErrorMessage(e, 'preferences.about.installError'),
+      }
     }
   }
 </script>
@@ -67,23 +99,72 @@
       {t('preferences.about.versionLabel', { version: appVersion })}
     </p>
   </div>
-  <Button
-    variant="default"
-    size="sm"
-    disabled={updateStatus !== 'idle'}
-    onclick={checkForUpdates}
-  >
-    {#if updateStatus === 'checking'}
-      {t('preferences.about.updateChecking')}
-    {:else if updateStatus === 'downloading'}
-      {t('preferences.about.updateDownloading')}
-    {:else if updateStatus === 'ready'}
-      {t('preferences.about.updateReady')}
-    {:else}
-      {t('preferences.about.checkForUpdates')}
-    {/if}
-  </Button>
+  {#if update.status === 'available' || update.status === 'installing'}
+    <Button
+      variant="default"
+      size="sm"
+      disabled={busy || isOffline()}
+      onclick={installUpdate}
+    >
+      {update.status === 'installing'
+        ? t('preferences.about.updateInstalling')
+        : t('preferences.about.installUpdate')}
+    </Button>
+  {:else}
+    <Button
+      variant="default"
+      size="sm"
+      disabled={busy || isOffline()}
+      onclick={checkForUpdates}
+    >
+      {update.status === 'checking'
+        ? t('preferences.about.updateChecking')
+        : t('preferences.about.checkForUpdates')}
+    </Button>
+  {/if}
 </div>
+
+{#if isOffline()}
+  <p class="text-muted-foreground text-sm">
+    {t('preferences.about.offlineHint')}
+    <button
+      type="button"
+      class="text-primary underline-offset-4 hover:underline"
+      onclick={() => setActivePreferencesPane('privacy')}
+    >
+      {t('preferences.about.openPrivacySettings')}
+    </button>
+  </p>
+{/if}
+
+{#if update.status === 'upToDate'}
+  <p class="text-muted-foreground text-sm" role="status">
+    {t('preferences.about.upToDate')}
+  </p>
+{:else if update.status === 'error'}
+  <p class="text-destructive text-sm" role="alert">{update.message}</p>
+{:else if update.status === 'available' || update.status === 'installing'}
+  <div class="space-y-2 rounded-md border p-3" role="status">
+    <p class="text-sm font-medium">
+      {t('preferences.about.updateAvailable', {
+        version: update.info.version,
+        current: update.info.currentVersion,
+      })}
+    </p>
+    {#if update.info.notes}
+      <div class="space-y-1">
+        <p class="text-muted-foreground text-xs font-medium">
+          {t('preferences.about.releaseNotes')}
+        </p>
+        <p
+          class="text-muted-foreground max-h-40 overflow-y-auto text-sm whitespace-pre-wrap"
+        >
+          {update.info.notes}
+        </p>
+      </div>
+    {/if}
+  </div>
+{/if}
 
 <Separator />
 

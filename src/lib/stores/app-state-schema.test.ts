@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest'
 import {
   defaultAppState,
   sanitizeAppState,
+  MAX_OPEN_TABS,
   MAX_RECENT_ITEMS,
+  MAX_TAB_URI_LEN,
 } from './app-state-schema'
 
 describe('defaultAppState', () => {
@@ -14,6 +16,8 @@ describe('defaultAppState', () => {
     expect(defaults.lastQuickPaneEntry).toBeNull()
     expect(defaults.recentItems).toEqual([])
     expect(defaults.onboardingCompleted).toBe(false)
+    expect(defaults.openTabs).toEqual([])
+    expect(defaults.activeTabId).toBeNull()
   })
 })
 
@@ -26,6 +30,23 @@ describe('sanitizeAppState', () => {
       lastQuickPaneEntry: 'hello',
       recentItems: ['a', 'b'],
       onboardingCompleted: true,
+      openTabs: [
+        {
+          id: 't1',
+          kind: 'note',
+          uri: 'vault://a.md',
+          title: 'A',
+          pinned: true,
+        },
+        {
+          id: 't2',
+          kind: 'pdf',
+          uri: 'vault://b.pdf',
+          title: 'B',
+          pinned: false,
+        },
+      ],
+      activeTabId: 't2',
     }
     expect(sanitizeAppState(valid)).toEqual(valid)
   })
@@ -91,5 +112,55 @@ describe('sanitizeAppState', () => {
     expect(result.lastQuickPaneEntry).toBeNull()
     expect(result.recentItems).toEqual([])
     expect(result.onboardingCompleted).toBe(false)
+    expect(result.openTabs).toEqual([])
+    expect(result.activeTabId).toBeNull()
+  })
+
+  const tab = (id: string) => ({
+    id,
+    kind: 'note',
+    uri: `vault://${id}.md`,
+    title: id,
+    pinned: false,
+  })
+
+  it('drops malformed and duplicate tabs', () => {
+    const result = sanitizeAppState({
+      openTabs: [
+        tab('a'),
+        null,
+        { ...tab('b'), uri: 42 },
+        { ...tab(''), title: 'empty id' },
+        { ...tab('c'), uri: 'x'.repeat(MAX_TAB_URI_LEN + 1) },
+        { ...tab('a'), title: 'duplicate' },
+        { ...tab('d'), pinned: 'yes' },
+      ],
+    })
+    expect(result.openTabs).toEqual([tab('a'), tab('d')])
+  })
+
+  it('caps openTabs at MAX_OPEN_TABS', () => {
+    const openTabs = Array.from({ length: MAX_OPEN_TABS + 5 }, (_, i) =>
+      tab(`t${i}`),
+    )
+    const result = sanitizeAppState({ openTabs })
+    expect(result.openTabs).toHaveLength(MAX_OPEN_TABS)
+  })
+
+  it('returns empty openTabs for a non-array', () => {
+    expect(sanitizeAppState({ openTabs: 'nope' }).openTabs).toEqual([])
+  })
+
+  it('clears an activeTabId that names no open tab', () => {
+    expect(
+      sanitizeAppState({ openTabs: [tab('a')], activeTabId: 'gone' })
+        .activeTabId,
+    ).toBeNull()
+    expect(
+      sanitizeAppState({ openTabs: [tab('a')], activeTabId: 42 }).activeTabId,
+    ).toBeNull()
+    expect(
+      sanitizeAppState({ openTabs: [tab('a')], activeTabId: 'a' }).activeTabId,
+    ).toBe('a')
   })
 })

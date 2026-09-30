@@ -78,9 +78,12 @@ async collectDiagnostics(tauriVersion: string) : Promise<Result<DiagnosticsRepor
     else return { status: "error", error: e  as any };
 }
 },
-async greet(name: string) : Promise<Result<string, string>> {
+async getEntitlements() : Promise<FeatureEntitlement[]> {
+    return await TAURI_INVOKE("get_entitlements");
+},
+async setEntitlement(feature: ProFeature, enabled: boolean) : Promise<Result<FeatureEntitlement[], CoreError>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("greet", { name }) };
+    return { status: "ok", data: await TAURI_INVOKE("set_entitlement", { feature, enabled }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -126,6 +129,34 @@ async isGlobalShortcutRegistered(accelerator: string) : Promise<Result<boolean, 
  */
 async quitApp() : Promise<void> {
     await TAURI_INVOKE("quit_app");
+},
+async getNetworkStatus() : Promise<NetPolicy> {
+    return await TAURI_INVOKE("get_network_status");
+},
+async setOfflineMode(offline: boolean) : Promise<Result<NetPolicy, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_offline_mode", { offline }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setAllowLocalhost(allow: boolean) : Promise<Result<NetPolicy, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_allow_localhost", { allow }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Every request attempt since launch, newest first.
+ */
+async listNetworkActivity() : Promise<RequestRecord[]> {
+    return await TAURI_INVOKE("list_network_activity");
+},
+async clearNetworkActivity() : Promise<void> {
+    await TAURI_INVOKE("clear_network_activity");
 },
 async loadPreferences() : Promise<Result<AppPreferences, string>> {
     try {
@@ -216,13 +247,33 @@ async listSystemFonts() : Promise<Result<string[], string>> {
 /**
  * Reads a user-picked VS Code theme file for the import flow.
  * 
- * The template ships without `tauri-plugin-fs`, so this one narrow command
+ * The frontend does not use `tauri-plugin-fs`, so this one narrow command
  * stands in for it: extension-pinned to theme JSON, size-capped, contents
  * returned as text for the frontend's JSONC parser to make sense of.
  */
 async readThemeFile(path: string) : Promise<Result<string, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("read_theme_file", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async checkForUpdate() : Promise<Result<UpdateInfo | null, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_for_update") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Downloads and installs the pending update, then restarts the app. Only
+ * returns on failure.
+ */
+async installUpdate() : Promise<Result<null, CoreError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("install_update") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -240,7 +291,13 @@ async readThemeFile(path: string) : Promise<Result<string, string>> {
 
 /** user-defined types **/
 
-export type AppPreferences = { theme: string; lightProfile: ThemeProfile; darkProfile: ThemeProfile; importedThemes: ImportedTheme[]; 
+export type AppPreferences = { 
+/**
+ * See [`CURRENT_PREFS_VERSION`]. The field-level `default` is
+ * deliberate: it overrides the container default (which would say
+ * "current") so a file without the field reads as 0.
+ */
+prefsVersion?: number; theme: string; lightProfile: ThemeProfile; darkProfile: ThemeProfile; importedThemes: ImportedTheme[]; 
 /**
  * UI font family; `None` means the platform's system font stack.
  */
@@ -271,8 +328,50 @@ windowEffects: boolean; language: string | null; globalShortcut: string | null; 
  * frontend combos (e.g. `"mod+shift+k"`), not Tauri accelerators.
  */
 commandShortcuts: Partial<{ [key in string]: string | null }> }
+/**
+ * The error every Ostralith command can return.
+ * 
+ * Serialised with a `kind` tag so the frontend can branch on the variant
+ * (show an upgrade hint for `notEntitled`, an offline badge for `offline`)
+ * instead of pattern-matching message strings.
+ */
+export type CoreError = 
+/**
+ * The feature exists but can't run here: wrong OS, missing hardware,
+ * safe mode, or a plugin that is switched off.
+ */
+{ kind: "featureDisabled"; feature: string; reason: string } | 
+/**
+ * A Pro feature whose local flag is off.
+ */
+{ kind: "notEntitled"; feature: ProFeature } | 
+/**
+ * A request to a non-loopback host while offline mode is on.
+ */
+{ kind: "offline"; host: string } | 
+/**
+ * Online, but the host is not on the network allowlist.
+ */
+{ kind: "hostNotAllowed"; host: string } | 
+/**
+ * A request that passed the policy but failed on the wire.
+ */
+{ kind: "network"; message: string } | 
+/**
+ * Input the command refuses to act on.
+ */
+{ kind: "invalidInput"; message: string } | 
+/**
+ * Anything else, carried as a message. Existing `Result<_, String>`
+ * helpers convert into this so they can be reused unchanged.
+ */
+{ kind: "internal"; message: string }
 export type CrashReportSummary = { filename: string; timestampSecs: number; secondsAgo: number }
 export type DiagnosticsReport = { appName: string; appVersion: string; osName: string; osArch: string; osVersion: string; tauriVersion: string; settings: JsonValue; recentCrashReports: string[]; memoryUsageBytes: number | null; uptimeSecs: number | null }
+/**
+ * One row of the Pro features list the settings UI renders.
+ */
+export type FeatureEntitlement = { feature: ProFeature; enabled: boolean }
 /**
  * A VS Code theme the user imported, stored as the already-converted anchor
  * profile plus workbench overrides — never the raw VS Code JSON. Mirrors
@@ -284,7 +383,101 @@ export type ImportedTheme = { id: string; name: string;
  */
 mode: string; accent: string; background: string; foreground: string; contrast: number; overrides: Partial<{ [key in string]: string }> | null }
 export type JsonValue = null | boolean | number | string | JsonValue[] | Partial<{ [key in string]: JsonValue }>
-export type PersistedAppState = { leftSidebarVisible: boolean; rightSidebarVisible: boolean; squareCorners: boolean; lastQuickPaneEntry: string | null; recentItems: string[]; onboardingCompleted: boolean }
+/**
+ * What the app may reach, persisted as `network.json`.
+ */
+export type NetPolicy = { 
+/**
+ * Block every non-loopback request. On by default: a fresh install
+ * makes zero network calls until the user opts in (for example, to
+ * download a model).
+ */
+offline: boolean; 
+/**
+ * Let loopback requests through even when offline. Local model servers
+ * (MLX, llama-server, Ollama, LM Studio) live on 127.0.0.1, so turning
+ * this off disables them.
+ */
+allowLocalhost: boolean; 
+/**
+ * Hosts reachable while online. An entry is an exact host
+ * (`huggingface.co`), a subdomain wildcard (`*.hf.co`, which does not
+ * match `hf.co` itself), or `*` for any host.
+ */
+allowedHosts: string[] }
+export type PersistedAppState = { leftSidebarVisible: boolean; rightSidebarVisible: boolean; squareCorners: boolean; lastQuickPaneEntry: string | null; recentItems: string[]; onboardingCompleted: boolean; 
+/**
+ * Workspace tabs, in strip order. Restored on the next launch. A
+ * pre-tabs `state.json` loads with none via the container-level
+ * `default` (no field-level one, so the TS type stays non-optional).
+ */
+openTabs: PersistedTab[]; 
+/**
+ * `id` of the focused tab in `open_tabs`, if any.
+ */
+activeTabId: string | null }
+/**
+ * One workspace tab as saved in `state.json`. Mirrors `sanitizeTab` in
+ * `src/lib/stores/app-state-schema.ts`.
+ */
+export type PersistedTab = { id: string; 
+/**
+ * What the tab shows (`"note"`, `"pdf"`, `"settings"`, ...). Free-form
+ * here; the frontend owns the vocabulary.
+ */
+kind: string; uri: string; title: string; pinned: boolean }
+/**
+ * A feature that sits behind the Pro flag.
+ * 
+ * Entitlements are local feature flags only: there is no licence server and
+ * no network check. Adding a variant here is the whole of gating a new
+ * feature; call [`Entitlements::require`] at the top of its command.
+ */
+export type ProFeature = 
+/**
+ * Live translation of a transcript while it is being recorded.
+ */
+"realtimeTranslation" | 
+/**
+ * Asking questions of a PDF, answered with page citations.
+ */
+"pdfAiQa" | 
+/**
+ * Cloud summaries and research on premium hosted models.
+ */
+"premiumCloudModels"
+export type RequestOutcome = 
+/**
+ * Passed the policy and was sent (it may still have failed on the wire;
+ * see `error`).
+ */
+"sent" | 
+/**
+ * Stopped by the policy before any IO.
+ */
+"blocked"
+/**
+ * One entry of the network activity log.
+ */
+export type RequestRecord = { 
+/**
+ * Milliseconds since the Unix epoch. `f64` rather than `u64` so the
+ * TypeScript side gets a plain `number`.
+ */
+timestampMs: number; method: string; host: string; 
+/**
+ * Scheme, host, port and path. Query strings and fragments are dropped
+ * because they routinely carry tokens.
+ */
+url: string; 
+/**
+ * Why the request was made, e.g. `model-download` or `updater`.
+ */
+purpose: string; outcome: RequestOutcome; status: number | null; 
+/**
+ * The response's declared `Content-Length`, when it has one.
+ */
+bytes: number | null; error: string | null }
 /**
  * What a registered global shortcut is *for*.
  * 
@@ -308,6 +501,7 @@ export type ShortcutPurpose =
  * `DEFAULT_LIGHT`/`DEFAULT_DARK` in `src/lib/theme/presets.ts`.
  */
 export type ThemeProfile = { presetId: string; customized: boolean; accent: string; background: string; foreground: string; contrast: number }
+export type UpdateInfo = { version: string; currentVersion: string; notes: string | null }
 
 /** tauri-specta globals **/
 

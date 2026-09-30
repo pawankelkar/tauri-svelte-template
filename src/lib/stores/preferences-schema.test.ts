@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  CURRENT_PREFS_VERSION,
   defaultPreferences,
   sanitizePreferences,
   isThemeMode,
@@ -43,6 +44,7 @@ const validProfile = {
 describe('sanitizePreferences', () => {
   it('passes through a valid object unchanged', () => {
     const valid = {
+      prefsVersion: 1,
       theme: 'dark',
       lightProfile: { ...validProfile, presetId: 'default-light' },
       darkProfile: validProfile,
@@ -215,5 +217,18 @@ describe('sanitizePreferences', () => {
     expect(result.language).toBeNull()
     expect(result.globalShortcut).toBeNull()
     expect(result.quickPaneShortcut).toBeNull()
+  })
+
+  it('keeps a stored prefsVersion and reads a missing one as 0', () => {
+    expect(defaultPreferences().prefsVersion).toBe(CURRENT_PREFS_VERSION)
+    expect(CURRENT_PREFS_VERSION).toBe(1)
+    expect(sanitizePreferences({}).prefsVersion).toBe(0)
+    expect(sanitizePreferences({ prefsVersion: 3 }).prefsVersion).toBe(3)
+  })
+
+  it('reads a malformed prefsVersion as 0', () => {
+    for (const bad of [-1, 1.5, '1', null, Number.NaN]) {
+      expect(sanitizePreferences({ prefsVersion: bad }).prefsVersion).toBe(0)
+    }
   })
 })

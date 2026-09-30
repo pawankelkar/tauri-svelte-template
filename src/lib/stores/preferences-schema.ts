@@ -47,8 +47,22 @@ export const FONT_SIZE_MAX = 20
  */
 export const DEFAULT_QUICK_PANE_SHORTCUT = 'CmdOrCtrl+Shift+.'
 
+/**
+ * Mirrors `CURRENT_PREFS_VERSION` in `src-tauri/src/types.rs`. Fresh
+ * defaults carry it; a stored file without the field reads as 0 (as it does
+ * in Rust), so migrations can tell pre-versioning files apart.
+ */
+export const CURRENT_PREFS_VERSION = 1
+
+function sanitizePrefsVersion(value: unknown): number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0
+    ? value
+    : 0
+}
+
 export function defaultPreferences(): AppPreferences {
   return {
+    prefsVersion: CURRENT_PREFS_VERSION,
     theme: 'system',
     lightProfile: profileFromPreset(DEFAULT_LIGHT),
     darkProfile: profileFromPreset(DEFAULT_DARK),
@@ -120,6 +134,7 @@ export function sanitizePreferences(raw: unknown): AppPreferences {
 
   const r = raw as Partial<AppPreferences>
   return {
+    prefsVersion: sanitizePrefsVersion(r.prefsVersion),
     theme: isThemeMode(r.theme) ? r.theme : defaults.theme,
     lightProfile: sanitizeProfile(r.lightProfile, defaults.lightProfile),
     darkProfile: sanitizeProfile(r.darkProfile, defaults.darkProfile),

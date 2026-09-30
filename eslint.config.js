@@ -96,6 +96,25 @@ export default ts.config(
   },
 
   {
+    // The `.svelte` half of ast-grep's `no-fetch` rule: the network is reached
+    // through ostralith-net in Rust, which enforces offline mode and logs
+    // every request. Webview networking would bypass both.
+    files: ['src/**/*.svelte'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        ...['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map(
+          (name) => ({
+            name,
+            message:
+              'Network access must go through the Rust (ostralith-net) commands — see .ast-grep/rules/no-fetch.yml.',
+          }),
+        ),
+      ],
+    },
+  },
+
+  {
     // The logger is the one place allowed to touch the console — that is its
     // whole job.
     files: ['src/lib/logger.ts'],
@@ -104,7 +123,7 @@ export default ts.config(
 
   {
     // CLI scripts are Node programs, not webview code.
-    files: ['scripts/**/*.js'],
+    files: ['scripts/**/*.{js,mjs}'],
     languageOptions: { globals: { ...globals.node } },
     rules: { 'no-console': 'off' },
   },

@@ -1,0 +1,24 @@
+id: no-fetch
+language: TypeScript
+severity: error
+files:
+  - 'src/**/*.ts'
+  - '!src/lib/bindings.ts'
+rule:
+  any:
+    - pattern: fetch($$$)
+    - pattern: window.fetch($$$)
+    - pattern: globalThis.fetch($$$)
+    - pattern: new XMLHttpRequest($$$)
+    - pattern: new WebSocket($$$)
+    - pattern: new EventSource($$$)
+message: >-
+  Network access must go through the Rust (ostralith-net) commands, not the
+  webview.
+note: >-
+  ostralith-net enforces offline mode, the host allowlist and the activity log
+  in Rust. A request made from the webview bypasses all three: it ignores
+  offline mode and never appears in Preferences → Privacy & Network. Add (or
+  reuse) a Rust command that performs the request through ostralith-net and
+  call it via { commands } from '$lib/tauri-bindings'. `.svelte` files are
+  covered by the matching `no-restricted-globals` rule in eslint.config.js.
